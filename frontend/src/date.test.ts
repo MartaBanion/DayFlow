@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { calculateCompletionRate, toDateInputValue } from './date'
+import { calculateCompletionRate, formatDisplayDate, toDateInputValue } from './date'
 import type { Task } from './types'
 
 const task = (status: Task['status']): Task => ({
@@ -22,6 +22,10 @@ const task = (status: Task['status']): Task => ({
 describe('date helpers', () => {
   it('formats a local date for date inputs', () => {
     expect(toDateInputValue(new Date(2026, 8, 26))).toBe('2026-09-26')
+  })
+
+  it('formats display dates in Simplified Chinese', () => {
+    expect(formatDisplayDate('2026-09-26')).toBe('2026年9月26日星期六')
   })
 
   it('calculates completion rate without division by zero', () => {

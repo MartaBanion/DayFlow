@@ -35,6 +35,7 @@ Only the version currently being implemented may be changed. Do not start later 
 - Do not silently swallow exceptions.
 - Validate input at the API boundary and enforce business rules in services.
 - Do not introduce future-version fields or abstractions without a current V0.2 need.
+- DayFlow's default user language is Simplified Chinese. User-visible UI copy should use Simplified Chinese; code, APIs, database schema, and internal enum values remain in English. Do not introduce a full internationalization system at this stage.
 
 ## Testing Rules
 

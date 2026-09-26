@@ -84,44 +84,44 @@ describe('MetadataManager', () => {
   it('creates, renames, and deletes categories and tags', async () => {
     await openManager()
 
-    await wrapper!.get('input[aria-label="New category name"]').setValue('Work')
+    await wrapper!.get('input[aria-label="新分类名称"]').setValue('Work')
     await wrapper!.findAll('form')[0].trigger('submit')
     await flushPromises()
     expect(taskApi.createCategory).toHaveBeenCalledWith('Work')
     expect(wrapper!.text()).toContain('Work')
 
     const categoryRow = wrapper!.findAll('.metadata-row').find((row) => row.text().includes('Learning'))
-    const categoryRename = categoryRow!.findAll('button').find((button) => button.text() === 'Rename')
+    const categoryRename = categoryRow!.findAll('button').find((button) => button.text() === '重命名')
     await categoryRename!.trigger('click')
-    await wrapper!.get('input[aria-label="Rename category Learning"]').setValue('Study')
-    await wrapper!.findAll('button').find((button) => button.text() === 'Save')!.trigger('click')
+    await wrapper!.get('input[aria-label="重命名分类：Learning"]').setValue('Study')
+    await wrapper!.findAll('button').find((button) => button.text() === '保存')!.trigger('click')
     await flushPromises()
     expect(taskApi.updateCategory).toHaveBeenCalledWith('category-1', 'Study')
     expect(wrapper!.text()).toContain('Study')
 
     const renamedCategoryRow = wrapper!.findAll('.metadata-row').find((row) => row.text().includes('Study'))
-    await renamedCategoryRow!.findAll('button').find((button) => button.text() === 'Delete')!.trigger('click')
+    await renamedCategoryRow!.findAll('button').find((button) => button.text() === '删除')!.trigger('click')
     await flushPromises()
     expect(taskApi.removeCategory).toHaveBeenCalledWith('category-1')
     expect(wrapper!.text()).not.toContain('Study')
 
-    await wrapper!.get('input[aria-label="New tag name"]').setValue('study')
+    await wrapper!.get('input[aria-label="新标签名称"]').setValue('study')
     await wrapper!.findAll('form')[1].trigger('submit')
     await flushPromises()
     expect(taskApi.createTag).toHaveBeenCalledWith('study')
     expect(wrapper!.text()).toContain('study')
 
     const tagRow = wrapper!.findAll('.metadata-row').find((row) => row.text().includes('linux'))
-    const tagRename = tagRow!.findAll('button').find((button) => button.text() === 'Rename')
+    const tagRename = tagRow!.findAll('button').find((button) => button.text() === '重命名')
     await tagRename!.trigger('click')
-    await wrapper!.get('input[aria-label="Rename tag linux"]').setValue('systems')
-    await wrapper!.findAll('button').find((button) => button.text() === 'Save')!.trigger('click')
+    await wrapper!.get('input[aria-label="重命名标签：linux"]').setValue('systems')
+    await wrapper!.findAll('button').find((button) => button.text() === '保存')!.trigger('click')
     await flushPromises()
     expect(taskApi.updateTag).toHaveBeenCalledWith('tag-1', 'systems')
     expect(wrapper!.text()).toContain('systems')
 
     const renamedTagRow = wrapper!.findAll('.metadata-row').find((row) => row.text().includes('systems'))
-    await renamedTagRow!.findAll('button').find((button) => button.text() === 'Delete')!.trigger('click')
+    await renamedTagRow!.findAll('button').find((button) => button.text() === '删除')!.trigger('click')
     await flushPromises()
     expect(taskApi.removeTag).toHaveBeenCalledWith('tag-1')
     expect(wrapper!.text()).not.toContain('systems')
@@ -133,13 +133,13 @@ describe('MetadataManager', () => {
     )
     await openManager()
 
-    await wrapper!.get('input[aria-label="New category name"]').setValue('learning')
+    await wrapper!.get('input[aria-label="新分类名称"]').setValue('learning')
     await wrapper!.findAll('form')[0].trigger('submit')
     await flushPromises()
 
     expect(wrapper!.find('.stub-alert').text()).toContain(
-      'A category with that name already exists.',
+      '分类名称已存在，请换一个名称。',
     )
-    expect(wrapper!.text()).not.toContain('Category created')
+    expect(wrapper!.text()).not.toContain('分类已创建')
   })
 })

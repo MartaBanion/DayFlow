@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
+import { priorityLabels } from '../constants/labels'
 import type { Category, Tag, Task, TaskPriority, TaskUpdatePayload } from '../types'
 
 const props = defineProps<{
@@ -51,48 +52,48 @@ function submit(): void {
 <template>
   <el-dialog
     :model-value="open"
-    title="Edit task"
+    title="编辑任务"
     width="560px"
     @update:model-value="emit('update:open', $event)"
   >
     <el-form label-position="top" @submit.prevent="submit">
-      <el-form-item label="Title" required>
-        <el-input v-model="title" autofocus />
+      <el-form-item label="任务标题" required>
+        <el-input v-model="title" placeholder="请输入任务标题" autofocus />
       </el-form-item>
-      <el-form-item label="Description">
-        <el-input v-model="description" type="textarea" :rows="4" />
+      <el-form-item label="备注">
+        <el-input v-model="description" type="textarea" :rows="4" placeholder="补充备注（可选）" />
       </el-form-item>
       <div class="form-grid">
-        <el-form-item label="Planned date">
+        <el-form-item label="计划日期">
           <el-date-picker
             v-model="plannedDate"
             type="date"
             value-format="YYYY-MM-DD"
-            placeholder="Inbox"
+            placeholder="未安排日期"
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="Priority">
+        <el-form-item label="优先级">
           <el-select v-model="priority" style="width: 100%">
-            <el-option label="Low" value="low" />
-            <el-option label="Normal" value="normal" />
-            <el-option label="High" value="high" />
+            <el-option :label="priorityLabels.low" value="low" />
+            <el-option :label="priorityLabels.normal" value="normal" />
+            <el-option :label="priorityLabels.high" value="high" />
           </el-select>
         </el-form-item>
       </div>
-      <el-form-item label="Category">
-        <el-select v-model="categoryId" clearable placeholder="No category" style="width: 100%">
+      <el-form-item label="分类">
+        <el-select v-model="categoryId" clearable placeholder="未分类" style="width: 100%">
           <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="Tags">
-        <el-select v-model="tagIds" multiple clearable placeholder="No tags" style="width: 100%">
+      <el-form-item label="标签">
+        <el-select v-model="tagIds" multiple clearable placeholder="无标签" style="width: 100%">
           <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
         </el-select>
       </el-form-item>
       <div class="dialog-actions">
-        <el-button @click="emit('update:open', false)">Cancel</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">Save changes</el-button>
+        <el-button @click="emit('update:open', false)">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="submit">保存修改</el-button>
       </div>
     </el-form>
   </el-dialog>

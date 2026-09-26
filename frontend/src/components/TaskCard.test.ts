@@ -33,10 +33,10 @@ describe('TaskCard organization metadata', () => {
       global: { plugins: [ElementPlus] },
     })
 
-    expect(wrapper.text()).toContain('high')
+    expect(wrapper.text()).toContain('高')
     expect(wrapper.text()).toContain('Learning')
     expect(wrapper.text()).toContain('linux')
     expect(wrapper.text()).toContain('lab')
-    expect(wrapper.text()).toContain('Planned for Inbox')
+    expect(wrapper.text()).toContain('计划日期：收件箱')
   })
 })

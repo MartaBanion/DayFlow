@@ -44,7 +44,7 @@ afterEach(() => {
 async function deleteTaskFromToday(): Promise<HTMLButtonElement> {
   const deleteButton = wrapper
     ?.findAll('.task-actions button')
-    .find((button) => button.text() === 'Delete')
+    .find((button) => button.text() === '删除')
   expect(deleteButton).toBeDefined()
 
   await deleteButton!.trigger('click')
@@ -97,7 +97,7 @@ describe('delete undo flow', () => {
 
     expect(restore).toHaveBeenCalledWith(task.id, 2)
     expect(wrapper.find('.page-alert').text()).toContain(
-      'This task changed elsewhere. Refresh the Today list and try again.',
+      '任务内容可能已被其他操作更新，请刷新今天的任务后重试。',
     )
   })
 })
@@ -110,7 +110,7 @@ describe('Today load state', () => {
     await nextTick()
 
     expect(wrapper.find('.today-state.is-loading').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Loading today’s tasks…')
+    expect(wrapper.text()).toContain('正在加载今日任务…')
     expect(wrapper.find('.summary-grid').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Nothing planned for this day')
   })
@@ -126,7 +126,7 @@ describe('Today load state', () => {
     await flushPromises()
 
     expect(wrapper.find('.today-state.is-error').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Request failed with status 502')
+    expect(wrapper.text()).toContain('请求失败，请稍后重试。（HTTP 502）')
     expect(wrapper.find('.summary-grid').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Nothing planned for this day')
 
@@ -163,7 +163,7 @@ describe('Inbox and search', () => {
     })
     expect(wrapper.text()).toContain('Capture Linux idea')
 
-    await wrapper.get('input[aria-label="New Inbox task title"]').setValue('New Inbox item')
+    await wrapper.get('input[aria-label="新收件箱任务标题"]').setValue('New Inbox item')
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
@@ -189,13 +189,13 @@ describe('Inbox and search', () => {
     await wrapper.get('a[href="#inbox"]').trigger('click')
     await flushPromises()
 
-    await wrapper.get('input[aria-label="Search tasks"]').setValue('linux')
+    await wrapper.get('input[aria-label="搜索任务"]').setValue('linux')
     await wrapper.get('form.search-form').trigger('submit')
     await flushPromises()
 
     expect(wrapper.find('.today-state.is-error').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Search service unavailable')
-    expect(wrapper.text()).not.toContain('No tasks match your search')
+    expect(wrapper.text()).toContain('请求失败，请稍后重试。（HTTP 503）')
+    expect(wrapper.text()).not.toContain('没有找到相关任务')
     expect(list).toHaveBeenLastCalledWith({
       inbox: false,
       query: 'linux',

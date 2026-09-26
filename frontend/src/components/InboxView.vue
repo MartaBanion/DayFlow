@@ -2,7 +2,8 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { ApiRequestError, taskApi } from '../api'
+import { taskApi } from '../api'
+import { getTaskErrorMessage } from '../constants/labels'
 import type { Category, Tag, Task, TaskPriority, TaskUpdatePayload } from '../types'
 import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
@@ -30,13 +31,7 @@ type RestoreTarget = Pick<Task, 'id' | 'version'>
 type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
 
 function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    if (error.status === 409) {
-      return 'This task changed elsewhere. Refresh the Inbox and try again.'
-    }
-    return error.message
-  }
-  return 'DayFlow could not complete that action. Check that the Backend is running.'
+  return getTaskErrorMessage(error, 'inbox')
 }
 
 function showError(error: unknown): void {
@@ -106,7 +101,7 @@ async function initializeInbox(): Promise<void> {
 async function createQuickTask(): Promise<void> {
   const title = quickTitle.value.trim()
   if (!title) {
-    errorMessage.value = 'Add a title before creating a task.'
+    errorMessage.value = '请先填写任务标题。'
     return
   }
 
@@ -117,7 +112,7 @@ async function createQuickTask(): Promise<void> {
     quickTitle.value = ''
     quickDescription.value = ''
     await loadTasks()
-    ElMessage.success('Task captured in Inbox')
+    ElMessage.success('任务已记录到收件箱')
   } catch (error) {
     showError(error)
   } finally {
@@ -136,7 +131,7 @@ async function openEditDialog(task: Task): Promise<void> {
 async function saveEdit(payload: TaskUpdatePayload): Promise<void> {
   const task = editingTask.value
   if (!task || !payload.title?.trim()) {
-    errorMessage.value = 'Task title cannot be empty.'
+    errorMessage.value = '任务标题不能为空。'
     return
   }
 
@@ -146,7 +141,7 @@ async function saveEdit(payload: TaskUpdatePayload): Promise<void> {
     await taskApi.update(task.id, task.version, payload)
     isEditDialogOpen.value = false
     await loadTasks()
-    ElMessage.success('Task updated')
+    ElMessage.success('任务已更新')
   } catch (error) {
     showError(error)
   } finally {
@@ -160,7 +155,7 @@ async function completeTask(task: Task): Promise<void> {
   try {
     await taskApi.complete(task.id, task.version)
     await loadTasks()
-    ElMessage.success('Task completed')
+    ElMessage.success('任务已完成')
   } catch (error) {
     showError(error)
   } finally {
@@ -174,7 +169,7 @@ async function restoreTask(task: RestoreTarget): Promise<boolean> {
   try {
     await taskApi.restore(task.id, task.version)
     await loadTasks()
-    ElMessage.success('Task restored')
+    ElMessage.success('任务已恢复')
     return true
   } catch (error) {
     showError(error)
@@ -192,8 +187,8 @@ function showDeleteUndo(task: RestoreTarget): void {
 
   messageHandler = ElMessage({
     message: h('span', { class: 'delete-message' }, [
-      h('span', 'Task deleted'),
-      h('button', { class: 'delete-undo', type: 'button', onClick: () => void undo() }, 'Undo'),
+      h('span', '任务已删除'),
+      h('button', { class: 'delete-undo', type: 'button', onClick: () => void undo() }, '撤销'),
     ]),
     type: 'success',
     duration: 8000,
@@ -204,9 +199,9 @@ function showDeleteUndo(task: RestoreTarget): void {
 async function deleteTask(task: Task): Promise<void> {
   try {
     await ElMessageBox.confirm(
-      `Delete “${task.title}”? You can undo this from the confirmation message.`,
-      'Delete task',
-      { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
+      `确定删除“${task.title}”吗？删除后可点击“撤销”恢复。`,
+      '删除任务',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
     )
   } catch {
     return
@@ -235,9 +230,9 @@ onMounted(initializeInbox)
 <template>
   <header class="page-header">
     <div>
-      <p class="eyebrow">INBOX</p>
-      <h2>Unscheduled tasks</h2>
-      <p class="muted">Capture first, decide when it belongs later.</p>
+      <p class="eyebrow">收件箱</p>
+      <h2>未安排日期的任务</h2>
+      <p class="muted">快速记录暂时还没有安排日期的任务。</p>
     </div>
     <div class="page-header-actions">
       <MetadataManager
@@ -245,7 +240,7 @@ onMounted(initializeInbox)
         :tags="tags"
         @updated="handleMetadataUpdated"
       />
-      <el-button :loading="isLoading" plain @click="loadTasks">Refresh</el-button>
+      <el-button :loading="isLoading" plain @click="loadTasks">刷新</el-button>
     </div>
   </header>
 
@@ -260,49 +255,49 @@ onMounted(initializeInbox)
   />
 
   <section v-if="loadState === 'loading'" class="today-state is-loading" aria-live="polite">
-    <p class="eyebrow">LOADING</p>
-    <h3>Loading Inbox</h3>
-    <p class="today-state-detail">Loading unscheduled tasks…</p>
+    <p class="eyebrow">加载中</p>
+    <h3>正在加载收件箱</h3>
+    <p class="today-state-detail">正在加载未安排日期的任务…</p>
   </section>
 
   <section v-else-if="loadState === 'error'" class="today-state is-error" role="alert">
-    <p class="eyebrow">INBOX UNAVAILABLE</p>
-    <h3>Could not load Inbox</h3>
-    <p class="today-state-detail">{{ errorMessage || 'DayFlow could not load Inbox.' }}</p>
-    <el-button type="primary" :loading="isLoading" @click="initializeInbox">Retry</el-button>
+    <p class="eyebrow">收件箱暂不可用</p>
+    <h3>收件箱加载失败</h3>
+    <p class="today-state-detail">{{ errorMessage || '收件箱加载失败，请稍后重试。' }}</p>
+    <el-button type="primary" :loading="isLoading" @click="initializeInbox">重试</el-button>
   </section>
 
   <template v-if="loadState === 'loaded'">
     <el-card shadow="never" class="capture-card">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">QUICK CAPTURE</p>
-          <h3>Save it for later</h3>
+          <p class="eyebrow">快速记录</p>
+          <h3>先记下来，稍后安排</h3>
         </div>
-        <span class="capture-hint">No date required</span>
+        <span class="capture-hint">无需设置日期</span>
       </div>
       <form class="capture-form" @submit.prevent="createQuickTask">
-        <el-input v-model="quickTitle" size="large" placeholder="What should you remember?" aria-label="New Inbox task title" />
-        <el-input v-model="quickDescription" placeholder="Optional note" aria-label="New Inbox task description" />
-        <el-button type="primary" native-type="submit" :loading="isSaving">Capture</el-button>
+        <el-input v-model="quickTitle" size="large" placeholder="想先记下什么？" aria-label="新收件箱任务标题" />
+        <el-input v-model="quickDescription" placeholder="备注（可选）" aria-label="新收件箱任务备注" />
+        <el-button type="primary" native-type="submit" :loading="isSaving">记录</el-button>
       </form>
     </el-card>
 
     <section class="search-panel">
       <form class="search-form" @submit.prevent="applySearch">
-        <el-input v-model="searchQuery" clearable placeholder="Search title or description" aria-label="Search tasks" />
-        <el-button native-type="submit" :loading="isLoading">Search</el-button>
+        <el-input v-model="searchQuery" clearable placeholder="搜索标题或备注" aria-label="搜索任务" />
+        <el-button native-type="submit" :loading="isLoading">搜索</el-button>
       </form>
       <div class="filter-row">
-        <el-select v-model="priorityFilter" clearable placeholder="Priority" @change="loadTasks">
-          <el-option label="Low" value="low" />
-          <el-option label="Normal" value="normal" />
-          <el-option label="High" value="high" />
+        <el-select v-model="priorityFilter" clearable placeholder="优先级" @change="loadTasks">
+          <el-option label="低" value="low" />
+          <el-option label="普通" value="normal" />
+          <el-option label="高" value="high" />
         </el-select>
-        <el-select v-model="categoryFilter" clearable placeholder="Category" @change="loadTasks">
+        <el-select v-model="categoryFilter" clearable placeholder="分类" @change="loadTasks">
           <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
         </el-select>
-        <el-select v-model="tagFilter" clearable placeholder="Tag" @change="loadTasks">
+        <el-select v-model="tagFilter" clearable placeholder="标签" @change="loadTasks">
           <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
         </el-select>
       </div>
@@ -311,15 +306,15 @@ onMounted(initializeInbox)
     <section class="task-section">
       <div class="section-heading task-heading">
         <div>
-          <p class="eyebrow">{{ isSearchMode ? 'SEARCH RESULTS' : 'INBOX' }}</p>
-          <h3>{{ isSearchMode ? 'Matching tasks' : 'Unscheduled tasks' }}</h3>
+          <p class="eyebrow">{{ isSearchMode ? '搜索结果' : '收件箱' }}</p>
+          <h3>{{ isSearchMode ? '匹配的任务' : '未安排日期的任务' }}</h3>
         </div>
         <el-tag type="info" effect="plain">{{ tasks.length }}</el-tag>
       </div>
 
       <el-empty
         v-if="tasks.length === 0"
-        :description="isSearchMode ? 'No tasks match your search' : 'Your Inbox is clear'"
+        :description="isSearchMode ? '没有找到相关任务' : '收件箱为空'"
       >
         <template #image>
           <div class="empty-mark">✓</div>

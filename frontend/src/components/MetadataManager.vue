@@ -2,7 +2,11 @@
 import { ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { ApiRequestError, taskApi } from '../api'
+import { taskApi } from '../api'
+import {
+  getMetadataErrorMessage,
+  getMetadataLoadErrorMessage,
+} from '../constants/labels'
 import type { Category, Tag } from '../types'
 
 type MetadataSnapshot = {
@@ -44,16 +48,7 @@ watch(
 )
 
 function getErrorMessage(error: unknown, subject: 'category' | 'tag'): string {
-  if (error instanceof ApiRequestError) {
-    if (error.code === `${subject}_name_conflict` || error.status === 409) {
-      return `A ${subject} with that name already exists.`
-    }
-    if (error.status === 422) {
-      return `Enter a non-empty ${subject} name within the allowed length.`
-    }
-    return error.message
-  }
-  return `DayFlow could not update this ${subject}. Check that the Backend is running.`
+  return getMetadataErrorMessage(error, subject)
 }
 
 function showError(error: unknown, subject: 'category' | 'tag'): void {
@@ -76,9 +71,7 @@ async function refreshMetadata(): Promise<boolean> {
     emit('updated', { categories, tags })
     return true
   } catch (error) {
-    errorMessage.value = error instanceof ApiRequestError
-      ? error.message
-      : 'DayFlow could not load Categories and Tags.'
+    errorMessage.value = getMetadataLoadErrorMessage(error)
     return false
   } finally {
     isLoading.value = false
@@ -94,7 +87,7 @@ async function openManager(): Promise<void> {
 async function createCategory(): Promise<void> {
   const name = newCategoryName.value.trim()
   if (!name) {
-    errorMessage.value = 'Category name cannot be empty.'
+    errorMessage.value = '分类名称不能为空。'
     return
   }
 
@@ -103,7 +96,7 @@ async function createCategory(): Promise<void> {
   try {
     await taskApi.createCategory(name)
     newCategoryName.value = ''
-    if (await refreshMetadata()) ElMessage.success('Category created')
+    if (await refreshMetadata()) ElMessage.success('分类已创建')
   } catch (error) {
     showError(error, 'category')
   } finally {
@@ -114,7 +107,7 @@ async function createCategory(): Promise<void> {
 async function createTag(): Promise<void> {
   const name = newTagName.value.trim()
   if (!name) {
-    errorMessage.value = 'Tag name cannot be empty.'
+    errorMessage.value = '标签名称不能为空。'
     return
   }
 
@@ -123,7 +116,7 @@ async function createTag(): Promise<void> {
   try {
     await taskApi.createTag(name)
     newTagName.value = ''
-    if (await refreshMetadata()) ElMessage.success('Tag created')
+    if (await refreshMetadata()) ElMessage.success('标签已创建')
   } catch (error) {
     showError(error, 'tag')
   } finally {
@@ -149,7 +142,7 @@ async function saveRename(): Promise<void> {
   const name = editingName.value.trim()
   if (!kind) return
   if (!name) {
-    errorMessage.value = `${kind === 'category' ? 'Category' : 'Tag'} name cannot be empty.`
+    errorMessage.value = `${kind === 'category' ? '分类' : '标签'}名称不能为空。`
     return
   }
 
@@ -163,7 +156,7 @@ async function saveRename(): Promise<void> {
     }
     cancelRename()
     if (await refreshMetadata()) {
-      ElMessage.success(`${kind === 'category' ? 'Category' : 'Tag'} renamed`)
+      ElMessage.success(`${kind === 'category' ? '分类' : '标签'}已重命名`)
     }
   } catch (error) {
     showError(error, kind)
@@ -175,9 +168,9 @@ async function saveRename(): Promise<void> {
 async function deleteCategory(category: Category): Promise<void> {
   try {
     await ElMessageBox.confirm(
-      `Delete category “${category.name}”? Tasks will be kept.`,
-      'Delete category',
-      { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
+      `确定删除分类“${category.name}”吗？任务不会被删除。`,
+      '删除分类',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
     )
   } catch {
     return
@@ -187,7 +180,7 @@ async function deleteCategory(category: Category): Promise<void> {
   clearError()
   try {
     await taskApi.removeCategory(category.id)
-    if (await refreshMetadata()) ElMessage.success('Category deleted')
+    if (await refreshMetadata()) ElMessage.success('分类已删除')
   } catch (error) {
     showError(error, 'category')
   } finally {
@@ -198,9 +191,9 @@ async function deleteCategory(category: Category): Promise<void> {
 async function deleteTag(tag: Tag): Promise<void> {
   try {
     await ElMessageBox.confirm(
-      `Delete tag “${tag.name}”? Tasks will be kept.`,
-      'Delete tag',
-      { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
+      `确定删除标签“${tag.name}”吗？任务不会被删除。`,
+      '删除标签',
+      { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' },
     )
   } catch {
     return
@@ -210,7 +203,7 @@ async function deleteTag(tag: Tag): Promise<void> {
   clearError()
   try {
     await taskApi.removeTag(tag.id)
-    if (await refreshMetadata()) ElMessage.success('Tag deleted')
+    if (await refreshMetadata()) ElMessage.success('标签已删除')
   } catch (error) {
     showError(error, 'tag')
   } finally {
@@ -220,9 +213,9 @@ async function deleteTag(tag: Tag): Promise<void> {
 </script>
 
 <template>
-  <el-button plain @click="openManager">Manage metadata</el-button>
+  <el-button plain @click="openManager">管理分类与标签</el-button>
 
-  <el-dialog v-model="isOpen" title="Manage categories and tags" width="640px">
+  <el-dialog v-model="isOpen" title="管理分类与标签" width="640px">
     <el-alert
       v-if="errorMessage"
       class="metadata-alert"
@@ -236,39 +229,39 @@ async function deleteTag(tag: Tag): Promise<void> {
     <section class="metadata-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">CATEGORIES</p>
-          <h3>Organize by one category</h3>
+          <p class="eyebrow">分类</p>
+          <h3>每个任务选择一个分类</h3>
         </div>
       </div>
       <form class="metadata-create-form" @submit.prevent="createCategory">
         <el-input
           v-model="newCategoryName"
           maxlength="100"
-          placeholder="New category name"
-          aria-label="New category name"
+          placeholder="新分类名称"
+          aria-label="新分类名称"
         />
         <el-button type="primary" native-type="submit" :loading="isMutating">
-          Add category
+          新建分类
         </el-button>
       </form>
       <p v-if="!localCategories.length && !errorMessage" class="metadata-empty">
-        No categories yet.
+        还没有分类。
       </p>
       <div v-else class="metadata-list">
         <div v-for="category in localCategories" :key="category.id" class="metadata-row">
           <template v-if="editingKind === 'category' && editingId === category.id">
-            <el-input v-model="editingName" :aria-label="`Rename category ${category.name}`" maxlength="100" />
-            <el-button type="primary" text :loading="isMutating" @click="saveRename">Save</el-button>
-            <el-button text :disabled="isMutating" @click="cancelRename">Cancel</el-button>
+            <el-input v-model="editingName" :aria-label="`重命名分类：${category.name}`" maxlength="100" />
+            <el-button type="primary" text :loading="isMutating" @click="saveRename">保存</el-button>
+            <el-button text :disabled="isMutating" @click="cancelRename">取消</el-button>
           </template>
           <template v-else>
             <el-tag effect="plain">{{ category.name }}</el-tag>
             <span class="metadata-row-actions">
               <el-button text :disabled="isMutating" @click="startRename('category', category.id, category.name)">
-                Rename
+                重命名
               </el-button>
               <el-button type="danger" text :loading="isMutating" @click="deleteCategory(category)">
-                Delete
+                删除
               </el-button>
             </span>
           </template>
@@ -281,39 +274,39 @@ async function deleteTag(tag: Tag): Promise<void> {
     <section class="metadata-section">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">TAGS</p>
-          <h3>Use multiple tags when useful</h3>
+          <p class="eyebrow">标签</p>
+          <h3>需要时添加多个标签</h3>
         </div>
       </div>
       <form class="metadata-create-form" @submit.prevent="createTag">
         <el-input
           v-model="newTagName"
           maxlength="50"
-          placeholder="New tag name"
-          aria-label="New tag name"
+          placeholder="新标签名称"
+          aria-label="新标签名称"
         />
         <el-button type="primary" native-type="submit" :loading="isMutating">
-          Add tag
+          新建标签
         </el-button>
       </form>
       <p v-if="!localTags.length && !errorMessage" class="metadata-empty">
-        No tags yet.
+        还没有标签。
       </p>
       <div v-else class="metadata-list">
         <div v-for="tag in localTags" :key="tag.id" class="metadata-row">
           <template v-if="editingKind === 'tag' && editingId === tag.id">
-            <el-input v-model="editingName" :aria-label="`Rename tag ${tag.name}`" maxlength="50" />
-            <el-button type="primary" text :loading="isMutating" @click="saveRename">Save</el-button>
-            <el-button text :disabled="isMutating" @click="cancelRename">Cancel</el-button>
+            <el-input v-model="editingName" :aria-label="`重命名标签：${tag.name}`" maxlength="50" />
+            <el-button type="primary" text :loading="isMutating" @click="saveRename">保存</el-button>
+            <el-button text :disabled="isMutating" @click="cancelRename">取消</el-button>
           </template>
           <template v-else>
             <el-tag effect="plain">{{ tag.name }}</el-tag>
             <span class="metadata-row-actions">
               <el-button text :disabled="isMutating" @click="startRename('tag', tag.id, tag.name)">
-                Rename
+                重命名
               </el-button>
               <el-button type="danger" text :loading="isMutating" @click="deleteTag(tag)">
-                Delete
+                删除
               </el-button>
             </span>
           </template>

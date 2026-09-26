@@ -22,19 +22,19 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       <div class="brand-row">
         <div class="brand-mark">D</div>
         <div>
-          <p class="eyebrow">PERSONAL WORKSPACE</p>
+          <p class="eyebrow">个人工作区</p>
           <h1>DayFlow</h1>
         </div>
       </div>
 
-      <nav class="sidebar-nav" aria-label="Primary navigation">
+      <nav class="sidebar-nav" aria-label="主要导航">
         <a
           class="nav-item"
           :class="{ 'is-active': currentView === 'today' }"
           href="#today"
           @click="currentView = 'today'"
         >
-          Today <span>01</span>
+          今天 <span>01</span>
         </a>
         <a
           class="nav-item"
@@ -42,20 +42,20 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
           href="#inbox"
           @click="currentView = 'inbox'"
         >
-          Inbox <span>02</span>
+          收件箱 <span>02</span>
         </a>
-        <span class="nav-item is-disabled">Calendar</span>
-        <span class="nav-item is-disabled">Projects</span>
+        <span class="nav-item is-disabled">日历</span>
+        <span class="nav-item is-disabled">项目</span>
       </nav>
 
       <div class="sidebar-note">
-        <p class="eyebrow">FOCUS</p>
-        <p>Small, reliable steps for a clearer day.</p>
+        <p class="eyebrow">专注</p>
+        <p>稳定的小步，让每一天更清晰。</p>
       </div>
 
       <div class="sidebar-footer">
         <el-tag type="info" effect="plain">V0.2</el-tag>
-        <span>Local first</span>
+        <span>本地优先</span>
       </div>
     </aside>
 

@@ -8,7 +8,7 @@ export function toDateInputValue(value: Date): string {
 }
 
 export function formatDisplayDate(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat('zh-CN', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',

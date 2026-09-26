@@ -72,7 +72,7 @@ describe('TaskEditor organization fields', () => {
     const selects = wrapper.findAll('select')
     await selects[1].setValue('category-2')
     await selects[2].setValue(['tag-2'])
-    await wrapper.findAll('button').find((button) => button.text() === 'Save changes')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       category_id: 'category-2',
@@ -89,7 +89,7 @@ describe('TaskEditor organization fields', () => {
     const selects = wrapper.findAll('select')
     await selects[1].setValue('')
     await selects[2].setValue([])
-    await wrapper.findAll('button').find((button) => button.text() === 'Save changes')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       category_id: null,
