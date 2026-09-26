@@ -4,18 +4,19 @@
 
 ### V0.1 — Task Management
 
-Status: implementation complete, pending manual acceptance and stable release tag.
+Status: Completed and released as `v0.1.0`.
 
 - Project scaffold
 - Git baseline
 - Minimal Task model
 - Task CRUD
 - Complete and restore
-- Soft Delete
+- Soft Delete with Undo
 - Today page
+- Today loading/error/loaded states with Retry
 - SQLite persistence
 - Alembic migration
-- Isolated tests
+- Isolated backend and frontend tests
 
 V0.1 deliberately does not include automated Backup/Restore, Projects, Inbox,
 Calendar, Reminders, AI, or scheduling.

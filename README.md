@@ -4,14 +4,15 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-V0.1 — minimal Task management and Today view.
+V0.1.0 — minimal Task management and Today view.
 
 ## V0.1 Features
 
 - Create, read, and edit Tasks.
 - Complete and restore Tasks.
-- Soft-delete Tasks.
+- Soft-delete Tasks with an Undo restore action.
 - View Tasks planned for Today.
+- Show explicit Today loading, loaded, and error states with Retry.
 - Persist data in SQLite across Backend restarts.
 
 The V0.1 UI is Today-first and desktop-first. The backend exposes the complete

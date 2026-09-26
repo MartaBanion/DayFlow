@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { ApiRequestError, taskApi } from './api'
@@ -8,6 +8,9 @@ import type { Task } from './types'
 
 const selectedDate = ref(toDateInputValue(new Date()))
 const tasks = ref<Task[]>([])
+type TodayLoadState = 'loading' | 'loaded' | 'error'
+
+const todayLoadState = ref<TodayLoadState>('loading')
 const isLoading = ref(false)
 const isSaving = ref(false)
 const errorMessage = ref('')
@@ -25,6 +28,8 @@ const pendingTasks = computed(() => tasks.value.filter((task) => task.status ===
 const completionRate = computed(() => calculateCompletionRate(tasks.value))
 const formattedDate = computed(() => formatDisplayDate(selectedDate.value))
 
+type RestoreTarget = Pick<Task, 'id' | 'version'>
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
     if (error.status === 409) {
@@ -40,11 +45,14 @@ function showError(error: unknown): void {
 }
 
 async function loadToday(): Promise<void> {
+  todayLoadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
   try {
     tasks.value = await taskApi.listToday(selectedDate.value)
+    todayLoadState.value = 'loaded'
   } catch (error) {
+    todayLoadState.value = 'error'
     showError(error)
   } finally {
     isLoading.value = false
@@ -127,24 +135,53 @@ async function completeTask(task: Task): Promise<void> {
   }
 }
 
-async function restoreTask(task: Task): Promise<void> {
+async function restoreTask(task: RestoreTarget): Promise<boolean> {
   isSaving.value = true
   errorMessage.value = ''
   try {
     await taskApi.restore(task.id, task.version)
     await loadToday()
     ElMessage.success('Task restored')
+    return true
   } catch (error) {
     showError(error)
+    return false
   } finally {
     isSaving.value = false
   }
 }
 
+function showDeleteUndo(task: RestoreTarget): void {
+  let messageHandler: ReturnType<typeof ElMessage> | undefined
+  const undo = async (): Promise<void> => {
+    if (await restoreTask(task)) {
+      messageHandler?.close()
+    }
+  }
+
+  messageHandler = ElMessage({
+    message: h('span', { class: 'delete-message' }, [
+      h('span', 'Task deleted'),
+      h(
+        'button',
+        {
+          class: 'delete-undo',
+          type: 'button',
+          onClick: () => void undo(),
+        },
+        'Undo',
+      ),
+    ]),
+    type: 'success',
+    duration: 8000,
+    showClose: true,
+  })
+}
+
 async function deleteTask(task: Task): Promise<void> {
   try {
     await ElMessageBox.confirm(
-      `Delete “${task.title}”? It will be soft-deleted and can be restored through the API.`,
+      `Delete “${task.title}”? You can undo this from the confirmation message.`,
       'Delete task',
       { confirmButtonText: 'Delete', cancelButtonText: 'Cancel', type: 'warning' },
     )
@@ -157,7 +194,8 @@ async function deleteTask(task: Task): Promise<void> {
   try {
     await taskApi.remove(task.id, task.version)
     await loadToday()
-    ElMessage.success('Task deleted')
+    // Soft delete increments the optimistic-lock version before the restore action.
+    showDeleteUndo({ id: task.id, version: task.version + 1 })
   } catch (error) {
     showError(error)
   } finally {
@@ -208,7 +246,7 @@ onMounted(loadToday)
       </header>
 
       <el-alert
-        v-if="errorMessage"
+        v-if="errorMessage && todayLoadState !== 'error'"
         class="page-alert"
         :title="errorMessage"
         type="error"
@@ -217,16 +255,43 @@ onMounted(loadToday)
         @close="errorMessage = ''"
       />
 
-      <section class="summary-grid" aria-label="Today summary">
+      <section
+        v-if="todayLoadState === 'loading'"
+        class="today-state is-loading"
+        aria-live="polite"
+      >
+        <p class="eyebrow">LOADING</p>
+        <h3>Loading today</h3>
+        <p class="today-state-detail">Loading today’s tasks…</p>
+      </section>
+
+      <section
+        v-else-if="todayLoadState === 'error'"
+        class="today-state is-error"
+        role="alert"
+      >
+        <p class="eyebrow">TODAY UNAVAILABLE</p>
+        <h3>Could not load today</h3>
+        <p class="today-state-detail">
+          {{ errorMessage || 'DayFlow could not load today’s tasks.' }}
+        </p>
+        <el-button type="primary" :loading="isLoading" @click="loadToday">Retry</el-button>
+      </section>
+
+      <section v-if="todayLoadState === 'loaded'" class="summary-grid" aria-label="Today summary">
         <el-card shadow="never" class="summary-card">
-          <span class="summary-label">Tasks</span>
-          <strong>{{ tasks.length }}</strong>
-          <span class="summary-detail">{{ pendingTasks.length }} still open</span>
+          <div class="summary-content">
+            <span class="summary-label">Tasks</span>
+            <strong class="summary-value">{{ tasks.length }}</strong>
+            <span class="summary-detail">{{ pendingTasks.length }} still open</span>
+          </div>
         </el-card>
         <el-card shadow="never" class="summary-card">
-          <span class="summary-label">Completion</span>
-          <strong>{{ completionRate }}%</strong>
-          <span class="summary-detail">Keep the next step visible</span>
+          <div class="summary-content">
+            <span class="summary-label">Completion</span>
+            <strong class="summary-value">{{ completionRate }}%</strong>
+            <span class="summary-detail">Keep the next step visible</span>
+          </div>
         </el-card>
       </section>
 
@@ -254,7 +319,7 @@ onMounted(loadToday)
         </form>
       </el-card>
 
-      <section class="task-section">
+      <section v-if="todayLoadState === 'loaded'" class="task-section">
         <div class="section-heading task-heading">
           <div>
             <p class="eyebrow">YOUR PLAN</p>
@@ -265,12 +330,8 @@ onMounted(loadToday)
           </el-tag>
         </div>
 
-        <div v-if="isLoading" class="loading-list" aria-label="Loading tasks">
-          <el-skeleton v-for="item in 3" :key="item" animated />
-        </div>
-
         <el-empty
-          v-else-if="tasks.length === 0"
+          v-if="tasks.length === 0"
           description="Nothing planned for this day"
         >
           <template #image>

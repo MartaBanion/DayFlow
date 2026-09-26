@@ -1,15 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.0] - 2026-09-26
 
 ### Added
 
-- V0.1 Task CRUD with optimistic version checks, complete/restore, and soft delete.
-- Today query and desktop-first Today UI with loading, empty, and error states.
+- Task CRUD with optimistic version checks, complete/restore, and soft delete with
+  a user-facing Undo action.
+- Today query and desktop-first Today UI with loading, loaded, error, retry, and
+  empty states.
 - SQLite persistence with Alembic migration `0001_create_tasks`.
-- Isolated backend and frontend tests.
+- Isolated backend and frontend tests covering the V0.1 task and Today flows.
 
 ### Notes
 
 - Automated Backup/Restore remains out of scope for V0.1.
-- Stable `v0.1.0` tagging waits for manual acceptance.
+- V0.1 passed automated tests and manual acceptance.
