@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import db_session
 from app.core.config import get_settings
 from app.core.time import today_in_timezone
-from app.schemas.task import TaskCreate, TaskRead, TaskUpdate, TaskVersionRequest
+from app.schemas.task import PriorityValue, TaskCreate, TaskRead, TaskUpdate, TaskVersionRequest
 from app.services.task_service import TaskService
 
 router = APIRouter(prefix="/api/v1", tags=["tasks"])
@@ -22,9 +22,22 @@ def create_task(payload: TaskCreate, session: Session = Depends(db_session)) -> 
 @router.get("/tasks", response_model=list[TaskRead])
 def list_tasks(
     planned_date: date_type | None = None,
+    inbox: bool = Query(default=False),
+    q: str | None = Query(default=None, max_length=200),
+    priority: PriorityValue | None = None,
+    category_id: UUID | None = None,
+    tag_id: UUID | None = None,
     session: Session = Depends(db_session),
 ) -> list[TaskRead]:
-    return service.list(session, planned_date)
+    return service.list(
+        session,
+        planned_date,
+        inbox=inbox,
+        query=q.strip() if q and q.strip() else None,
+        priority=priority.value if priority is not None else None,
+        category_id=str(category_id) if category_id is not None else None,
+        tag_id=str(tag_id) if tag_id is not None else None,
+    )
 
 
 @router.get("/today", response_model=list[TaskRead])

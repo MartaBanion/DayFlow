@@ -9,7 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 class Settings(BaseSettings):
     app_name: str = "DayFlow Personal"
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
     environment: str = Field(default="development", alias="DAYFLOW_ENV")
     database_path: Path = Field(
         default=PROJECT_ROOT / "data" / "dayflow.sqlite3",

@@ -4,7 +4,7 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-V0.1.0 — minimal Task management and Today view.
+V0.2 — Inbox, Task organization, and Search development on the stable V0.1.0 foundation.
 
 ## V0.1 Features
 
@@ -18,6 +18,17 @@ V0.1.0 — minimal Task management and Today view.
 The V0.1 UI is Today-first and desktop-first. The backend exposes the complete
 minimal Task lifecycle under `/api/v1` and uses optimistic `version` checks for
 mutations.
+
+## V0.2 Features
+
+- Inbox represented by active Tasks with `planned_date = null`.
+- Low/normal/high Priority with a normal default.
+- User-defined Categories and normalized many-to-many Tags.
+- Title/description Search with structured Priority, Category, and Tag filters.
+- SQLite Foreign Key enforcement on every SQLAlchemy connection.
+
+V0.2 keeps the V0.1 API paths and behavior compatible. The `v0.2.0` release tag
+waits for human acceptance.
 
 V0.1 deliberately excludes Projects, Priority, Category, Tags, Reminders, Recurrence, Calendar, AI, and ScheduleBlock.
 
@@ -50,8 +61,10 @@ npm ci --prefix frontend
 uv run --directory backend alembic upgrade head
 ```
 
-The real SQLite file is created by the Alembic command. Runtime code does not
-call `Base.metadata.create_all()`.
+The real SQLite file is created and upgraded by Alembic. Runtime code does not
+call `Base.metadata.create_all()`. Before applying the V0.2 migration to real
+data, stop the Backend, create a verified backup, and validate the migration on
+a copy of the V0.1 database first.
 
 ## Run
 

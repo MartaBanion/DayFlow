@@ -64,3 +64,58 @@ Errors use this shape:
 
 Important codes include `validation_error`, `task_not_found`,
 `task_version_conflict`, `database_error`, and `internal_error`.
+
+## V0.2 Endpoints and Filters
+
+The existing `/api/v1` paths remain unchanged. Task listing accepts these
+additional optional filters:
+
+```text
+GET /api/v1/tasks?inbox=true
+GET /api/v1/tasks?q=linux
+GET /api/v1/tasks?priority=high
+GET /api/v1/tasks?category_id=<uuid>&tag_id=<uuid>
+```
+
+`inbox=true` returns only pending, active Tasks with `planned_date = null`.
+`q` is trimmed, parameterized, and searches only `title` and `description`.
+Percent and underscore are treated as literal characters, not SQL wildcards.
+Category, Tag, and Priority are structured filters. Soft-deleted Tasks are
+excluded by default.
+
+Task Create and Patch additionally accept:
+
+```json
+{
+  "priority": "normal",
+  "category_id": "<uuid-or-null>",
+  "tag_ids": ["<uuid>"]
+}
+```
+
+One Task Patch that changes multiple fields or relationships increments `version`
+once. Relationship IDs are validated before any mutation; failures roll back the
+whole transaction.
+
+Category resources:
+
+```text
+GET    /api/v1/categories
+POST   /api/v1/categories
+PATCH  /api/v1/categories/{id}
+DELETE /api/v1/categories/{id}
+```
+
+Tag resources:
+
+```text
+GET    /api/v1/tags
+POST   /api/v1/tags
+PATCH  /api/v1/tags/{id}
+DELETE /api/v1/tags/{id}
+```
+
+Category and Tag names are trimmed, non-empty, length-limited, and
+case-insensitively unique. Duplicate names return HTTP 409. Deleting a Category
+uncategorizes its Tasks; deleting a Tag removes its relationships while keeping
+the Tasks.

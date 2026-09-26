@@ -6,7 +6,7 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-V0.1: minimal Task management and Today view.
+V0.2: Inbox, Task organization, and Search built on the V0.1 Task foundation.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -34,7 +34,7 @@ Only the version currently being implemented may be changed. Do not start later 
 - Use typed Python and TypeScript interfaces for API data.
 - Do not silently swallow exceptions.
 - Validate input at the API boundary and enforce business rules in services.
-- Do not introduce future-version fields or abstractions without a current V0.1 need.
+- Do not introduce future-version fields or abstractions without a current V0.2 need.
 
 ## Testing Rules
 
@@ -56,7 +56,7 @@ Only the version currently being implemented may be changed. Do not start later 
 
 - Real database path: `data/dayflow.sqlite3`.
 - SQLite data is not source code and must not enter Git.
-- V0.1 Task schema must remain minimal.
+- V0.2 Task organization fields must be added only through Alembic.
 - Database writes go through services and transactions.
 - Do not use `Base.metadata.create_all()` in application runtime.
 
@@ -83,10 +83,10 @@ Only the version currently being implemented may be changed. Do not start later 
 
 ## Prohibited Actions
 
-- No V0.2+ features during V0.1.
-- No Project, Priority, Category, Tag, Reminder, Recurrence, Calendar, AI, ScheduleBlock, PWA, Authentication, Docker, CI/CD, or remote Git work in V0.1.
+- No V0.3+ features during V0.2.
+- No Project, Reminder, Recurrence, Calendar, AI, ScheduleBlock, PWA, Authentication, Docker, CI/CD, or remote Git work in V0.2.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
 
-A V0.1 change is complete only when the application runs, relevant tests pass, regression tests pass, migrations are correct, no secrets or personal data are exposed, documentation is updated, and manual verification steps are reported.
+A V0.2 change is complete only when the application runs, the temporary V0.1 database copy is migrated and verified, relevant tests pass, V0.1 regression tests pass, no secrets or personal data are exposed, documentation is updated, and manual verification steps are reported. The V0.2 release tag waits for human acceptance.

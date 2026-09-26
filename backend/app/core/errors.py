@@ -38,6 +38,32 @@ class TaskVersionConflictError(AppError):
         )
 
 
+class CategoryNotFoundError(AppError):
+    def __init__(self, category_id: str):
+        super().__init__(
+            "category_not_found", f"Category '{category_id}' was not found", 404
+        )
+
+
+class TagNotFoundError(AppError):
+    def __init__(self, tag_id: str):
+        super().__init__("tag_not_found", f"Tag '{tag_id}' was not found", 404)
+
+
+class CategoryNameConflictError(AppError):
+    def __init__(self, name: str):
+        super().__init__(
+            "category_name_conflict",
+            f"A category named '{name}' already exists",
+            409,
+        )
+
+
+class TagNameConflictError(AppError):
+    def __init__(self, name: str):
+        super().__init__("tag_name_conflict", f"A tag named '{name}' already exists", 409)
+
+
 def error_response(code: str, message: str, details: Any = None, status_code: int = 500) -> JSONResponse:
     payload: dict[str, Any] = {"error": {"code": code, "message": message}}
     if details is not None:

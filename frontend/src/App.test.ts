@@ -17,6 +17,9 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   description: null,
   status: 'pending',
   planned_date: today,
+  priority: 'normal',
+  category: null,
+  tags: [],
   created_at_utc: '2026-09-26T00:00:00.000000Z',
   updated_at_utc: '2026-09-26T00:00:00.000000Z',
   completed_at_utc: null,
@@ -34,6 +37,7 @@ beforeEach(() => {
 afterEach(() => {
   ElMessage.closeAll()
   wrapper?.unmount()
+  window.location.hash = ''
   vi.restoreAllMocks()
 })
 
@@ -133,5 +137,63 @@ describe('Today load state', () => {
     expect(wrapper.find('.today-state.is-error').exists()).toBe(false)
     expect(wrapper.find('.summary-grid').exists()).toBe(true)
     expect(wrapper.text()).toContain(task.title)
+  })
+})
+
+describe('Inbox and search', () => {
+  it('loads Inbox and captures an undated task', async () => {
+    const task = makeTask({ id: 'inbox-1', title: 'Capture Linux idea', planned_date: null })
+    vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
+    const list = vi.spyOn(taskApi, 'list').mockResolvedValue([task])
+    vi.spyOn(taskApi, 'listCategories').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
+    const create = vi.spyOn(taskApi, 'create').mockResolvedValue(task)
+
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    await wrapper.get('a[href="#inbox"]').trigger('click')
+    await flushPromises()
+
+    expect(list).toHaveBeenCalledWith({
+      inbox: true,
+      query: undefined,
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
+    expect(wrapper.text()).toContain('Capture Linux idea')
+
+    await wrapper.get('input[aria-label="New Inbox task title"]').setValue('New Inbox item')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(create).toHaveBeenCalledWith({
+      title: 'New Inbox item',
+      description: null,
+      planned_date: null,
+    })
+  })
+
+  it('shows search error state without pretending the result is empty', async () => {
+    vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listCategories').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
+    const list = vi
+      .spyOn(taskApi, 'list')
+      .mockRejectedValueOnce(new ApiRequestError('Search service unavailable', 503))
+      .mockResolvedValueOnce([])
+
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    await wrapper.get('a[href="#inbox"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.today-state.is-error').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Search service unavailable')
+    expect(wrapper.text()).not.toContain('Your Inbox is clear')
+
+    await wrapper.get('.today-state.is-error button').trigger('click')
+    await flushPromises()
+    expect(list).toHaveBeenCalledTimes(2)
   })
 })

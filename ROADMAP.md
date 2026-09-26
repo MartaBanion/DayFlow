@@ -23,7 +23,19 @@ Calendar, Reminders, AI, or scheduling.
 
 ## Planned
 
-- V0.2: Inbox, Priority, Category, Tags, Search.
+### V0.2 — Inbox and Organization
+
+Status: In development. Release tag waits for human acceptance.
+
+- Inbox based on `planned_date IS NULL`, excluding completed and deleted Tasks
+- Priority
+- Category
+- Tags
+- Search over title and description
+- Structured Priority, Category, and Tag filters
+
+### Later
+
 - V0.3: Calendar and Time Blocking.
 - V0.4: Projects and Project progress.
 - V0.5: Reminders, Deadlines, and Repeat Tasks.

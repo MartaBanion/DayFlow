@@ -28,7 +28,33 @@ V0.1 contains only the `tasks` table with the fields required for basic Task man
 The UTC datetime type intentionally stores normalized RFC3339 text because
 SQLite does not preserve timezone metadata for ordinary datetime columns.
 Future schema changes must be additive or data-compatible migrations; do not
-pre-add Project, Reminder, Recurrence, scheduling, or AI columns to V0.1.
+pre-add Project, Reminder, Recurrence, scheduling, or AI columns.
+
+## V0.2 Schema
+
+Migration `0002_add_priority_categories_tags` adds:
+
+| Object | Purpose |
+| --- | --- |
+| `tasks.priority` | Non-null `low`, `normal`, or `high`; existing rows use `normal` |
+| `tasks.category_id` | Nullable Category foreign key with `ON DELETE SET NULL` |
+| `categories` | UUID and case-insensitive unique name |
+| `tags` | UUID and case-insensitive unique name |
+| `task_tags` | Composite `(task_id, tag_id)` relationship table |
+
+Inbox is not a table or column. It is the query:
+
+```text
+planned_date IS NULL AND deleted_at_utc IS NULL AND status = 'pending'
+```
+
+Category and Tag names are trimmed, non-empty, length-limited, and checked for
+case-insensitive duplicates. SQLite `NOCASE` is intentionally used without an
+additional Unicode case-folding dependency; its case-insensitive behavior is
+limited compared with full Unicode case folding.
+
+Every SQLAlchemy SQLite connection enables `PRAGMA foreign_keys=ON`. The same
+rule applies to the Alembic engine and isolated test engines.
 
 ## State Rules
 
@@ -55,8 +81,11 @@ uv run --directory backend alembic current
 ```
 
 The initial migration is `0001_create_tasks`. Downgrade is supported for the
-empty/test database and is covered by tests; make a manual backup before any
-risky migration on personal data.
+The V0.2 migration is `0002_add_priority_categories_tags`; `0001_create_tasks`
+must never be edited. SQLite batch operations are used for the existing Task
+table. Downgrade is destructive once V0.2 data exists, so it is intended for
+empty/test databases only. Make a manual backup before any risky migration on
+personal data.
 
 ## Test Isolation
 

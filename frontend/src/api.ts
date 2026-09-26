@@ -1,8 +1,11 @@
 import type {
   ApiErrorBody,
+  Category,
   Task,
   TaskCreatePayload,
+  TaskPriority,
   TaskUpdatePayload,
+  Tag,
 } from './types'
 
 const API_BASE = '/api/v1'
@@ -58,6 +61,31 @@ function jsonRequest(method: string, body: unknown): RequestInit {
 export const taskApi = {
   listToday(date: string): Promise<Task[]> {
     return request<Task[]>(`/today?date=${encodeURIComponent(date)}`)
+  },
+
+  list(params: {
+    inbox?: boolean
+    query?: string
+    priority?: TaskPriority
+    categoryId?: string
+    tagId?: string
+  } = {}): Promise<Task[]> {
+    const query = new URLSearchParams()
+    if (params.inbox) query.set('inbox', 'true')
+    if (params.query) query.set('q', params.query)
+    if (params.priority) query.set('priority', params.priority)
+    if (params.categoryId) query.set('category_id', params.categoryId)
+    if (params.tagId) query.set('tag_id', params.tagId)
+    const suffix = query.toString() ? `?${query.toString()}` : ''
+    return request<Task[]>(`/tasks${suffix}`)
+  },
+
+  listCategories(): Promise<Category[]> {
+    return request<Category[]>('/categories')
+  },
+
+  listTags(): Promise<Tag[]> {
+    return request<Tag[]>('/tags')
   },
 
   create(payload: TaskCreatePayload): Promise<Task> {

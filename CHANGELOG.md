@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased] — V0.2 development
+
+### Added
+
+- Inbox semantics based on active, pending Tasks without a planned date.
+- Low/normal/high Priority with a normal default.
+- Category CRUD and nullable Task Category relationships.
+- Tag CRUD and normalized Task/Tag relationships.
+- Parameterized title/description Search with structured filters.
+- SQLite Foreign Key enforcement for application, migration, and test connections.
+- V0.2 migration compatibility and Frontend Inbox/Search tests.
+
+### Changed
+
+- Split the Today-first Frontend shell into Today, Inbox, Task Card, and Task Editor components.
+- Extended Task organization updates to increment optimistic version once per Task PATCH.
+
 ## [0.1.0] - 2026-09-26
 
 ### Added

@@ -2,7 +2,7 @@
 
 ## Current Version
 
-V0.1.
+V0.2 development on the stable V0.1 Task foundation.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ DayFlow is a local-first, single-user modular monolith:
 Vue 3 Frontend → FastAPI REST API → Service Layer → SQLAlchemy → SQLite
 ```
 
-The application is intentionally not split into microservices. AI, reminders, projects, and scheduling remain future modules and are not part of V0.1.
+The application is intentionally not split into microservices. AI, reminders, projects, and scheduling remain future modules and are not part of V0.2.
 
 The current request path is:
 
@@ -37,12 +37,20 @@ The frontend only sends user-confirmed mutations; it never opens the database.
 - V0.1 has only `pending` and `completed` states. Soft deletion is represented by
   `deleted_at_utc`, not by an extra status.
 - The AI, reminder, project, recurrence, and ScheduleBlock concepts remain
-  outside the V0.1 schema and will arrive through later Alembic migrations.
+  outside the V0.2 schema and will arrive through later Alembic migrations.
+- Inbox is `planned_date IS NULL`, `deleted_at_utc IS NULL`, and pending only.
+- Priority is a non-null `low`, `normal`, or `high` value with `normal` default.
+- A Task has at most one nullable Category.
+- Tags use normalized `tags` and `task_tags` tables.
+- Search uses parameterized SQLite `LIKE` over title and description. Category,
+  Tag, and Priority are structured filters.
 
 ## Error and Safety Boundaries
 
 - API validation returns a stable `{error: {code, message, details}}` envelope.
 - A stale Task `version` returns HTTP 409 and never overwrites newer data.
+- Every SQLAlchemy SQLite connection enables `PRAGMA foreign_keys=ON`, including
+  migration and test connections.
 - Database exceptions are logged, rolled back, and returned as a meaningful
   generic error; internal tracebacks are not sent to the browser.
 - Tests configure a dependency override backed by a temporary SQLite file.
