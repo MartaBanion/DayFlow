@@ -5,6 +5,7 @@ import logging
 
 from sqlalchemy import case, select
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import StaleDataError
 from sqlalchemy.orm import Session
 
 from app.core.errors import TaskNotFoundError, TaskVersionConflictError
@@ -64,7 +65,7 @@ class TaskService:
         for field, value in changes.items():
             setattr(task, field, value)
         self._touch(task)
-        self._commit(session, "update task")
+        self._commit(session, "update task", (task.id, expected_version))
         session.refresh(task)
         return task
 
@@ -76,7 +77,7 @@ class TaskService:
         task.status = TaskStatus.COMPLETED.value
         task.completed_at_utc = utc_now()
         self._touch(task)
-        self._commit(session, "complete task")
+        self._commit(session, "complete task", (task.id, expected_version))
         session.refresh(task)
         return task
 
@@ -92,7 +93,7 @@ class TaskService:
         task.status = TaskStatus.PENDING.value
         task.completed_at_utc = None
         self._touch(task)
-        self._commit(session, "restore task")
+        self._commit(session, "restore task", (task.id, expected_version))
         session.refresh(task)
         return task
 
@@ -101,7 +102,7 @@ class TaskService:
         self._check_version(task, expected_version)
         task.deleted_at_utc = utc_now()
         self._touch(task)
-        self._commit(session, "soft delete task")
+        self._commit(session, "soft delete task", (task.id, expected_version))
 
     @staticmethod
     def _check_version(task: Task, expected_version: int) -> None:
@@ -114,9 +115,27 @@ class TaskService:
         task.updated_at_utc = utc_now()
 
     @staticmethod
-    def _commit(session: Session, operation: str) -> None:
+    def _commit(
+        session: Session,
+        operation: str,
+        conflict: tuple[str, int] | None = None,
+    ) -> None:
         try:
             session.commit()
+        except StaleDataError:
+            session.rollback()
+            if conflict is not None:
+                task_id, expected_version = conflict
+                actual_version = session.scalar(
+                    select(Task.version).where(Task.id == task_id)
+                )
+                raise TaskVersionConflictError(
+                    task_id,
+                    expected_version,
+                    actual_version if actual_version is not None else -1,
+                )
+            logger.exception("Database transaction rolled back during %s", operation)
+            raise
         except SQLAlchemyError:
             session.rollback()
             logger.exception("Database transaction rolled back during %s", operation)

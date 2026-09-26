@@ -4,7 +4,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.errors import TaskVersionConflictError
+from app.core.time import utc_now
 from app.models.task import Task
+from app.schemas.task import TaskCreate, TaskUpdate
+from app.services.task_service import TaskService
 
 
 def create_task(
@@ -153,3 +157,46 @@ def test_transaction_rolls_back_failed_unit_of_work(
         assert session.scalar(select(Task).where(Task.id == "rollback-task")) is None
     finally:
         session.close()
+
+
+def test_concurrent_update_is_rejected_by_database_version(
+    session_factory: sessionmaker[Session],
+) -> None:
+    service = TaskService()
+    with session_factory() as creator:
+        created = service.create(
+            creator,
+            TaskCreate(title="Concurrent task", planned_date=None),
+        )
+        task_id = created.id
+
+    first = session_factory()
+    second = session_factory()
+    try:
+        first_task = service.get(first, task_id)
+        second_task = service.get(second, task_id)
+        assert first_task.version == second_task.version == 1
+
+        service.update(
+            first,
+            task_id,
+            first_task.version,
+            TaskUpdate(title="First writer"),
+        )
+        assert first_task.updated_at_utc <= utc_now()
+
+        try:
+            service.update(
+                second,
+                task_id,
+                second_task.version,
+                TaskUpdate(title="Stale writer"),
+            )
+        except TaskVersionConflictError as error:
+            assert error.code == "task_version_conflict"
+            assert error.details["actual_version"] == 2
+        else:
+            raise AssertionError("stale update was not rejected")
+    finally:
+        first.close()
+        second.close()
