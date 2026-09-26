@@ -33,7 +33,7 @@ const stubs = {
   },
   'el-select': {
     props: ['modelValue'],
-    template: '<select :multiple="Array.isArray(modelValue)" :value="modelValue" @change="$emit(\'update:modelValue\', Array.isArray(modelValue) ? Array.from($event.target.selectedOptions).map((option) => option.value) : ($event.target.value || null))"><slot /></select>',
+    template: '<select :multiple="Array.isArray(modelValue)" :value="modelValue" @change="$emit(\'update:modelValue\', Array.isArray(modelValue) ? Array.from($event.target.selectedOptions).map((option) => option.value) : ($event.target.value || undefined))"><slot /></select>',
   },
 }
 
@@ -80,7 +80,7 @@ describe('TaskEditor organization fields', () => {
     })
   })
 
-  it('can clear category and tags', async () => {
+  it('sends null when clearing category and keeps an empty tag list', async () => {
     const wrapper = mount(TaskEditor, {
       props: { open: true, task, categories, tags },
       global: { stubs },
@@ -91,9 +91,10 @@ describe('TaskEditor organization fields', () => {
     await selects[2].setValue([])
     await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
 
-    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
-      category_id: null,
-      tag_ids: [],
-    })
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as Record<string, unknown>
+
+    expect(payload).toMatchObject({ category_id: null, tag_ids: [] })
+    expect(Object.prototype.hasOwnProperty.call(payload, 'category_id')).toBe(true)
+    expect(payload.category_id).toBeNull()
   })
 })

@@ -43,7 +43,7 @@ function submit(): void {
     description: description.value.trim() || null,
     planned_date: plannedDate.value || null,
     priority: priority.value,
-    category_id: categoryId.value,
+    category_id: categoryId.value ?? null,
     tag_ids: tagIds.value,
   })
 }
