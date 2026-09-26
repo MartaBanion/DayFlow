@@ -94,6 +94,24 @@ synchronous FastAPI routes may need one-time elevated execution because the
 sandbox can block cross-thread asyncio wakeups. This is an execution-environment
 limitation, not a dependency downgrade requirement.
 
+Browser E2E acceptance tests use a fresh temporary SQLite database for each
+run. The runner refuses the real database and runs Alembic before starting a
+test-only Backend on `127.0.0.1:18000` and Vite on `127.0.0.1:15173`:
+
+```bash
+npm run test:e2e --prefix frontend
+npm run test:e2e:ui --prefix frontend
+```
+
+Install only the Playwright Chromium browser before the first run:
+
+```bash
+npm exec --prefix frontend playwright install chromium
+```
+
+The UI mode is optional and is not a release gate in headless-only
+environments. Browser reports and test results are ignored by Git.
+
 ## Troubleshooting
 
 - `database is locked`: stop the Backend before manually copying or inspecting

@@ -17,6 +17,8 @@ htmlcov/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/
 
 # Runtime data and logs
 data/*.sqlite

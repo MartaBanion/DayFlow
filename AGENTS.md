@@ -44,6 +44,10 @@ Only the version currently being implemented may be changed. Do not start later 
 - Test migration setup before testing database behavior.
 - Run relevant tests and regression tests after changes.
 - Do not ignore newly failing existing tests.
+- Browser E2E runs must use the fail-closed temporary database runner and must
+  never fall back to `data/dayflow.sqlite3` or any file under `data/backups/`.
+- Browser E2E uses the dedicated local ports `18000` and `15173`, headless
+  Chromium by default, and keeps workers at one while SQLite is under test.
 
 ## Git Rules
 
