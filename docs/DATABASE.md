@@ -6,89 +6,152 @@
 data/dayflow.sqlite3
 ```
 
-The file is personal runtime data and must never be committed.
+The file is personal runtime data and must never be committed. Backend writes
+must occur through services and transactions.
 
-## V0.1 Schema
+## Current Schema: V0.2.1
 
-V0.1 contains only the `tasks` table with the fields required for basic Task management and Today queries.
+The real database is currently at:
+
+```text
+0002_add_priority_categories_tags
+```
+
+V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
+the normalized metadata tables.
+
+### Tasks
 
 | Column | SQLite type | Nullable | Meaning |
-| --- | --- | --- | --- |
+| --- | --- | ---: | --- |
 | `id` | `VARCHAR(36)` | no | Application-generated UUID string |
 | `title` | `VARCHAR(500)` | no | Required user-facing title |
 | `description` | `TEXT` | yes | Optional notes |
 | `status` | `VARCHAR(20)` | no | `pending` or `completed` |
-| `planned_date` | `DATE` | yes | Date-only planning value |
+| `planned_date` | `DATE` | yes | Local date-only planning value |
 | `created_at_utc` | `VARCHAR(32)` | no | UTC RFC3339 instant ending in `Z` |
 | `updated_at_utc` | `VARCHAR(32)` | no | UTC RFC3339 instant ending in `Z` |
 | `completed_at_utc` | `VARCHAR(32)` | yes | Set when completed |
-| `deleted_at_utc` | `VARCHAR(32)` | yes | Set by soft delete |
+| `deleted_at_utc` | `VARCHAR(32)` | yes | Soft-delete instant |
 | `version` | `INTEGER` | no | Starts at 1 and increments on mutation |
+| `priority` | `VARCHAR(20)` | no | `low`, `normal`, or `high` |
+| `category_id` | `VARCHAR(36)` | yes | Nullable Category foreign key |
 
-The UTC datetime type intentionally stores normalized RFC3339 text because
-SQLite does not preserve timezone metadata for ordinary datetime columns.
-Future schema changes must be additive or data-compatible migrations; do not
-pre-add Project, Reminder, Recurrence, scheduling, or AI columns.
+### Organization Tables
 
-## V0.2 Schema
+- `categories`: UUID and case-insensitive unique name.
+- `tags`: UUID and case-insensitive unique name.
+- `task_tags`: normalized composite `(task_id, tag_id)` relationship table.
 
-Migration `0002_add_priority_categories_tags` adds:
+Category deletion uses `ON DELETE SET NULL`. Tag deletion uses `ON DELETE
+CASCADE` for `task_tags`. Deletion of either metadata object never deletes a
+Task. Affected Task versions are updated by the service in one transaction.
 
-| Object | Purpose |
-| --- | --- |
-| `tasks.priority` | Non-null `low`, `normal`, or `high`; existing rows use `normal` |
-| `tasks.category_id` | Nullable Category foreign key with `ON DELETE SET NULL` |
-| `categories` | UUID and case-insensitive unique name |
-| `tags` | UUID and case-insensitive unique name |
-| `task_tags` | Composite `(task_id, tag_id)` relationship table |
+## V0.2 State Rules
 
-Inbox is not a table or column. It is the query:
-
-```text
-planned_date IS NULL AND deleted_at_utc IS NULL AND status = 'pending'
-```
-
-Category and Tag names are trimmed, non-empty, length-limited, and checked for
-case-insensitive duplicates. SQLite `NOCASE` is intentionally used without an
-additional Unicode case-folding dependency; its case-insensitive behavior is
-limited compared with full Unicode case folding.
-
-Every SQLAlchemy SQLite connection enables `PRAGMA foreign_keys=ON`. The same
-rule applies to the Alembic engine and isolated test engines.
-
-## State Rules
-
-- Completing a pending Task sets `status=completed` and `completed_at_utc`.
-- Restoring a completed Task returns it to `pending` and clears
+- Inbox is `planned_date IS NULL AND deleted_at_utc IS NULL AND status = 'pending'`.
+- Completing a pending Task sets `status=completed` and
   `completed_at_utc`.
+- Restoring a Task returns it to `pending` and clears `completed_at_utc`.
 - Soft delete sets `deleted_at_utc` and increments `version` without erasing
   the row.
-- Normal list and Today queries exclude soft-deleted rows.
-- The restore endpoint can recover a soft-deleted row when the caller supplies
-  its current version.
+- Normal list, Today, Inbox, and Search queries exclude soft-deleted Tasks.
+- The restore endpoint can recover a soft-deleted row using its current version.
 
-## Manual Backup
+## Planned V0.3 Schema: `0003_add_task_schedule`
 
-Stop the Backend before copying the database. Copy `data/dayflow.sqlite3` to a timestamped location outside the repository. V0.1 does not include an automated backup or restore workflow.
+This migration is designed but has not been created or executed.
 
-## Migration
+It will add only these nullable columns to `tasks`:
 
-Use Alembic. Do not delete and recreate the database to apply schema changes.
+| Column | SQLite type | Nullable | Meaning |
+| --- | --- | ---: | --- |
+| `start_at_utc` | `VARCHAR(32)` | yes | Time Block start UTC instant |
+| `end_at_utc` | `VARCHAR(32)` | yes | Time Block end UTC instant |
+| `schedule_timezone` | `VARCHAR(64)` | yes | IANA timezone for the Time Block |
 
-```bash
-uv run --directory backend alembic upgrade head
-uv run --directory backend alembic current
+No existing Task is assigned a time during migration. Existing rows retain:
+
+- `id`
+- `status`
+- `planned_date`
+- `completed_at_utc`
+- `deleted_at_utc`
+- `version`
+
+All three new columns will be `NULL` for old Tasks.
+
+### Structural Constraints
+
+The migration should add only database-level structural constraints:
+
+1. `start_at_utc` and `end_at_utc` are both `NULL` or both non-`NULL`.
+2. A non-`NULL` Time Block requires a non-`NULL` `planned_date`.
+3. A non-`NULL` Time Block requires a non-`NULL` `schedule_timezone`.
+
+The following remain Backend business validation rather than SQLite-only
+constraints:
+
+- IANA timezone validity.
+- DST ambiguous/nonexistent local times.
+- `end_at_utc` later than `start_at_utc`.
+- `planned_date` matching the local date of `start_at_utc`.
+- V0.3 same-local-date restriction for Time Blocks.
+
+The existing `(planned_date, deleted_at_utc)` index is sufficient for the
+initial Calendar range query. No additional index is planned until a real query
+plan shows a need.
+
+### Time Block State Semantics
+
+```text
+Inbox:       planned_date = NULL, start/end/timezone = NULL
+Date-only:   planned_date != NULL, start/end/timezone = NULL
+Scheduled:   planned_date != NULL, start/end/timezone != NULL
 ```
 
-The initial migration is `0001_create_tasks`. Downgrade is supported for the
-The V0.2 migration is `0002_add_priority_categories_tags`; `0001_create_tasks`
-must never be edited. SQLite batch operations are used for the existing Task
-table. Downgrade is destructive once V0.2 data exists, so it is intended for
-empty/test databases only. Make a manual backup before any risky migration on
-personal data.
+The UI label for the date-only state is “未安排时间”. It must not imply that
+the Task has a full-day time block.
+
+One Task has at most one Time Block. A separate `time_blocks` table is deferred
+until multiple blocks, split execution, or external Calendar Events become a
+real requirement.
+
+## Migration Procedure
+
+When implementation begins:
+
+1. Keep the Backend stopped.
+2. Create and verify a pre-V0.3 backup.
+3. Copy the real V0.2.1 database to a temporary test location.
+4. Run `0003` only against the copy.
+5. Verify `integrity_check` and `foreign_key_check`.
+6. Verify Alembic head and all legacy Task fields.
+7. Verify all new fields are `NULL` for existing Tasks.
+8. Test scheduled Task writes, clear operations, conflict rollback, and restart
+   persistence on the copy.
+9. Run the complete Backend, Frontend, and Browser regression suites.
+10. Request explicit approval before upgrading the real database.
+
+SQLite batch migration must be used where table recreation is required. The
+migration must not edit `0001_create_tasks` or
+`0002_add_priority_categories_tags`.
+
+## Downgrade
+
+Downgrade of `0003` is potentially destructive because it removes saved Time
+Block data. It must fail closed if any row has a non-`NULL` schedule field. A
+downgrade is only safe when all three new columns are empty, such as on a clean
+test database.
+
+## Backup
+
+Stop the Backend before copying `data/dayflow.sqlite3`. V0.2.1 still uses the
+manual backup procedure; V0.3 does not add an automatic backup service.
 
 ## Test Isolation
 
-Tests create a temporary SQLite file, run the Alembic upgrade against that file,
-and override the FastAPI database dependency. The configured real path
-`data/dayflow.sqlite3` is never used by tests.
+Tests create isolated temporary SQLite files, run Alembic against those files,
+and override the FastAPI database dependency. Browser E2E uses a unique
+`/tmp/dayflow-e2e-*` directory, upgrades it to head, and refuses to fall back
+to the real database or any backup.

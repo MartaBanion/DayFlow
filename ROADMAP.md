@@ -21,11 +21,12 @@ Status: Completed and released as `v0.1.0`.
 V0.1 deliberately does not include automated Backup/Restore, Projects, Inbox,
 Calendar, Reminders, AI, or scheduling.
 
-## Planned
+## Completed
 
 ### V0.2 — Inbox and Organization
 
-Status: In development. Release tag waits for human acceptance.
+Status: Completed and released as `v0.2.0`; patch and Browser E2E acceptance
+work released as `v0.2.1`.
 
 - Inbox based on `planned_date IS NULL`, excluding completed and deleted Tasks
 - Priority
@@ -34,9 +35,43 @@ Status: In development. Release tag waits for human acceptance.
 - Search over title and description
 - Structured Priority, Category, and Tag filters
 
-### Later
+## Next
 
-- V0.3: Calendar and Time Blocking.
+### V0.3 — Calendar and Time Blocking
+
+Status: Architecture frozen; implementation not started.
+
+Scope:
+
+- Calendar range query
+- Day View
+- Week View
+- Month View
+- Date-only Tasks shown as “未安排时间”
+- One optional Time Block per Task
+- Persisted `start_at_utc`, `end_at_utc`, and `schedule_timezone`
+- Timezone-consistent scheduling with Python `zoneinfo`
+- Active pending Task conflict detection with explicit overlap override
+- Optimistic Version and atomic schedule updates
+
+Explicitly out of scope:
+
+- Drag & Drop
+- Resize
+- Cross-day Time Blocks
+- Repeat
+- Calendar Event
+- Project
+- Reminder
+- AI Scheduling
+- External Calendar integration
+
+Implementation must first validate `0003_add_task_schedule` on a temporary copy
+of the real v0.2.1 database. No real-data migration is implied by this design
+entry.
+
+## Later
+
 - V0.4: Projects and Project progress.
 - V0.5: Reminders, Deadlines, and Repeat Tasks.
 - V0.6: AI Provider abstraction and Mock Provider.
