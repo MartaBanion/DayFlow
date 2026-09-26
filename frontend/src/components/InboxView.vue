@@ -4,6 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { ApiRequestError, taskApi } from '../api'
 import type { Category, Tag, Task, TaskPriority, TaskUpdatePayload } from '../types'
+import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
 import TaskEditor from './TaskEditor.vue'
 
@@ -26,6 +27,7 @@ const isEditDialogOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 
 type RestoreTarget = Pick<Task, 'id' | 'version'>
+type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -71,6 +73,12 @@ async function loadMetadata(): Promise<void> {
   categories.value = loadedCategories
   tags.value = loadedTags
   metadataLoaded.value = true
+}
+
+async function handleMetadataUpdated(snapshot: MetadataSnapshot): Promise<void> {
+  categories.value = snapshot.categories
+  tags.value = snapshot.tags
+  if (loadState.value === 'loaded') await loadTasks()
 }
 
 async function initializeInbox(): Promise<void> {
@@ -231,7 +239,14 @@ onMounted(initializeInbox)
       <h2>Unscheduled tasks</h2>
       <p class="muted">Capture first, decide when it belongs later.</p>
     </div>
-    <el-button :loading="isLoading" plain @click="loadTasks">Refresh</el-button>
+    <div class="page-header-actions">
+      <MetadataManager
+        :categories="categories"
+        :tags="tags"
+        @updated="handleMetadataUpdated"
+      />
+      <el-button :loading="isLoading" plain @click="loadTasks">Refresh</el-button>
+    </div>
   </header>
 
   <el-alert

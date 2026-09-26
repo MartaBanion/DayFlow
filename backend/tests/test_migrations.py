@@ -80,7 +80,8 @@ def test_v01_data_is_preserved_by_v02_upgrade(tmp_path: Path) -> None:
         )
         rows = connection.execute(
             text(
-                "SELECT id, status, planned_date, deleted_at_utc, version, priority, category_id "
+                "SELECT id, status, planned_date, completed_at_utc, deleted_at_utc, "
+                "version, priority, category_id "
                 "FROM tasks ORDER BY id"
             )
         ).all()
@@ -93,10 +94,12 @@ def test_v01_data_is_preserved_by_v02_upgrade(tmp_path: Path) -> None:
         assert rows[0][2] == "2026-09-26"
         assert rows[1][2] is None
         assert rows[0][3] is None
-        assert rows[1][3] == "2026-09-26T02:00:00.000000Z"
-        assert [row[4] for row in rows] == [4, 2]
-        assert [row[5] for row in rows] == ["normal", "normal"]
-        assert [row[6] for row in rows] == [None, None]
+        assert rows[1][3] == "2026-09-26T01:00:00.000000Z"
+        assert rows[0][4] is None
+        assert rows[1][4] == "2026-09-26T02:00:00.000000Z"
+        assert [row[5] for row in rows] == [4, 2]
+        assert [row[6] for row in rows] == ["normal", "normal"]
+        assert [row[7] for row in rows] == [None, None]
         assert connection.execute(text("SELECT COUNT(*) FROM tasks WHERE deleted_at_utc IS NULL")).scalar() == 1
         assert connection.execute(text("SELECT COUNT(*) FROM tasks WHERE deleted_at_utc IS NOT NULL")).scalar() == 1
     engine.dispose()

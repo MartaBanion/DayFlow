@@ -84,8 +84,44 @@ export const taskApi = {
     return request<Category[]>('/categories')
   },
 
+  createCategory(name: string): Promise<Category> {
+    return request<Category>('/categories', jsonRequest('POST', { name }))
+  },
+
+  updateCategory(id: string, name: string): Promise<Category> {
+    return request<Category>(
+      `/categories/${encodeURIComponent(id)}`,
+      jsonRequest('PATCH', { name }),
+    )
+  },
+
+  removeCategory(id: string): Promise<void> {
+    return request<void>(
+      `/categories/${encodeURIComponent(id)}`,
+      jsonRequest('DELETE', undefined),
+    )
+  },
+
   listTags(): Promise<Tag[]> {
     return request<Tag[]>('/tags')
+  },
+
+  createTag(name: string): Promise<Tag> {
+    return request<Tag>('/tags', jsonRequest('POST', { name }))
+  },
+
+  updateTag(id: string, name: string): Promise<Tag> {
+    return request<Tag>(
+      `/tags/${encodeURIComponent(id)}`,
+      jsonRequest('PATCH', { name }),
+    )
+  },
+
+  removeTag(id: string): Promise<void> {
+    return request<void>(
+      `/tags/${encodeURIComponent(id)}`,
+      jsonRequest('DELETE', undefined),
+    )
   },
 
   create(payload: TaskCreatePayload): Promise<Task> {

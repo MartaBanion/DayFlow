@@ -58,7 +58,10 @@ class TaskUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=500)
     description: str | None = None
     planned_date: date | None = None
-    priority: PriorityValue | None = None
+    # A non-optional field with a default still remains absent from
+    # ``exclude_unset`` when the client omits it, while explicit JSON null is
+    # rejected during request validation.
+    priority: PriorityValue = PriorityValue.NORMAL
     category_id: UUID | None = None
     tag_ids: list[UUID] | None = None
 

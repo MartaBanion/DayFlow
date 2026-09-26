@@ -24,6 +24,7 @@ mutations.
 - Inbox represented by active Tasks with `planned_date = null`.
 - Low/normal/high Priority with a normal default.
 - User-defined Categories and normalized many-to-many Tags.
+- Create, rename, and delete Category and Tag metadata from the Today or Inbox UI.
 - Title/description Search with structured Priority, Category, and Tag filters.
 - SQLite Foreign Key enforcement on every SQLAlchemy connection.
 

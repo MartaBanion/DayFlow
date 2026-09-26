@@ -145,6 +145,13 @@ textarea {
   gap: 20px;
 }
 
+.page-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
 .page-header h2 {
   font-size: 34px;
   letter-spacing: -0.04em;
@@ -463,6 +470,54 @@ textarea {
   min-width: 150px;
 }
 
+.metadata-alert {
+  margin-bottom: 18px;
+}
+
+.metadata-section {
+  display: grid;
+  gap: 12px;
+}
+
+.metadata-create-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.metadata-list {
+  display: grid;
+  gap: 8px;
+}
+
+.metadata-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e6ebf2;
+  border-radius: 8px;
+}
+
+.metadata-row > .el-input {
+  min-width: 0;
+}
+
+.metadata-row-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.metadata-empty {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+}
+
 @media (max-width: 900px) {
   body {
     min-width: 0;
@@ -478,6 +533,10 @@ textarea {
   }
 
   .capture-form {
+    grid-template-columns: 1fr;
+  }
+
+  .metadata-create-form {
     grid-template-columns: 1fr;
   }
 

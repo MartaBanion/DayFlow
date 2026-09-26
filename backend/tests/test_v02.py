@@ -76,6 +76,50 @@ def test_priority_category_tags_and_single_patch_version(client: TestClient) -> 
     assert [tag["id"] for tag in updated["tags"]] == [second_tag["id"]]
 
 
+def test_priority_patch_validation_preserves_data_and_version(client: TestClient) -> None:
+    created = create_task(client, "Keep priority", priority="high")
+    task_id = created["id"]
+
+    omitted = client.patch(
+        f"/api/v1/tasks/{task_id}?version=1", json={"title": "Keep priority updated"}
+    )
+    assert omitted.status_code == 200
+    assert omitted.json()["priority"] == "high"
+    assert omitted.json()["version"] == 2
+
+    for invalid_priority in (None, "urgent"):
+        response = client.patch(
+            f"/api/v1/tasks/{task_id}?version=2",
+            json={"priority": invalid_priority},
+        )
+        assert response.status_code == 422
+        unchanged = client.get(f"/api/v1/tasks/{task_id}").json()
+        assert unchanged["priority"] == "high"
+        assert unchanged["version"] == 2
+        assert unchanged["title"] == "Keep priority updated"
+
+
+def test_category_and_tags_can_be_cleared_in_one_patch(client: TestClient) -> None:
+    category = client.post("/api/v1/categories", json={"name": "Clearable"}).json()
+    tag = client.post("/api/v1/tags", json={"name": "clearable"}).json()
+    created = create_task(
+        client,
+        "Clear relationships",
+        category_id=category["id"],
+        tag_ids=[tag["id"]],
+    )
+
+    response = client.patch(
+        f"/api/v1/tasks/{created['id']}?version=1",
+        json={"category_id": None, "tag_ids": []},
+    )
+    assert response.status_code == 200
+    cleared = response.json()
+    assert cleared["category"] is None
+    assert cleared["tags"] == []
+    assert cleared["version"] == 2
+
+
 def test_invalid_relationship_rolls_back_all_task_changes(client: TestClient) -> None:
     category = client.post("/api/v1/categories", json={"name": "Study"}).json()
     created = create_task(client, "Rollback relationship update")
@@ -206,3 +250,13 @@ def test_search_uses_literal_like_query_and_structured_filters(
         f"/api/v1/tasks?category_id={category['id']}&tag_id={tag['id']}&priority=normal"
     )
     assert [task["id"] for task in filtered.json()] == [matching["id"]]
+
+    description_only = create_task(
+        client,
+        "Documentation review",
+        description="Kubernetes networking notes",
+    )
+    description_response = client.get("/api/v1/tasks?q=kubernetes")
+    assert [task["id"] for task in description_response.json()] == [
+        description_only["id"]
+    ]

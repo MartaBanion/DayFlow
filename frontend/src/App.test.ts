@@ -180,6 +180,7 @@ describe('Inbox and search', () => {
     vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
     const list = vi
       .spyOn(taskApi, 'list')
+      .mockResolvedValueOnce([])
       .mockRejectedValueOnce(new ApiRequestError('Search service unavailable', 503))
       .mockResolvedValueOnce([])
 
@@ -188,12 +189,23 @@ describe('Inbox and search', () => {
     await wrapper.get('a[href="#inbox"]').trigger('click')
     await flushPromises()
 
+    await wrapper.get('input[aria-label="Search tasks"]').setValue('linux')
+    await wrapper.get('form.search-form').trigger('submit')
+    await flushPromises()
+
     expect(wrapper.find('.today-state.is-error').exists()).toBe(true)
     expect(wrapper.text()).toContain('Search service unavailable')
-    expect(wrapper.text()).not.toContain('Your Inbox is clear')
+    expect(wrapper.text()).not.toContain('No tasks match your search')
+    expect(list).toHaveBeenLastCalledWith({
+      inbox: false,
+      query: 'linux',
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
 
     await wrapper.get('.today-state.is-error button').trigger('click')
     await flushPromises()
-    expect(list).toHaveBeenCalledTimes(2)
+    expect(list).toHaveBeenCalledTimes(3)
   })
 })

@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ApiRequestError, taskApi } from '../api'
 import { calculateCompletionRate, formatDisplayDate, toDateInputValue } from '../date'
 import type { Category, Tag, Task, TaskUpdatePayload } from '../types'
+import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
 import TaskEditor from './TaskEditor.vue'
 
@@ -29,6 +30,7 @@ const completionRate = computed(() => calculateCompletionRate(tasks.value))
 const formattedDate = computed(() => formatDisplayDate(selectedDate.value))
 
 type RestoreTarget = Pick<Task, 'id' | 'version'>
+type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
@@ -72,6 +74,12 @@ async function loadMetadata(): Promise<void> {
   } catch (error) {
     showError(error)
   }
+}
+
+async function handleMetadataUpdated(snapshot: MetadataSnapshot): Promise<void> {
+  categories.value = snapshot.categories
+  tags.value = snapshot.tags
+  if (todayLoadState.value === 'loaded') await loadToday()
 }
 
 async function createQuickTask(): Promise<void> {
@@ -218,7 +226,14 @@ onMounted(loadToday)
       <h2>{{ formattedDate }}</h2>
       <p class="muted">A calm view of what deserves your attention.</p>
     </div>
-    <el-button :loading="isLoading" plain @click="loadToday">Refresh</el-button>
+    <div class="page-header-actions">
+      <MetadataManager
+        :categories="categories"
+        :tags="tags"
+        @updated="handleMetadataUpdated"
+      />
+      <el-button :loading="isLoading" plain @click="loadToday">Refresh</el-button>
+    </div>
   </header>
 
   <el-alert
