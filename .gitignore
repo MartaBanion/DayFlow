@@ -1,0 +1,34 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Runtime data and logs
+data/*.sqlite
+data/*.sqlite3
+data/*.sqlite3-*
+data/backups/
+data/test/
+*.log
+
+# Tooling and OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

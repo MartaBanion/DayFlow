@@ -1,0 +1,28 @@
+{
+  "name": "dayflow-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "type-check": "vue-tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "element-plus": "2.14.6",
+    "vue": "3.5.43"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.9",
+    "@vue/test-utils": "2.4.6",
+    "jsdom": "26.1.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.1",
+    "vitest": "3.2.4",
+    "vue-tsc": "3.0.6"
+  }
+}
