@@ -6,10 +6,11 @@ The current stable release is **v0.2.1**. It contains the V0.1 Task
 foundation, V0.2 Inbox and organization features, the Category clearing fix,
 and Browser E2E acceptance infrastructure.
 
-V0.3 Phase 1 Backend implementation is complete for review: the schedule model,
-Migration 0003, schedule validation, conflict detection, Calendar range API,
-and Runtime API are present. Calendar Frontend implementation has not started,
-and the real database remains at `0002_add_priority_categories_tags`.
+V0.3 Phase 1 Backend and Phase 2 Calendar Frontend implementation are complete
+for review: the schedule model, Migration 0003, schedule validation, conflict
+detection, Calendar range API, Runtime API, Hash navigation, and Day/Week/Month
+views are present. The real database remains at
+`0002_add_priority_categories_tags`.
 
 ## Architecture
 
@@ -154,6 +155,10 @@ Tasks remain hidden.
 
 The V0.3 frontend adds `CalendarView` and small Day/Week/Month renderers. It
 continues to use Hash navigation, Vue 3, TypeScript, Vite, and Element Plus.
+TaskEditor is the single schedule write surface and sends the structured
+schedule payload, including explicit `schedule: null` when the user clears a
+Time Block. Calendar uses Backend runtime `local_date` and
+`schedule_timezone`-aware `Intl.DateTimeFormat` output.
 
 V0.3 does not add Vue Router, Pinia, another global state library, a Calendar
 library, or a Drag library. Task Editor remains the write surface for schedule

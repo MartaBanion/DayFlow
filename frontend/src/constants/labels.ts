@@ -24,6 +24,18 @@ export function getTaskErrorMessage(
   return `${areaLabel}操作失败，请确认后端服务正在运行。`
 }
 
+export function getCalendarErrorMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 409 && error.code !== 'schedule_conflict') {
+      return '任务内容可能已被其他操作更新，请刷新日历后重试。'
+    }
+    if (error.status === 422) return '时间安排不符合要求，请检查日期和时间后重试。'
+    if (error.code === 'schedule_conflict') return '该时间段与已有任务冲突。'
+    return `日历请求失败，请稍后重试。（HTTP ${error.status}）`
+  }
+  return '日历操作失败，请确认后端服务正在运行。'
+}
+
 export function getMetadataErrorMessage(
   error: unknown,
   subject: 'category' | 'tag',

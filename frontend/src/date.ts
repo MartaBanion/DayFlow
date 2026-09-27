@@ -8,12 +8,13 @@ export function toDateInputValue(value: Date): string {
 }
 
 export function formatDisplayDate(value: string): string {
+  const [year, month, day] = value.split('-').map(Number)
   return new Intl.DateTimeFormat('zh-CN', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
-  }).format(new Date(`${value}T12:00:00`))
+  }).format(new Date(year, month - 1, day, 12))
 }
 
 export function calculateCompletionRate(tasks: Task[]): number {

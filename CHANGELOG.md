@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased] — V0.3 Calendar Frontend
+
+### Added
+
+- Hash-based Calendar navigation with Day, Week, and Month views.
+- Date-only Task display as “未安排时间” and single Task Time Blocks.
+- Task Editor start/end time editing and explicit Time Block clearing.
+- Backend runtime timezone integration, Calendar loading/error/empty states, and
+  Chinese schedule conflict confirmation.
+- Calendar Vitest and Playwright Browser E2E regression coverage.
+
 ## [Unreleased] — V0.2 development
 
 ### Added

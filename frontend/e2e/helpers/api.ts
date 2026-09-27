@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 
-import type { Category, Tag, Task, TaskPriority } from '../../src/types'
+import type { Category, Tag, Task, TaskPriority, TaskSchedulePayload } from '../../src/types'
 
 export function uniqueName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -33,6 +33,7 @@ export async function createTask(
     priority?: TaskPriority
     category_id?: string | null
     tag_ids?: string[]
+    schedule?: TaskSchedulePayload | null
   },
 ): Promise<Task> {
   const response = await request.post('/api/v1/tasks', {
@@ -42,6 +43,7 @@ export async function createTask(
       priority: 'normal',
       category_id: null,
       tag_ids: [],
+      schedule: null,
       ...payload,
     },
   })

@@ -4,13 +4,15 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { taskApi } from '../api'
 import { getTaskErrorMessage } from '../constants/labels'
-import { calculateCompletionRate, formatDisplayDate, toDateInputValue } from '../date'
+import { calculateCompletionRate, formatDisplayDate } from '../date'
+import { updateTaskWithConflict } from '../taskSave'
 import type { Category, Tag, Task, TaskUpdatePayload } from '../types'
 import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
 import TaskEditor from './TaskEditor.vue'
 
-const selectedDate = ref(toDateInputValue(new Date()))
+const selectedDate = ref('')
+const runtimeTimezone = ref('')
 const tasks = ref<Task[]>([])
 type TodayLoadState = 'loading' | 'loaded' | 'error'
 
@@ -28,7 +30,7 @@ const metadataLoaded = ref(false)
 
 const pendingTasks = computed(() => tasks.value.filter((task) => task.status === 'pending'))
 const completionRate = computed(() => calculateCompletionRate(tasks.value))
-const formattedDate = computed(() => formatDisplayDate(selectedDate.value))
+const formattedDate = computed(() => selectedDate.value ? formatDisplayDate(selectedDate.value) : '今天')
 
 type RestoreTarget = Pick<Task, 'id' | 'version'>
 type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
@@ -42,6 +44,7 @@ function showError(error: unknown): void {
 }
 
 async function loadToday(): Promise<void> {
+  if (!selectedDate.value) return
   todayLoadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
@@ -53,6 +56,28 @@ async function loadToday(): Promise<void> {
     showError(error)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function initializeToday(): Promise<void> {
+  todayLoadState.value = 'loading'
+  errorMessage.value = ''
+  try {
+    const runtime = await taskApi.getRuntime()
+    runtimeTimezone.value = runtime.timezone
+    selectedDate.value = runtime.local_date
+    await loadToday()
+  } catch (error) {
+    todayLoadState.value = 'error'
+    showError(error)
+  }
+}
+
+async function retryToday(): Promise<void> {
+  if (selectedDate.value) {
+    await loadToday()
+  } else {
+    await initializeToday()
   }
 }
 
@@ -109,6 +134,19 @@ async function openEditDialog(task: Task): Promise<void> {
   isEditDialogOpen.value = true
 }
 
+async function confirmScheduleConflict(): Promise<boolean> {
+  try {
+    await ElMessageBox.confirm(
+      '该时间段与已有任务冲突，是否仍然保存？',
+      '时间安排冲突',
+      { confirmButtonText: '仍然保存', cancelButtonText: '取消', type: 'warning' },
+    )
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function saveEdit(payload: TaskUpdatePayload): Promise<void> {
   const task = editingTask.value
   if (!task || !payload.title?.trim()) {
@@ -119,7 +157,8 @@ async function saveEdit(payload: TaskUpdatePayload): Promise<void> {
   isSaving.value = true
   errorMessage.value = ''
   try {
-    await taskApi.update(task.id, task.version, payload)
+    const updated = await updateTaskWithConflict(task, payload, confirmScheduleConflict)
+    if (!updated) return
     isEditDialogOpen.value = false
     await loadToday()
     ElMessage.success('任务已更新')
@@ -211,7 +250,7 @@ async function deleteTask(task: Task): Promise<void> {
   }
 }
 
-onMounted(loadToday)
+onMounted(initializeToday)
 </script>
 
 <template>
@@ -253,7 +292,7 @@ onMounted(loadToday)
     <p class="today-state-detail">
       {{ errorMessage || '今日任务加载失败，请稍后重试。' }}
     </p>
-    <el-button type="primary" :loading="isLoading" @click="loadToday">重试</el-button>
+    <el-button type="primary" :loading="isLoading" @click="retryToday">重试</el-button>
   </section>
 
   <section v-if="todayLoadState === 'loaded'" class="summary-grid" aria-label="今日概览">
@@ -323,6 +362,7 @@ onMounted(loadToday)
     :task="editingTask"
     :categories="categories"
     :tags="tags"
+    :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
     @update:open="isEditDialogOpen = $event"
     @submit="saveEdit"

@@ -17,6 +17,9 @@ export interface Task {
   description: string | null
   status: TaskStatus
   planned_date: string | null
+  start_at_utc: string | null
+  end_at_utc: string | null
+  schedule_timezone: string | null
   priority: TaskPriority
   category: Category | null
   tags: Tag[]
@@ -34,6 +37,7 @@ export interface TaskCreatePayload {
   priority?: TaskPriority
   category_id?: string | null
   tag_ids?: string[]
+  schedule?: TaskSchedulePayload | null
 }
 
 export interface TaskUpdatePayload {
@@ -43,6 +47,18 @@ export interface TaskUpdatePayload {
   priority?: TaskPriority
   category_id?: string | null
   tag_ids?: string[]
+  schedule?: TaskSchedulePayload | null
+}
+
+export interface TaskSchedulePayload {
+  start_time: string
+  end_time: string
+  timezone?: string
+}
+
+export interface RuntimeInfo {
+  timezone: string
+  local_date: string
 }
 
 export interface ApiErrorBody {

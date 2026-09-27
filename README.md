@@ -32,17 +32,18 @@ mutations.
 V0.2 keeps the V0.1 API paths and behavior compatible. The `v0.2.0` and
 `v0.2.1` release tags are local stable checkpoints. V0.3 Phase 1 Backend
 schedule model, Migration 0003, Calendar range API, Runtime API, timezone/DST
-validation, and conflict detection are implemented for review; Calendar
-Frontend implementation has not started. The real database remains at
-`0002_add_priority_categories_tags`.
+validation, and conflict detection are implemented. Phase 2 adds the Hash-based
+Calendar frontend, Day/Week/Month views, and Task Editor Time Blocking. The
+real database remains at `0002_add_priority_categories_tags` until separately
+approved.
 
 V0.1 deliberately excluded Projects, Priority, Category, Tags, Reminders,
 Recurrence, Calendar, AI, and ScheduleBlock.
 
-V0.3 is planned to add Calendar, Day/Week/Month views, date-only Tasks, and
-one optional Time Block per Task. V0.3 does not include Drag & Drop, Resize,
-cross-day Time Blocks, Repeat, Projects, Reminders, AI Scheduling, or external
-Calendar integration.
+V0.3 adds Calendar, Day/Week/Month views, date-only Tasks, and one optional
+Time Block per Task. V0.3 does not include Drag & Drop, Resize, cross-day Time
+Blocks, Repeat, Projects, Reminders, AI Scheduling, or external Calendar
+integration.
 
 ## Technology
 
@@ -75,7 +76,7 @@ DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backen
 ```
 
 The real SQLite file is managed by Alembic, but it remains at
-`0002_add_priority_categories_tags` during V0.3 Phase 1. Runtime code does not
+`0002_add_priority_categories_tags` during V0.3 development. Runtime code does not
 call `Base.metadata.create_all()`. Do not run `alembic upgrade head` against
 the real database during this phase. Before applying any future migration to
 real data, stop the Backend, create a verified backup, and validate the
@@ -89,8 +90,8 @@ Backend:
 DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The Phase 1 development command above uses the temporary database initialized
-by the setup command. Do not start the Phase 1 Backend against
+The V0.3 development command above uses the temporary database initialized
+by the setup command. Do not start the V0.3 Backend against
 `data/dayflow.sqlite3` until the real-data migration has been separately
 approved.
 

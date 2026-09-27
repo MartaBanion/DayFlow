@@ -39,9 +39,9 @@ work released as `v0.2.1`.
 
 ### V0.3 — Calendar and Time Blocking
 
-Status: Phase 1 Backend implementation complete; review pending. The real
-database remains at `0002_add_priority_categories_tags`; Calendar Frontend
-implementation has not started.
+Status: Phase 1 Backend and Phase 2 Calendar Frontend implementation complete;
+review pending. The real database remains at
+`0002_add_priority_categories_tags`.
 
 Scope:
 
@@ -55,6 +55,10 @@ Scope:
 - Timezone-consistent scheduling with Python `zoneinfo`
 - Active pending Task conflict detection with explicit overlap override
 - Optimistic Version and atomic schedule updates
+- Hash-based Calendar navigation with Day/Week/Month views
+- Task Editor Time Blocking with explicit clear support
+- Runtime timezone integration and Chinese conflict confirmation
+- Calendar loading, error, empty, and retry states
 
 Explicitly out of scope:
 
@@ -70,7 +74,8 @@ Explicitly out of scope:
 
 `0003_add_task_schedule` is implemented and must be validated on a temporary
 copy of the real v0.2.1 database. No real-data migration is implied by this
-roadmap entry.
+roadmap entry. Calendar Frontend development also uses only temporary `0003`
+databases and does not migrate the real data file.
 
 ## Later
 

@@ -13,6 +13,9 @@ const task: Task = {
   description: 'Check the networking notes',
   status: 'pending',
   planned_date: null,
+  start_at_utc: null,
+  end_at_utc: null,
+  schedule_timezone: null,
   priority: 'high',
   category: { id: 'category-1', name: 'Learning' },
   tags: [

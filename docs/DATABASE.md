@@ -62,7 +62,9 @@ Task. Affected Task versions are updated by the service in one transaction.
 
 The migration file is implemented and tested on isolated databases. It has not
 been executed against the real database, which remains at
-`0002_add_priority_categories_tags`.
+`0002_add_priority_categories_tags`. V0.3 Calendar Frontend development also
+uses only temporary `/tmp/dayflow-v03-dev-*` or E2E databases upgraded to
+`0003_add_task_schedule`.
 
 It will add only these nullable columns to `tasks`:
 

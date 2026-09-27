@@ -17,6 +17,9 @@ const makeTask = (overrides: Partial<Task> = {}): Task => ({
   description: null,
   status: 'pending',
   planned_date: today,
+  start_at_utc: null,
+  end_at_utc: null,
+  schedule_timezone: null,
   priority: 'normal',
   category: null,
   tags: [],
@@ -32,6 +35,10 @@ let wrapper: VueWrapper | undefined
 
 beforeEach(() => {
   vi.spyOn(ElMessageBox, 'confirm').mockResolvedValue({ action: 'confirm' })
+  vi.spyOn(taskApi, 'getRuntime').mockResolvedValue({
+    timezone: 'Asia/Shanghai',
+    local_date: today,
+  })
 })
 
 afterEach(() => {

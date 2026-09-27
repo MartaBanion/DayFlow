@@ -4,6 +4,7 @@ import type {
   Task,
   TaskCreatePayload,
   TaskPriority,
+  RuntimeInfo,
   TaskUpdatePayload,
   Tag,
 } from './types'
@@ -61,6 +62,15 @@ function jsonRequest(method: string, body: unknown): RequestInit {
 export const taskApi = {
   listToday(date: string): Promise<Task[]> {
     return request<Task[]>(`/today?date=${encodeURIComponent(date)}`)
+  },
+
+  getRuntime(): Promise<RuntimeInfo> {
+    return request<RuntimeInfo>('/runtime')
+  },
+
+  listCalendar(start: string, end: string): Promise<Task[]> {
+    const query = new URLSearchParams({ start, end })
+    return request<Task[]>(`/calendar?${query.toString()}`)
   },
 
   list(params: {
@@ -124,13 +134,24 @@ export const taskApi = {
     )
   },
 
-  create(payload: TaskCreatePayload): Promise<Task> {
-    return request<Task>('/tasks', jsonRequest('POST', payload))
+  create(
+    payload: TaskCreatePayload,
+    options: { allowScheduleConflict?: boolean } = {},
+  ): Promise<Task> {
+    const query = options.allowScheduleConflict ? '?allow_schedule_conflict=true' : ''
+    return request<Task>(`/tasks${query}`, jsonRequest('POST', payload))
   },
 
-  update(id: string, version: number, payload: TaskUpdatePayload): Promise<Task> {
+  update(
+    id: string,
+    version: number,
+    payload: TaskUpdatePayload,
+    options: { allowScheduleConflict?: boolean } = {},
+  ): Promise<Task> {
+    const query = new URLSearchParams({ version: String(version) })
+    if (options.allowScheduleConflict) query.set('allow_schedule_conflict', 'true')
     return request<Task>(
-      `/tasks/${encodeURIComponent(id)}?version=${version}`,
+      `/tasks/${encodeURIComponent(id)}?${query.toString()}`,
       jsonRequest('PATCH', payload),
     )
   },

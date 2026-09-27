@@ -4,12 +4,15 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { taskApi } from '../api'
 import { getTaskErrorMessage } from '../constants/labels'
+import { updateTaskWithConflict } from '../taskSave'
 import type { Category, Tag, Task, TaskPriority, TaskUpdatePayload } from '../types'
 import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
 import TaskEditor from './TaskEditor.vue'
 
 type InboxLoadState = 'loading' | 'loaded' | 'error'
+
+const props = defineProps<{ searchOnly?: boolean }>()
 
 const loadState = ref<InboxLoadState>('loading')
 const isLoading = ref(false)
@@ -20,12 +23,13 @@ const searchQuery = ref('')
 const priorityFilter = ref<TaskPriority | ''>('')
 const categoryFilter = ref('')
 const tagFilter = ref('')
-const isSearchMode = computed(() => searchQuery.value.trim().length > 0)
+const isSearchMode = computed(() => props.searchOnly || searchQuery.value.trim().length > 0)
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
 const metadataLoaded = ref(false)
 const isEditDialogOpen = ref(false)
 const editingTask = ref<Task | null>(null)
+const runtimeTimezone = ref('')
 
 type RestoreTarget = Pick<Task, 'id' | 'version'>
 type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
@@ -124,8 +128,29 @@ const quickTitle = ref('')
 const quickDescription = ref('')
 
 async function openEditDialog(task: Task): Promise<void> {
+  if (!runtimeTimezone.value) {
+    try {
+      runtimeTimezone.value = (await taskApi.getRuntime()).timezone
+    } catch (error) {
+      showError(error)
+      return
+    }
+  }
   editingTask.value = task
   isEditDialogOpen.value = true
+}
+
+async function confirmScheduleConflict(): Promise<boolean> {
+  try {
+    await ElMessageBox.confirm(
+      '该时间段与已有任务冲突，是否仍然保存？',
+      '时间安排冲突',
+      { confirmButtonText: '仍然保存', cancelButtonText: '取消', type: 'warning' },
+    )
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function saveEdit(payload: TaskUpdatePayload): Promise<void> {
@@ -138,7 +163,8 @@ async function saveEdit(payload: TaskUpdatePayload): Promise<void> {
   isSaving.value = true
   errorMessage.value = ''
   try {
-    await taskApi.update(task.id, task.version, payload)
+    const updated = await updateTaskWithConflict(task, payload, confirmScheduleConflict)
+    if (!updated) return
     isEditDialogOpen.value = false
     await loadTasks()
     ElMessage.success('任务已更新')
@@ -230,9 +256,11 @@ onMounted(initializeInbox)
 <template>
   <header class="page-header">
     <div>
-      <p class="eyebrow">收件箱</p>
-      <h2>未安排日期的任务</h2>
-      <p class="muted">快速记录暂时还没有安排日期的任务。</p>
+      <p class="eyebrow">{{ props.searchOnly ? '搜索' : '收件箱' }}</p>
+      <h2>{{ props.searchOnly ? '搜索任务' : '未安排日期的任务' }}</h2>
+      <p class="muted">
+        {{ props.searchOnly ? '按标题或备注查找任务。' : '快速记录暂时还没有安排日期的任务。' }}
+      </p>
     </div>
     <div class="page-header-actions">
       <MetadataManager
@@ -268,7 +296,7 @@ onMounted(initializeInbox)
   </section>
 
   <template v-if="loadState === 'loaded'">
-    <el-card shadow="never" class="capture-card">
+    <el-card v-if="!props.searchOnly" shadow="never" class="capture-card">
       <div class="section-heading">
         <div>
           <p class="eyebrow">快速记录</p>
@@ -340,6 +368,7 @@ onMounted(initializeInbox)
     :task="editingTask"
     :categories="categories"
     :tags="tags"
+    :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
     @update:open="isEditDialogOpen = $event"
     @submit="saveEdit"

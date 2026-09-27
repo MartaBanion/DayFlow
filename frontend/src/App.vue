@@ -3,13 +3,21 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 import InboxView from './components/InboxView.vue'
 import TodayView from './components/TodayView.vue'
+import CalendarView from './components/CalendarView.vue'
 
-type ViewName = 'today' | 'inbox'
+type ViewName = 'today' | 'inbox' | 'calendar' | 'search'
 
-const currentView = ref<ViewName>(window.location.hash === '#inbox' ? 'inbox' : 'today')
+function viewFromHash(): ViewName {
+  if (window.location.hash === '#inbox') return 'inbox'
+  if (window.location.hash === '#calendar') return 'calendar'
+  if (window.location.hash === '#search') return 'search'
+  return 'today'
+}
+
+const currentView = ref<ViewName>(viewFromHash())
 
 function syncViewFromHash(): void {
-  currentView.value = window.location.hash === '#inbox' ? 'inbox' : 'today'
+  currentView.value = viewFromHash()
 }
 
 onMounted(() => window.addEventListener('hashchange', syncViewFromHash))
@@ -44,7 +52,22 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         >
           收件箱 <span>02</span>
         </a>
-        <span class="nav-item is-disabled">日历</span>
+        <a
+          class="nav-item"
+          :class="{ 'is-active': currentView === 'calendar' }"
+          href="#calendar"
+          @click="currentView = 'calendar'"
+        >
+          日历 <span>03</span>
+        </a>
+        <a
+          class="nav-item"
+          :class="{ 'is-active': currentView === 'search' }"
+          href="#search"
+          @click="currentView = 'search'"
+        >
+          搜索 <span>04</span>
+        </a>
         <span class="nav-item is-disabled">项目</span>
       </nav>
 
@@ -54,14 +77,16 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       </div>
 
       <div class="sidebar-footer">
-        <el-tag type="info" effect="plain">V0.2</el-tag>
+        <el-tag type="info" effect="plain">V0.3</el-tag>
         <span>本地优先</span>
       </div>
     </aside>
 
     <main class="workspace">
       <TodayView v-if="currentView === 'today'" />
-      <InboxView v-else />
+      <InboxView v-else-if="currentView === 'inbox'" />
+      <InboxView v-else-if="currentView === 'search'" search-only />
+      <CalendarView v-else />
     </main>
   </div>
 </template>

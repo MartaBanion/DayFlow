@@ -118,7 +118,9 @@ Rules:
   not create a second Task CRUD system.
 
 Day, Week, and Month views calculate their local date range and call this same
-endpoint.
+endpoint. The frontend uses a Day range for Day View, seven dates for Week
+View, and the visible month grid range for Month View; all stay within the
+Backend's 62-day limit.
 
 ## V0.3 Phase 1 Task Schedule Write API
 
