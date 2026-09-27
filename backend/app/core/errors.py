@@ -64,6 +64,26 @@ class TagNameConflictError(AppError):
         super().__init__("tag_name_conflict", f"A tag named '{name}' already exists", 409)
 
 
+class ScheduleValidationError(AppError):
+    def __init__(self, message: str):
+        super().__init__("schedule_validation_error", message, 422)
+
+
+class ScheduleConflictError(AppError):
+    def __init__(self, task_ids: list[str]):
+        super().__init__(
+            "schedule_conflict",
+            "The requested time overlaps another task",
+            409,
+            {"task_ids": task_ids},
+        )
+
+
+class CalendarRangeError(AppError):
+    def __init__(self, message: str):
+        super().__init__("calendar_range_invalid", message, 422)
+
+
 def error_response(code: str, message: str, details: Any = None, status_code: int = 500) -> JSONResponse:
     payload: dict[str, Any] = {"error": {"code": code, "message": message}}
     if details is not None:

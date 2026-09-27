@@ -96,9 +96,9 @@ PATCH  /api/v1/tags/{id}
 DELETE /api/v1/tags/{id}
 ```
 
-## V0.3 Calendar API
+## V0.3 Phase 1 Calendar API
 
-V0.3 adds one read-only Calendar range endpoint:
+V0.3 Phase 1 adds one read-only Calendar range endpoint:
 
 ```http
 GET /api/v1/calendar?start=2026-09-21&end=2026-09-27
@@ -120,7 +120,7 @@ Rules:
 Day, Week, and Month views calculate their local date range and call this same
 endpoint.
 
-## V0.3 Task Schedule Write API
+## V0.3 Phase 1 Task Schedule Write API
 
 Task Create and Patch gain one structured `schedule` field:
 
@@ -228,9 +228,10 @@ Errors use the existing envelope:
 }
 ```
 
-V0.3 adds or uses:
+V0.3 Phase 1 adds or uses:
 
-- `validation_error` — invalid date/time, timezone, or schedule state.
+- `schedule_validation_error` — invalid date/time, timezone, or schedule state.
+- `calendar_range_invalid` — invalid or oversized Calendar date range.
 - `schedule_conflict` — overlapping active pending Task.
 - `task_version_conflict` — stale optimistic version.
 - `task_not_found` — missing or inaccessible Task.

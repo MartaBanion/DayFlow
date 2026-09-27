@@ -39,7 +39,9 @@ work released as `v0.2.1`.
 
 ### V0.3 — Calendar and Time Blocking
 
-Status: Architecture frozen; implementation not started.
+Status: Phase 1 Backend implementation complete; review pending. The real
+database remains at `0002_add_priority_categories_tags`; Calendar Frontend
+implementation has not started.
 
 Scope:
 
@@ -66,9 +68,9 @@ Explicitly out of scope:
 - AI Scheduling
 - External Calendar integration
 
-Implementation must first validate `0003_add_task_schedule` on a temporary copy
-of the real v0.2.1 database. No real-data migration is implied by this design
-entry.
+`0003_add_task_schedule` is implemented and must be validated on a temporary
+copy of the real v0.2.1 database. No real-data migration is implied by this
+roadmap entry.
 
 ## Later
 

@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.routes.tasks import router as task_router
 from app.api.routes.metadata import router as metadata_router
+from app.api.routes.runtime import router as runtime_router
 from app.core.config import get_settings
 from app.core.errors import (
     AppError,
@@ -32,6 +33,7 @@ app.add_exception_handler(SQLAlchemyError, database_error_handler)
 app.add_exception_handler(Exception, unexpected_error_handler)
 app.include_router(task_router)
 app.include_router(metadata_router)
+app.include_router(runtime_router)
 
 
 @app.get("/healthz", tags=["system"])

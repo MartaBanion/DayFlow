@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from enum import StrEnum
 from uuid import UUID
 
@@ -20,6 +20,29 @@ class PriorityValue(StrEnum):
     HIGH = TaskPriority.HIGH.value
 
 
+class ScheduleInput(BaseModel):
+    start_time: time
+    end_time: time
+    timezone: str | None = Field(default=None, max_length=64)
+
+    @field_validator("start_time", "end_time")
+    @classmethod
+    def schedule_time_must_be_local(cls, value: time) -> time:
+        if value.tzinfo is not None and value.utcoffset() is not None:
+            raise ValueError("schedule times must not include a UTC offset")
+        return value
+
+    @field_validator("timezone")
+    @classmethod
+    def timezone_must_not_be_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        if not value:
+            raise ValueError("timezone must not be blank")
+        return value
+
+
 def _serialize_utc(value: datetime | None) -> str | None:
     if value is None:
         return None
@@ -37,6 +60,7 @@ class TaskCreate(BaseModel):
     priority: PriorityValue = PriorityValue.NORMAL
     category_id: UUID | None = None
     tag_ids: list[UUID] = Field(default_factory=list)
+    schedule: ScheduleInput | None = None
 
     @field_validator("title")
     @classmethod
@@ -64,6 +88,9 @@ class TaskUpdate(BaseModel):
     priority: PriorityValue = PriorityValue.NORMAL
     category_id: UUID | None = None
     tag_ids: list[UUID] | None = None
+    # ``exclude_unset`` distinguishes omitted schedule from explicit null,
+    # which is required to preserve versus clear a time block.
+    schedule: ScheduleInput | None = None
 
     @field_validator("title")
     @classmethod
@@ -144,12 +171,22 @@ class TaskRead(BaseModel):
     priority: PriorityValue
     category: CategoryRead | None
     tags: list[TagRead] = Field(default_factory=list)
+    start_at_utc: datetime | None
+    end_at_utc: datetime | None
+    schedule_timezone: str | None
     created_at_utc: datetime
     updated_at_utc: datetime
     completed_at_utc: datetime | None
     deleted_at_utc: datetime | None
     version: int
 
-    @field_serializer("created_at_utc", "updated_at_utc", "completed_at_utc", "deleted_at_utc")
+    @field_serializer(
+        "created_at_utc",
+        "updated_at_utc",
+        "completed_at_utc",
+        "deleted_at_utc",
+        "start_at_utc",
+        "end_at_utc",
+    )
     def serialize_timestamps(self, value: datetime | None) -> str | None:
         return _serialize_utc(value)

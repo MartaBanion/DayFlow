@@ -39,6 +39,15 @@ class Task(Base):
             "priority IN ('low', 'normal', 'high')",
             name="ck_tasks_priority",
         ),
+        CheckConstraint(
+            "(start_at_utc IS NULL AND end_at_utc IS NULL AND schedule_timezone IS NULL) "
+            "OR (start_at_utc IS NOT NULL AND end_at_utc IS NOT NULL AND schedule_timezone IS NOT NULL)",
+            name="ck_tasks_schedule_complete",
+        ),
+        CheckConstraint(
+            "start_at_utc IS NULL OR planned_date IS NOT NULL",
+            name="ck_tasks_schedule_requires_date",
+        ),
         CheckConstraint("version >= 1", name="ck_tasks_version_positive"),
         Index("ix_tasks_planned_date_deleted", "planned_date", "deleted_at_utc"),
         Index("ix_tasks_category_deleted", "category_id", "deleted_at_utc"),
@@ -66,6 +75,13 @@ class Task(Base):
         String(36),
         ForeignKey("categories.id", ondelete="SET NULL"),
         nullable=True,
+    )
+    start_at_utc: Mapped[datetime | None] = mapped_column(
+        UTCDateTime(), nullable=True
+    )
+    end_at_utc: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    schedule_timezone: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
     )
     created_at_utc: Mapped[datetime] = mapped_column(
         UTCDateTime(), nullable=False, default=utc_now

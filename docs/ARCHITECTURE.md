@@ -6,9 +6,10 @@ The current stable release is **v0.2.1**. It contains the V0.1 Task
 foundation, V0.2 Inbox and organization features, the Category clearing fix,
 and Browser E2E acceptance infrastructure.
 
-V0.3 is design-frozen but implementation has not started. This document records
-the approved V0.3 architecture; it does not imply that the V0.3 schema or
-product code already exists.
+V0.3 Phase 1 Backend implementation is complete for review: the schedule model,
+Migration 0003, schedule validation, conflict detection, Calendar range API,
+and Runtime API are present. Calendar Frontend implementation has not started,
+and the real database remains at `0002_add_priority_categories_tags`.
 
 ## Architecture
 
@@ -175,8 +176,10 @@ loading, error, empty, and conflict states.
 
 ## Migration Safety
 
-V0.3 schema work will be implemented as `0003_add_task_schedule`, based on
+V0.3 schema work is implemented as `0003_add_task_schedule`, based on
 `0002_add_priority_categories_tags`. `0001` and `0002` remain immutable.
+The migration is tested only on isolated databases and temporary copies until
+explicit approval is given for real data.
 
 Before a real-data migration, the Backend must be stopped, a verified backup
 must be created, and the migration must pass on a copy of the real V0.2.1
@@ -187,7 +190,7 @@ database. A downgrade must fail closed when any Time Block would be lost.
 The approved order is:
 
 ```text
-0003 design → temporary-copy migration test → Backend/API → Frontend Calendar
+0003 implementation → temporary-copy migration test → Backend/API → Frontend Calendar
 → Vitest → Browser E2E → real-data migration approval → manual acceptance
 ```
 

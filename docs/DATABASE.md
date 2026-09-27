@@ -58,9 +58,11 @@ Task. Affected Task versions are updated by the service in one transaction.
 - Normal list, Today, Inbox, and Search queries exclude soft-deleted Tasks.
 - The restore endpoint can recover a soft-deleted row using its current version.
 
-## Planned V0.3 Schema: `0003_add_task_schedule`
+## V0.3 Phase 1 Schema: `0003_add_task_schedule`
 
-This migration is designed but has not been created or executed.
+The migration file is implemented and tested on isolated databases. It has not
+been executed against the real database, which remains at
+`0002_add_priority_categories_tags`.
 
 It will add only these nullable columns to `tasks`:
 
@@ -119,7 +121,7 @@ real requirement.
 
 ## Migration Procedure
 
-When implementation begins:
+Before applying `0003` to real data:
 
 1. Keep the Backend stopped.
 2. Create and verify a pre-V0.3 backup.

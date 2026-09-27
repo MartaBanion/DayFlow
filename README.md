@@ -30,8 +30,11 @@ mutations.
 - SQLite Foreign Key enforcement on every SQLAlchemy connection.
 
 V0.2 keeps the V0.1 API paths and behavior compatible. The `v0.2.0` and
-`v0.2.1` release tags are local stable checkpoints. V0.3 Calendar and Time
-Blocking are architecture-frozen only; implementation has not started.
+`v0.2.1` release tags are local stable checkpoints. V0.3 Phase 1 Backend
+schedule model, Migration 0003, Calendar range API, Runtime API, timezone/DST
+validation, and conflict detection are implemented for review; Calendar
+Frontend implementation has not started. The real database remains at
+`0002_add_priority_categories_tags`.
 
 V0.1 deliberately excluded Projects, Priority, Category, Tags, Reminders,
 Recurrence, Calendar, AI, and ScheduleBlock.
@@ -67,21 +70,29 @@ Use Python 3.12 and Node.js 24 LTS. Install `uv`, then run:
 ```bash
 uv sync --directory backend
 npm ci --prefix frontend
-uv run --directory backend alembic upgrade head
+# Only point this at a new or temporary database, never the real personal DB.
+DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend alembic upgrade head
 ```
 
-The real SQLite file is created and upgraded by Alembic. Runtime code does not
-call `Base.metadata.create_all()`. Before applying any future migration to real
-data, stop the Backend, create a verified backup, and validate the migration on
-a copy of the current database first.
+The real SQLite file is managed by Alembic, but it remains at
+`0002_add_priority_categories_tags` during V0.3 Phase 1. Runtime code does not
+call `Base.metadata.create_all()`. Do not run `alembic upgrade head` against
+the real database during this phase. Before applying any future migration to
+real data, stop the Backend, create a verified backup, and validate the
+migration on a copy of the current database first.
 
 ## Run
 
 Backend:
 
 ```bash
-uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+The Phase 1 development command above uses the temporary database initialized
+by the setup command. Do not start the Phase 1 Backend against
+`data/dayflow.sqlite3` until the real-data migration has been separately
+approved.
 
 Frontend:
 

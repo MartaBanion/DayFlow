@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 import logging
 
 from sqlalchemy import case, func, or_, select
@@ -11,12 +11,20 @@ from sqlalchemy.orm.exc import StaleDataError
 from app.core.errors import (
     CategoryNameConflictError,
     CategoryNotFoundError,
+    ScheduleConflictError,
+    ScheduleValidationError,
     TagNameConflictError,
     TagNotFoundError,
     TaskNotFoundError,
     TaskVersionConflictError,
 )
+from app.core.config import get_settings
 from app.core.time import utc_now
+from app.core.schedule import (
+    local_schedule_to_utc,
+    move_schedule_to_date,
+    validate_persisted_schedule,
+)
 from app.models.category import Category
 from app.models.tag import Tag, task_tags
 from app.models.task import Task, TaskPriority, TaskStatus
@@ -33,10 +41,25 @@ logger = logging.getLogger("dayflow.task")
 
 
 class TaskService:
-    def create(self, session: Session, payload: TaskCreate) -> Task:
+    def create(
+        self,
+        session: Session,
+        payload: TaskCreate,
+        *,
+        allow_schedule_conflict: bool = False,
+    ) -> Task:
         try:
             category = self._resolve_category(session, payload.category_id)
             tags = self._resolve_tags(session, payload.tag_ids)
+            start_at_utc, end_at_utc, schedule_timezone = self._schedule_for_create(
+                payload
+            )
+            self._ensure_no_schedule_conflict(
+                session,
+                start_at_utc,
+                end_at_utc,
+                allow_schedule_conflict=allow_schedule_conflict,
+            )
             task = Task(
                 title=payload.title,
                 description=payload.description,
@@ -44,6 +67,9 @@ class TaskService:
                 priority=payload.priority.value,
                 category=category,
                 tags=tags,
+                start_at_utc=start_at_utc,
+                end_at_utc=end_at_utc,
+                schedule_timezone=schedule_timezone,
             )
             session.add(task)
             self._commit(session, "create task")
@@ -103,6 +129,25 @@ class TaskService:
     def today(self, session: Session, target_date: date) -> list[Task]:
         return self.list(session, target_date)
 
+    def calendar(self, session: Session, start_date: date, end_date: date) -> list[Task]:
+        statement = (
+            select(Task)
+            .options(selectinload(Task.category), selectinload(Task.tags))
+            .where(
+                Task.deleted_at_utc.is_(None),
+                Task.planned_date >= start_date,
+                Task.planned_date <= end_date,
+            )
+            .order_by(
+                Task.planned_date,
+                Task.start_at_utc.is_(None),
+                Task.start_at_utc,
+                case((Task.status == TaskStatus.PENDING.value, 0), else_=1),
+                Task.created_at_utc,
+            )
+        )
+        return list(session.scalars(statement).unique().all())
+
     def get(self, session: Session, task_id: str) -> Task:
         task = session.scalar(
             select(Task)
@@ -119,6 +164,8 @@ class TaskService:
         task_id: str,
         expected_version: int,
         payload: TaskUpdate,
+        *,
+        allow_schedule_conflict: bool = False,
     ) -> Task:
         try:
             task = self.get(session, task_id)
@@ -140,6 +187,11 @@ class TaskService:
                 else None
             )
 
+            planned_date = changes.get("planned_date", task.planned_date)
+            start_at_utc, end_at_utc, schedule_timezone = self._schedule_for_update(
+                task, changes, planned_date
+            )
+
             changed = False
             for field in ("title", "description", "planned_date", "priority"):
                 if field not in changes:
@@ -148,24 +200,55 @@ class TaskService:
                 if isinstance(value, TaskPriority):
                     value = value.value
                 if getattr(task, field) != value:
-                    setattr(task, field, value)
                     changed = True
 
             if category_requested:
                 category_id = category.id if category is not None else None
                 if task.category_id != category_id:
-                    task.category = category
                     changed = True
 
             if tag_ids_requested:
                 requested_tag_ids = {tag.id for tag in tags or []}
                 current_tag_ids = {tag.id for tag in task.tags}
                 if requested_tag_ids != current_tag_ids:
-                    task.tags = tags or []
                     changed = True
+
+            if (
+                task.start_at_utc != start_at_utc
+                or task.end_at_utc != end_at_utc
+                or task.schedule_timezone != schedule_timezone
+            ):
+                changed = True
 
             if not changed:
                 return task
+
+            if task.status == TaskStatus.PENDING.value:
+                self._ensure_no_schedule_conflict(
+                    session,
+                    start_at_utc,
+                    end_at_utc,
+                    exclude_task_id=task.id,
+                    allow_schedule_conflict=allow_schedule_conflict,
+                )
+
+            for field in ("title", "description", "planned_date", "priority"):
+                if field not in changes:
+                    continue
+                value = changes[field]
+                if isinstance(value, TaskPriority):
+                    value = value.value
+                setattr(task, field, value)
+
+            if category_requested:
+                task.category = category
+
+            if tag_ids_requested:
+                task.tags = tags or []
+
+            task.start_at_utc = start_at_utc
+            task.end_at_utc = end_at_utc
+            task.schedule_timezone = schedule_timezone
             self._touch(task)
             self._commit(session, "update task", (task.id, expected_version))
             session.refresh(task)
@@ -310,6 +393,107 @@ class TaskService:
             self._touch(task)
         session.delete(tag)
         self._commit(session, "delete tag")
+
+    @staticmethod
+    def _schedule_for_create(payload: TaskCreate) -> tuple[datetime | None, datetime | None, str | None]:
+        if payload.schedule is None:
+            return None, None, None
+        if payload.planned_date is None:
+            raise ScheduleValidationError("a schedule requires planned_date")
+
+        timezone_name = payload.schedule.timezone or get_settings().timezone
+        instants = local_schedule_to_utc(
+            payload.planned_date,
+            payload.schedule.start_time,
+            payload.schedule.end_time,
+            timezone_name,
+        )
+        validate_persisted_schedule(
+            payload.planned_date,
+            instants.start_at_utc,
+            instants.end_at_utc,
+            instants.timezone_name,
+        )
+        return instants.start_at_utc, instants.end_at_utc, instants.timezone_name
+
+    @staticmethod
+    def _schedule_for_update(
+        task: Task,
+        changes: dict[str, object],
+        planned_date: date | None,
+    ) -> tuple[datetime | None, datetime | None, str | None]:
+        schedule_requested = "schedule" in changes
+        if schedule_requested:
+            requested_schedule = changes["schedule"]
+            if requested_schedule is None:
+                result = (None, None, None)
+            else:
+                if planned_date is None:
+                    raise ScheduleValidationError("a schedule requires planned_date")
+                timezone_name = requested_schedule.get("timezone") or get_settings().timezone  # type: ignore[union-attr]
+                instants = local_schedule_to_utc(
+                    planned_date,
+                    requested_schedule["start_time"],  # type: ignore[index]
+                    requested_schedule["end_time"],  # type: ignore[index]
+                    timezone_name,
+                )
+                result = (
+                    instants.start_at_utc,
+                    instants.end_at_utc,
+                    instants.timezone_name,
+                )
+        elif "planned_date" in changes and task.start_at_utc is not None:
+            if planned_date is None:
+                raise ScheduleValidationError(
+                    "clear schedule before clearing planned_date"
+                )
+            instants = move_schedule_to_date(
+                planned_date,
+                task.start_at_utc,
+                task.end_at_utc,
+                task.schedule_timezone,
+            )
+            result = (
+                instants.start_at_utc,
+                instants.end_at_utc,
+                instants.timezone_name,
+            )
+        else:
+            result = (
+                task.start_at_utc,
+                task.end_at_utc,
+                task.schedule_timezone,
+            )
+
+        validate_persisted_schedule(planned_date, *result)
+        return result
+
+    @staticmethod
+    def _ensure_no_schedule_conflict(
+        session: Session,
+        start_at_utc: datetime | None,
+        end_at_utc: datetime | None,
+        *,
+        exclude_task_id: str | None = None,
+        allow_schedule_conflict: bool = False,
+    ) -> None:
+        if start_at_utc is None or end_at_utc is None:
+            return
+
+        statement = select(Task.id).where(
+            Task.status == TaskStatus.PENDING.value,
+            Task.deleted_at_utc.is_(None),
+            Task.start_at_utc.is_not(None),
+            Task.end_at_utc.is_not(None),
+            Task.start_at_utc < end_at_utc,
+            Task.end_at_utc > start_at_utc,
+        )
+        if exclude_task_id is not None:
+            statement = statement.where(Task.id != exclude_task_id)
+
+        conflicting_ids = [str(task_id) for task_id in session.scalars(statement).all()]
+        if conflicting_ids and not allow_schedule_conflict:
+            raise ScheduleConflictError(conflicting_ids)
 
     @staticmethod
     def _resolve_category(session: Session, category_id) -> Category | None:
