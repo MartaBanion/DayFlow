@@ -6,10 +6,9 @@ The current stable release is **v0.3.1**. It contains the V0.1 Task
 foundation, V0.2 Inbox and organization features, and the V0.3 Calendar and
 Time Blocking implementation with the V0.3.1 UI/UX polish release.
 
-V0.4 Phase 1 Project Backend, Migration 0004, and their tests are implemented
-and validated on isolated temporary databases. Project Frontend product code
-has not started. The real database remains at `0003_add_task_schedule` until
-explicit migration approval.
+V0.4 Project Backend, Migration 0004, Project Frontend, and their tests are
+implemented and validated on isolated temporary databases. The real database
+remains at `0003_add_task_schedule` until explicit migration approval.
 
 ## Architecture
 

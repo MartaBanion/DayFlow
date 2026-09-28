@@ -6,9 +6,10 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 **v0.3.1 — stable release.** Inbox, Task organization, Search, Calendar
 Day/Week/Month views, single-Task Time Blocks, and the V0.3.1 UI/UX polish are
-complete. The current development target is **v0.4.0 — V0.4 Projects**. Phase 1
-Project Backend and Migration 0004 are implemented and tested on temporary
-databases; Project Frontend has not started.
+complete. The current development target is **v0.4.0 — V0.4 Projects**. Project
+Backend, Migration 0004, Project Frontend, and acceptance tests are implemented
+and validated on temporary databases; the real database remains at
+`0003_add_task_schedule` pending explicit migration approval.
 
 ## V0.1 Features
 
@@ -77,10 +78,10 @@ DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backen
 ```
 
 The real SQLite file is managed by Alembic and remains at
-`0003_add_task_schedule` while V0.4 Phase 1 is reviewed. Runtime code does not call
-`Base.metadata.create_all()`. Before applying any future migration to real
-data, stop the Backend, create a verified backup, and validate the migration on
-a copy of the current database first.
+`0003_add_task_schedule` while V0.4 real-data migration is pending explicit
+approval. Runtime code does not call `Base.metadata.create_all()`. Before
+applying any future migration to real data, stop the Backend, create a verified
+backup, and validate the migration on a copy of the current database first.
 
 ## Run
 

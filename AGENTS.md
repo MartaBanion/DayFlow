@@ -8,11 +8,10 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 Stable release: `v0.3.1`.
 
-Current development target: `v0.4.0` — V0.4 Projects, Phase 1 Backend and
-Migration 0004. The Project Backend and migration are implemented and tested
-only on isolated temporary databases. The real database remains at
-`0003_add_task_schedule` until explicit migration approval. Project Frontend
-implementation has not started.
+Current development target: `v0.4.0` — V0.4 Projects. The Project Backend,
+Migration 0004, Project Frontend, and acceptance tests are implemented and
+validated only on isolated temporary databases. The real database remains at
+`0003_add_task_schedule` until explicit migration approval.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -99,14 +98,14 @@ Only the version currently being implemented may be changed. Do not start later 
 ## Prohibited Actions
 
 - No Drag & Drop, Resize, Reminder, Recurrence, AI, external Calendar, PWA,
-  Authentication, Docker, CI/CD, or remote Git work during V0.4.
+  Authentication, Docker, CI/CD, or remote Git work during V0.4 release
+  preparation.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
 
-A V0.4 Phase 1 Backend change is complete only when Project Backend and
-migration tests run against isolated temporary `0004` data, V0.1–V0.3.1
-Backend regression tests pass, no secrets or personal data are exposed,
+A V0.4 release candidate is complete only when Project Backend, Migration 0004,
+Project Frontend, and their tests run against isolated temporary `0004` data,
+V0.1–V0.3.1 regression tests pass, no secrets or personal data are exposed,
 documentation is synchronized, and the real database remains unchanged until
-explicit migration approval. Project Frontend work belongs to the later Phase
-2 review.
+explicit migration approval.
