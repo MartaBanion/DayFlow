@@ -246,3 +246,130 @@ changes.
 
 One successful Task PATCH increments `version` at most once, regardless of how
 many fields and relationships change.
+
+## V0.4 Project API
+
+V0.4 adds a minimal Project resource. It reuses the existing Task resource for
+Project membership and filtering; it does not create a second Project-specific
+Task CRUD surface.
+
+### Project Endpoints
+
+```text
+GET    /api/v1/projects
+POST   /api/v1/projects
+GET    /api/v1/projects/{id}
+PATCH  /api/v1/projects/{id}
+DELETE /api/v1/projects/{id}
+POST   /api/v1/projects/{id}/complete
+POST   /api/v1/projects/{id}/reopen
+POST   /api/v1/projects/{id}/restore
+```
+
+Project list/detail responses include dynamically calculated `task_count`,
+`completed_task_count`, and `progress_percent`; these values are not stored in
+the database. Project list calculation must use grouped aggregates or an
+equivalent bounded query plan, not one count query per Project.
+
+A minimal response shape is:
+
+```json
+{
+  "id": "project-uuid",
+  "name": "学习 Linux",
+  "description": null,
+  "status": "active",
+  "created_at_utc": "2026-09-28T00:00:00.000000Z",
+  "updated_at_utc": "2026-09-28T00:00:00.000000Z",
+  "completed_at_utc": null,
+  "deleted_at_utc": null,
+  "version": 1,
+  "task_count": 3,
+  "completed_task_count": 1,
+  "progress_percent": 33
+}
+```
+
+`POST` requires a non-empty trimmed `name`; `description` is optional. `PATCH`
+supports `name` and `description` as partial fields and requires the current
+Project `version`. `GET /projects` excludes soft-deleted Projects by default;
+the restore action addresses deleted records without adding a recycle-bin
+feature.
+
+Lifecycle semantics are explicit:
+
+- `complete` sets Project status to `completed` and `completed_at_utc`; it does
+  not complete any Task.
+- `reopen` sets status to `active` and clears `completed_at_utc`.
+- `DELETE` soft-deletes the Project and clears `project_id` from every related
+  Task, including soft-deleted Tasks, in one transaction. Each affected Task
+  version and `updated_at_utc` changes once at most.
+- `restore` clears only the Project's soft-delete marker and preserves its
+  status/completion timestamp. It does not recreate previous Task
+  relationships. If an active Project already has the same name, restore
+  returns HTTP 409.
+
+Duplicate active names return HTTP 409. Empty/invalid names return HTTP 422.
+Missing Projects return HTTP 404, and stale Project versions return HTTP 409.
+The existing error envelope is used with resource-specific error codes such as
+`project_name_conflict`, `project_version_conflict`, and `project_not_found`.
+
+### Task Project Integration
+
+Task Create and PATCH gain an optional nullable field:
+
+```json
+{
+  "project_id": "project-uuid-or-null"
+}
+```
+
+Omitted `project_id` preserves the current relationship; `null` clears it; a
+UUID assigns the Task to that Project. A Task may belong to at most one
+Project. The existing `version` is incremented only once when a successful
+PATCH changes Project membership together with other Task fields. Missing or
+deleted Project IDs fail before mutation and roll back the whole request.
+
+`TaskRead` adds nullable `project_id` and a compact nullable Project summary
+when the relationship exists. The addition is backward-compatible for clients
+that ignore unknown response fields. Project deletion makes both values null
+for affected Tasks.
+
+Task listing and Search add the structured filter:
+
+```text
+GET /api/v1/tasks?project_id=<uuid>
+```
+
+The filter is exact and does not alter the existing Inbox, Today, Calendar,
+Priority, Category, Tag, or title/description `q` semantics. Project detail
+uses the same query rather than `GET /projects/{id}/tasks`.
+
+### Project Transaction Rules
+
+Every Project mutation validates input and optimistic version before changing
+stored state. Project delete performs Project soft delete, relationship
+clearing for all associated Tasks, Task timestamp/version updates, and commit
+in one transaction. Any validation, name conflict, stale version, foreign-key
+failure, or other critical error rolls the transaction back. Project complete,
+reopen, and restore change only the Project and increment its version once.
+
+Project restore does not restore historical Task membership. Project status and
+Task status are independent: completing a Task changes progress only, while
+completing a Project does not complete its Tasks.
+
+## V0.4 Compatibility and Test Contract
+
+The V0.1–V0.3.1 endpoints retain their paths and semantics. Existing Tasks
+migrate with `project_id = null`; Inbox remains `planned_date IS NULL` plus its
+existing active/pending rules, and Calendar/Today continue to use
+`planned_date` and schedule fields as before.
+
+The V0.4 test gate must cover Project CRUD, duplicate/validation errors,
+complete/reopen/restore, assignment and clearing, Project deletion preserving
+Tasks, detachment of soft-deleted Tasks, one-version-per-affected-Task,
+dynamic progress, stale-version rollback, migration compatibility, and Project
+filters in Search, Inbox, Today, and Calendar. Frontend and Browser E2E must
+cover Hash navigation, Project list/detail, Task Editor assignment/clear,
+progress, lifecycle actions, error states, refresh persistence, and continued
+V0.3 regression coverage.

@@ -2,15 +2,13 @@
 
 ## Current Version
 
-The current stable release is **v0.2.1**. It contains the V0.1 Task
-foundation, V0.2 Inbox and organization features, the Category clearing fix,
-and Browser E2E acceptance infrastructure.
+The current stable release is **v0.3.1**. It contains the V0.1 Task
+foundation, V0.2 Inbox and organization features, and the V0.3 Calendar and
+Time Blocking implementation with the V0.3.1 UI/UX polish release.
 
-V0.3 Phase 1 Backend and Phase 2 Calendar Frontend implementation are complete
-for review: the schedule model, Migration 0003, schedule validation, conflict
-detection, Calendar range API, Runtime API, Hash navigation, and Day/Week/Month
-views are present. The real database remains at
-`0002_add_priority_categories_tags`.
+V0.4 Projects architecture is frozen for implementation review, but Project
+product code and Migration 0004 have not yet been implemented. The real
+database is currently at `0003_add_task_schedule`.
 
 ## Architecture
 
@@ -21,8 +19,9 @@ Vue 3 Frontend → FastAPI REST API → Service Layer → SQLAlchemy → SQLite
 ```
 
 The application is intentionally not split into microservices. AI, reminders,
-projects, recurrence, external calendar integration, and scheduling automation
-remain outside V0.3.
+recurrence, external calendar integration, and scheduling automation remain
+outside V0.3 and V0.4. Project support is limited to the frozen V0.4 design
+below; it must not be implemented as part of unrelated work.
 
 The request path remains:
 
@@ -128,6 +127,87 @@ Frontend confirmation copy should be concise Chinese, for example:
 Conflict failure and stale-version failure are atomic: no partial update and no
 version increment may remain.
 
+## Frozen V0.4 Project Decisions
+
+V0.4 is a single-user Project layer over the existing Task model. Its scope is
+Project CRUD, assigning Tasks to one Project, Project detail, dynamic progress,
+Project lifecycle actions, and Project-aware Task filtering/display. It does not
+introduce a second Task CRUD system or a workflow/kanban model.
+
+### Project Model
+
+The planned `projects` table contains only fields required by V0.4:
+
+- `id`: application-generated UUID stored as text.
+- `name`: required trimmed name.
+- `description`: nullable text.
+- `status`: `active` or `completed`.
+- `created_at_utc` and `updated_at_utc`: UTC instants.
+- `completed_at_utc`: nullable UTC instant.
+- `deleted_at_utc`: nullable UTC instant for soft delete.
+- `version`: integer optimistic-concurrency version starting at 1.
+
+Color, icon, deadline, start date, sort order, archive state, pause state,
+hierarchy, and persisted progress are deliberately deferred. Project names are
+unique only among non-deleted Projects. Trimmed, case-insensitive duplicate
+validation is a service/API responsibility backed by a partial unique index;
+SQLite `NOCASE` limitations for non-ASCII case folding remain documented.
+
+### Task Relationship and Lifecycle
+
+V0.4 adds nullable `tasks.project_id`. A Task belongs to zero or one Project,
+and a Project contains zero or more Tasks. Inbox, planned-date, Calendar,
+Priority, Category, Tag, schedule, complete, restore, and soft-delete semantics
+remain unchanged. An Inbox Task may belong to a Project, and a Project Task may
+have no planned date or Time Block.
+
+Project lifecycle rules are fixed:
+
+- `complete` changes only the Project to `completed` and sets
+  `completed_at_utc`; it never completes associated Tasks.
+- `reopen` changes only a completed Project to `active` and clears
+  `completed_at_utc`.
+- `DELETE` soft-deletes the Project and, in the same transaction, clears
+  `project_id` on every associated Task, including soft-deleted Tasks.
+- Every affected Task version increases at most once for that delete operation.
+- `restore` clears only the Project's soft-delete marker and preserves its
+  status/completion timestamp. It never reconstructs historical Task
+  relationships; a name collision with an active Project returns HTTP 409.
+- Task completion never changes Project status.
+
+All Project mutations require the current Project `version` and increment it
+once on success. Task assignment, clearing, or Project deletion follows the
+existing one-PATCH/one-version-increment rule; an affected Task's
+`updated_at_utc` is updated with that single version change. Multi-row changes
+use one transaction and roll back completely on validation, conflict, or
+database failure.
+
+### Progress and Query Boundaries
+
+Progress is computed dynamically and is never stored. For a non-deleted Project:
+
+```text
+completed active Tasks / total active Tasks
+```
+
+Soft-deleted Tasks are excluded from both numerator and denominator. Completed
+Tasks remain in the denominator. An empty Project reports 0% and zero Tasks.
+Project list queries must obtain counts and completed counts with grouped
+aggregates (or an equivalent bounded query plan), not one query per Project.
+
+Project detail reuses the existing Task list/filter path with
+`project_id=<uuid>`. The Task editor gains a Project selector, and Today,
+Inbox, Search, and Calendar may display a compact Project name without changing
+their existing date, status, or deletion semantics.
+
+### V0.4 Frontend Boundary
+
+The existing Hash navigation remains in use: `#projects` for the Project list
+and `#project:<id>` for Project detail. The minimum frontend units are a
+Projects view, a Project detail view, and the existing Task Editor extension.
+No Vue Router, Pinia, new UI framework, Kanban board, or project-specific drag
+interaction is introduced.
+
 ## Timezone Strategy
 
 - Database stores Time Block instants in UTC.
@@ -182,13 +262,18 @@ loading, error, empty, and conflict states.
 ## Migration Safety
 
 V0.3 schema work is implemented as `0003_add_task_schedule`, based on
-`0002_add_priority_categories_tags`. `0001` and `0002` remain immutable.
-The migration is tested only on isolated databases and temporary copies until
-explicit approval is given for real data.
+`0002_add_priority_categories_tags`; the real database is now at `0003`.
+`0001` and `0002` remain immutable.
+
+V0.4 schema work is planned as `0004_add_projects`, based on `0003`. It must be
+tested on a clean temporary database and a copy of the real database before any
+real-data migration approval. Existing Tasks must retain all legacy values and
+receive `project_id = NULL`.
 
 Before a real-data migration, the Backend must be stopped, a verified backup
-must be created, and the migration must pass on a copy of the real V0.2.1
-database. A downgrade must fail closed when any Time Block would be lost.
+must be created, and the migration must pass on a copy of the current database.
+A downgrade must fail closed when any Project or Project relationship would be
+lost.
 
 ## V0.3 Implementation Boundary
 
@@ -199,4 +284,14 @@ The approved order is:
 → Vitest → Browser E2E → real-data migration approval → manual acceptance
 ```
 
-No V0.4+ feature may enter the V0.3 implementation.
+The V0.4 implementation order is:
+
+```text
+0004 temporary migration → Project backend/model/API → backend regression
+tests → Hash-based Project list/detail → Task Editor integration → Vitest and
+Browser E2E → real-data backup and migration approval → manual acceptance
+```
+
+No V0.4 product implementation may enter a release outside its approved
+Project scope. V0.5+ features such as reminders, recurrence, AI, and external
+integrations remain out of scope.

@@ -1,5 +1,8 @@
 # DayFlow Personal Roadmap
 
+Current stable release: **v0.3.1**. The real database is at
+`0003_add_task_schedule`.
+
 ## Current
 
 ### V0.1 — Task Management
@@ -39,9 +42,8 @@ work released as `v0.2.1`.
 
 ### V0.3 — Calendar and Time Blocking
 
-Status: Phase 1 Backend and Phase 2 Calendar Frontend implementation complete;
-review pending. The real database remains at
-`0002_add_priority_categories_tags`.
+Status: Completed and released as `v0.3.0`; UI/UX polish released as
+`v0.3.1`. The real database is at `0003_add_task_schedule`.
 
 Scope:
 
@@ -72,10 +74,47 @@ Explicitly out of scope:
 - AI Scheduling
 - External Calendar integration
 
-`0003_add_task_schedule` is implemented and must be validated on a temporary
-copy of the real v0.2.1 database. No real-data migration is implied by this
-roadmap entry. Calendar Frontend development also uses only temporary `0003`
-databases and does not migrate the real data file.
+`0003_add_task_schedule` was validated on a temporary copy and then applied to
+the real database after backup and approval. No later migration is implied by
+this roadmap entry.
+
+### V0.4 — Projects
+
+Status: Architecture frozen; implementation not started.
+
+Scope:
+
+- Project CRUD and Hash-based Project list/detail views
+- One optional Project per Task via nullable `tasks.project_id`
+- Project Task assignment and clearing from Task Editor
+- Active/completed Project lifecycle: complete and reopen
+- Soft delete and restore for Projects
+- Dynamic Project progress from active Tasks, with empty Projects at 0%
+- Project-aware Task filtering and compact Project display in existing views
+- Optimistic Version, atomic relationship updates, and grouped progress queries
+- `0004_add_projects` tested on temporary databases before real-data approval
+
+Frozen lifecycle rules:
+
+- Completing a Project never completes its Tasks.
+- Completing a Task never changes Project status.
+- Deleting a Project clears `project_id` for all related Tasks, including
+  soft-deleted Tasks, and increments each affected Task version once.
+- Restoring a Project never restores historical Task relationships.
+- Active Project names are unique; restoring into a duplicate name returns 409.
+- Progress is dynamic and never stored in the database.
+
+Explicitly out of scope:
+
+- Kanban, subprojects, Project hierarchy, teams, assignees, sprints
+- Comments, attachments, file upload
+- Project colors, icons, deadlines, start dates, sorting, archive, pause
+- Project AI, external integrations, reminders, and recurrence
+
+V0.4 implementation order is: temporary `0004` migration rehearsal, Backend
+model/service/API and tests, Frontend Hash views and Task Editor integration,
+Vitest and Browser E2E regression, real-data backup and migration approval,
+manual acceptance, then release review.
 
 ## Later
 

@@ -9,16 +9,17 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: V0.2.1
+## Current Schema: V0.3.1
 
 The real database is currently at:
 
 ```text
-0002_add_priority_categories_tags
+0003_add_task_schedule
 ```
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
-the normalized metadata tables.
+the normalized metadata tables. V0.3 adds the optional single-Task Time Block
+columns.
 
 ### Tasks
 
@@ -36,6 +37,9 @@ the normalized metadata tables.
 | `version` | `INTEGER` | no | Starts at 1 and increments on mutation |
 | `priority` | `VARCHAR(20)` | no | `low`, `normal`, or `high` |
 | `category_id` | `VARCHAR(36)` | yes | Nullable Category foreign key |
+| `start_at_utc` | `VARCHAR(32)` | yes | Optional Time Block start UTC instant |
+| `end_at_utc` | `VARCHAR(32)` | yes | Optional Time Block end UTC instant |
+| `schedule_timezone` | `VARCHAR(64)` | yes | IANA timezone for the Time Block |
 
 ### Organization Tables
 
@@ -58,15 +62,10 @@ Task. Affected Task versions are updated by the service in one transaction.
 - Normal list, Today, Inbox, and Search queries exclude soft-deleted Tasks.
 - The restore endpoint can recover a soft-deleted row using its current version.
 
-## V0.3 Phase 1 Schema: `0003_add_task_schedule`
+## V0.3 Schema: `0003_add_task_schedule`
 
-The migration file is implemented and tested on isolated databases. It has not
-been executed against the real database, which remains at
-`0002_add_priority_categories_tags`. V0.3 Calendar Frontend development also
-uses only temporary `/tmp/dayflow-v03-dev-*` or E2E databases upgraded to
-`0003_add_task_schedule`.
-
-It will add only these nullable columns to `tasks`:
+The migration is implemented, tested, and applied to the real database. It
+added only these nullable columns to `tasks`:
 
 | Column | SQLite type | Nullable | Meaning |
 | --- | --- | ---: | --- |
@@ -83,7 +82,8 @@ No existing Task is assigned a time during migration. Existing rows retain:
 - `deleted_at_utc`
 - `version`
 
-All three new columns will be `NULL` for old Tasks.
+Existing Tasks were migrated with all three new columns `NULL`; no legacy Task
+was assigned a schedule by the migration.
 
 ### Structural Constraints
 
@@ -121,19 +121,77 @@ One Task has at most one Time Block. A separate `time_blocks` table is deferred
 until multiple blocks, split execution, or external Calendar Events become a
 real requirement.
 
+## V0.4 Schema Plan: `0004_add_projects`
+
+`0004_add_projects` is a design plan only. It must depend on
+`0003_add_task_schedule`, and it must not modify `0001`, `0002`, or `0003`.
+
+### Projects
+
+| Column | SQLite type | Nullable | Meaning |
+| --- | --- | ---: | --- |
+| `id` | `VARCHAR(36)` | no | Application-generated UUID string |
+| `name` | `VARCHAR(200)` | no | Trimmed Project name |
+| `description` | `TEXT` | yes | Optional Project description |
+| `status` | `VARCHAR(20)` | no | `active` or `completed` |
+| `created_at_utc` | `VARCHAR(32)` | no | Creation UTC instant |
+| `updated_at_utc` | `VARCHAR(32)` | no | Last Project mutation UTC instant |
+| `completed_at_utc` | `VARCHAR(32)` | yes | Set only for completed Projects |
+| `deleted_at_utc` | `VARCHAR(32)` | yes | Project soft-delete UTC instant |
+| `version` | `INTEGER` | no | Starts at 1; increments once per mutation |
+
+`tasks.project_id` will be a nullable foreign key to `projects.id` with
+`ON DELETE SET NULL`, plus an index for Project task queries. The service must
+clear all associated Task relationships before soft-deleting a Project, so the
+logical delete also covers soft-deleted Tasks and updates each affected Task
+version once. Physical FK deletion is not the normal Project delete path.
+
+The migration will add a partial unique index for trimmed/case-insensitive
+Project names where `deleted_at_utc IS NULL`. SQLite `NOCASE` is sufficient for
+the current single-user scope but does not provide full Unicode case folding.
+Name validation remains explicit at the API/service boundary.
+
+Status and relationship constraints are structural (`active`/`completed`,
+valid nullable FK); lifecycle rules, timestamps, and version transitions remain
+service rules. Progress is not a column: it is calculated from active Tasks as
+`completed / total`, with soft-deleted Tasks excluded and an empty Project at
+0%.
+
+### Migration Safety and Downgrade
+
+On upgrade from the real V0.3.1 schema, all existing Tasks must retain their
+IDs, titles, descriptions, statuses, dates, completion/deletion timestamps,
+priorities, Categories, Tags, schedule fields, and versions. Their new
+`project_id` value must be `NULL`. SQLite batch migration is allowed where table
+recreation is required, with foreign-key enforcement enabled on every
+connection.
+
+Downgrade must fail closed if any Project row exists or any Task has a
+non-`NULL` `project_id`; it must never silently discard Project data or
+relationships. Downgrade is safe only for a test database whose Project table
+is empty and whose Task relationships are all `NULL`.
+
+Before real migration, stop the Backend, create and verify a backup, migrate a
+temporary copy from `0003` to `0004`, compare all legacy Task fields and IDs,
+test Project relationships/progress and rollback behavior, then request
+explicit approval. Do not create or run this migration in the current design
+review phase.
+
 ## Migration Procedure
 
-Before applying `0003` to real data:
+Before applying any future migration to real data (the next planned one is
+`0004_add_projects`):
 
 1. Keep the Backend stopped.
-2. Create and verify a pre-V0.3 backup.
-3. Copy the real V0.2.1 database to a temporary test location.
-4. Run `0003` only against the copy.
+2. Create and verify a pre-migration backup.
+3. Copy the real V0.3.1 database to a temporary test location.
+4. Run the candidate `0004` only against the copy.
 5. Verify `integrity_check` and `foreign_key_check`.
 6. Verify Alembic head and all legacy Task fields.
-7. Verify all new fields are `NULL` for existing Tasks.
-8. Test scheduled Task writes, clear operations, conflict rollback, and restart
-   persistence on the copy.
+7. Verify `project_id` is `NULL` for existing Tasks and all V0.3 schedule
+   fields remain unchanged.
+8. Test Project CRUD, assignment/clearing, delete detach semantics, progress,
+   lifecycle transitions, rollback, and restart persistence on the copy.
 9. Run the complete Backend, Frontend, and Browser regression suites.
 10. Request explicit approval before upgrading the real database.
 
@@ -150,8 +208,8 @@ test database.
 
 ## Backup
 
-Stop the Backend before copying `data/dayflow.sqlite3`. V0.2.1 still uses the
-manual backup procedure; V0.3 does not add an automatic backup service.
+Stop the Backend before copying `data/dayflow.sqlite3`. DayFlow still uses the
+manual backup procedure; V0.4 does not add an automatic backup service.
 
 ## Test Isolation
 
