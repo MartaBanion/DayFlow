@@ -11,6 +11,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from app.core.errors import (
     CategoryNameConflictError,
     CategoryNotFoundError,
+    ProjectNotFoundError,
     ScheduleConflictError,
     ScheduleValidationError,
     TagNameConflictError,
@@ -26,6 +27,7 @@ from app.core.schedule import (
     validate_persisted_schedule,
 )
 from app.models.category import Category
+from app.models.project import Project
 from app.models.tag import Tag, task_tags
 from app.models.task import Task, TaskPriority, TaskStatus
 from app.schemas.task import (
@@ -50,6 +52,7 @@ class TaskService:
     ) -> Task:
         try:
             category = self._resolve_category(session, payload.category_id)
+            project = self._resolve_project(session, payload.project_id)
             tags = self._resolve_tags(session, payload.tag_ids)
             start_at_utc, end_at_utc, schedule_timezone = self._schedule_for_create(
                 payload
@@ -66,6 +69,7 @@ class TaskService:
                 planned_date=payload.planned_date,
                 priority=payload.priority.value,
                 category=category,
+                project=project,
                 tags=tags,
                 start_at_utc=start_at_utc,
                 end_at_utc=end_at_utc,
@@ -88,11 +92,16 @@ class TaskService:
         query: str | None = None,
         priority: str | None = None,
         category_id: str | None = None,
+        project_id: str | None = None,
         tag_id: str | None = None,
     ) -> list[Task]:
         statement = (
             select(Task)
-            .options(selectinload(Task.category), selectinload(Task.tags))
+            .options(
+                selectinload(Task.category),
+                selectinload(Task.project),
+                selectinload(Task.tags),
+            )
             .where(Task.deleted_at_utc.is_(None))
         )
         if planned_date is not None:
@@ -114,6 +123,8 @@ class TaskService:
             statement = statement.where(Task.priority == priority)
         if category_id is not None:
             statement = statement.where(Task.category_id == category_id)
+        if project_id is not None:
+            statement = statement.where(Task.project_id == project_id)
         if tag_id is not None:
             statement = statement.join(
                 task_tags, task_tags.c.task_id == Task.id
@@ -132,7 +143,11 @@ class TaskService:
     def calendar(self, session: Session, start_date: date, end_date: date) -> list[Task]:
         statement = (
             select(Task)
-            .options(selectinload(Task.category), selectinload(Task.tags))
+            .options(
+                selectinload(Task.category),
+                selectinload(Task.project),
+                selectinload(Task.tags),
+            )
             .where(
                 Task.deleted_at_utc.is_(None),
                 Task.planned_date >= start_date,
@@ -151,7 +166,11 @@ class TaskService:
     def get(self, session: Session, task_id: str) -> Task:
         task = session.scalar(
             select(Task)
-            .options(selectinload(Task.category), selectinload(Task.tags))
+            .options(
+                selectinload(Task.category),
+                selectinload(Task.project),
+                selectinload(Task.tags),
+            )
             .where(Task.id == task_id, Task.deleted_at_utc.is_(None))
         )
         if task is None:
@@ -175,10 +194,16 @@ class TaskService:
                 return task
 
             category_requested = "category_id" in changes
+            project_requested = "project_id" in changes
             tag_ids_requested = "tag_ids" in changes
             category = (
                 self._resolve_category(session, changes["category_id"])
                 if category_requested
+                else None
+            )
+            project = (
+                self._resolve_project(session, changes["project_id"])
+                if project_requested
                 else None
             )
             tags = (
@@ -205,6 +230,11 @@ class TaskService:
             if category_requested:
                 category_id = category.id if category is not None else None
                 if task.category_id != category_id:
+                    changed = True
+
+            if project_requested:
+                project_id = project.id if project is not None else None
+                if task.project_id != project_id:
                     changed = True
 
             if tag_ids_requested:
@@ -243,6 +273,9 @@ class TaskService:
             if category_requested:
                 task.category = category
 
+            if project_requested:
+                task.project = project
+
             if tag_ids_requested:
                 task.tags = tags or []
 
@@ -272,7 +305,11 @@ class TaskService:
     def restore(self, session: Session, task_id: str, expected_version: int) -> Task:
         task = session.scalar(
             select(Task)
-            .options(selectinload(Task.category), selectinload(Task.tags))
+            .options(
+                selectinload(Task.category),
+                selectinload(Task.project),
+                selectinload(Task.tags),
+            )
             .where(Task.id == task_id)
         )
         if task is None:
@@ -504,6 +541,21 @@ class TaskService:
         if category is None:
             raise CategoryNotFoundError(resolved_id)
         return category
+
+    @staticmethod
+    def _resolve_project(session: Session, project_id) -> Project | None:
+        if project_id is None:
+            return None
+        resolved_id = str(project_id)
+        project = session.scalar(
+            select(Project).where(
+                Project.id == resolved_id,
+                Project.deleted_at_utc.is_(None),
+            )
+        )
+        if project is None:
+            raise ProjectNotFoundError(resolved_id)
+        return project
 
     @staticmethod
     def _resolve_tags(session: Session, tag_ids) -> list[Tag]:

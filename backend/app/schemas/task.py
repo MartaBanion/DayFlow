@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from app.models.task import Task, TaskPriority, TaskStatus
+from app.schemas.project import ProjectSummary
 
 
 class TaskStatusValue(StrEnum):
@@ -59,6 +60,7 @@ class TaskCreate(BaseModel):
     planned_date: date | None = None
     priority: PriorityValue = PriorityValue.NORMAL
     category_id: UUID | None = None
+    project_id: UUID | None = None
     tag_ids: list[UUID] = Field(default_factory=list)
     schedule: ScheduleInput | None = None
 
@@ -87,6 +89,7 @@ class TaskUpdate(BaseModel):
     # rejected during request validation.
     priority: PriorityValue = PriorityValue.NORMAL
     category_id: UUID | None = None
+    project_id: UUID | None = None
     tag_ids: list[UUID] | None = None
     # ``exclude_unset`` distinguishes omitted schedule from explicit null,
     # which is required to preserve versus clear a time block.
@@ -170,6 +173,8 @@ class TaskRead(BaseModel):
     planned_date: date | None
     priority: PriorityValue
     category: CategoryRead | None
+    project_id: str | None = None
+    project: ProjectSummary | None = None
     tags: list[TagRead] = Field(default_factory=list)
     start_at_utc: datetime | None
     end_at_utc: datetime | None

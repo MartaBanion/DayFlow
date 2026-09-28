@@ -38,6 +38,36 @@ class TaskVersionConflictError(AppError):
         )
 
 
+class ProjectNotFoundError(AppError):
+    def __init__(self, project_id: str):
+        super().__init__(
+            "project_not_found", f"Project '{project_id}' was not found", 404
+        )
+
+
+class ProjectVersionConflictError(AppError):
+    def __init__(self, project_id: str, expected: int, actual: int):
+        super().__init__(
+            "project_version_conflict",
+            "Project changed since it was loaded; refresh before saving",
+            409,
+            {
+                "project_id": project_id,
+                "expected_version": expected,
+                "actual_version": actual,
+            },
+        )
+
+
+class ProjectNameConflictError(AppError):
+    def __init__(self, name: str):
+        super().__init__(
+            "project_name_conflict",
+            f"A project named '{name}' already exists",
+            409,
+        )
+
+
 class CategoryNotFoundError(AppError):
     def __init__(self, category_id: str):
         super().__init__(

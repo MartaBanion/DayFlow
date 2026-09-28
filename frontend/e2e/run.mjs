@@ -13,7 +13,7 @@ const backendRoot = join(projectRoot, 'backend')
 const realDatabasePath = resolve(projectRoot, 'data', 'dayflow.sqlite3')
 const backendPort = 18000
 const frontendPort = 15173
-const expectedMigration = '0003_add_task_schedule'
+const expectedMigration = '0004_add_projects'
 
 const processes = new Set()
 let activePlaywright

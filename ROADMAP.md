@@ -80,7 +80,9 @@ this roadmap entry.
 
 ### V0.4 — Projects
 
-Status: Architecture frozen; implementation not started.
+Status: Phase 1 Backend and Migration 0004 implemented and tested on temporary
+databases; Project Frontend not started. The real database remains at
+`0003_add_task_schedule` pending explicit migration approval.
 
 Scope:
 
@@ -111,10 +113,10 @@ Explicitly out of scope:
 - Project colors, icons, deadlines, start dates, sorting, archive, pause
 - Project AI, external integrations, reminders, and recurrence
 
-V0.4 implementation order is: temporary `0004` migration rehearsal, Backend
-model/service/API and tests, Frontend Hash views and Task Editor integration,
-Vitest and Browser E2E regression, real-data backup and migration approval,
-manual acceptance, then release review.
+V0.4 implementation order is: Phase 1 temporary `0004` migration rehearsal,
+Backend model/service/API and tests, Phase 1 review, then Frontend Hash views
+and Task Editor integration, Vitest and Browser E2E regression, real-data
+backup and migration approval, manual acceptance, then release review.
 
 ## Later
 

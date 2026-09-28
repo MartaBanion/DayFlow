@@ -35,6 +35,7 @@ def list_tasks(
     q: str | None = Query(default=None, max_length=200),
     priority: PriorityValue | None = None,
     category_id: UUID | None = None,
+    project_id: UUID | None = None,
     tag_id: UUID | None = None,
     session: Session = Depends(db_session),
 ) -> list[TaskRead]:
@@ -45,6 +46,7 @@ def list_tasks(
         query=q.strip() if q and q.strip() else None,
         priority=priority.value if priority is not None else None,
         category_id=str(category_id) if category_id is not None else None,
+        project_id=str(project_id) if project_id is not None else None,
         tag_id=str(tag_id) if tag_id is not None else None,
     )
 

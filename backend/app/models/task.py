@@ -14,6 +14,7 @@ from app.db.types import UTCDateTime
 
 if TYPE_CHECKING:
     from app.models.category import Category
+    from app.models.project import Project
     from app.models.tag import Tag
 
 
@@ -51,6 +52,7 @@ class Task(Base):
         CheckConstraint("version >= 1", name="ck_tasks_version_positive"),
         Index("ix_tasks_planned_date_deleted", "planned_date", "deleted_at_utc"),
         Index("ix_tasks_category_deleted", "category_id", "deleted_at_utc"),
+        Index("ix_tasks_project_deleted", "project_id", "deleted_at_utc"),
     )
 
     id: Mapped[str] = mapped_column(
@@ -76,6 +78,11 @@ class Task(Base):
         ForeignKey("categories.id", ondelete="SET NULL"),
         nullable=True,
     )
+    project_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("projects.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     start_at_utc: Mapped[datetime | None] = mapped_column(
         UTCDateTime(), nullable=True
     )
@@ -98,6 +105,9 @@ class Task(Base):
     )
     category: Mapped["Category | None"] = relationship(
         "Category", back_populates="tasks", lazy="selectin"
+    )
+    project: Mapped["Project | None"] = relationship(
+        "Project", back_populates="tasks", lazy="selectin"
     )
     tags: Mapped[list["Tag"]] = relationship(
         "Tag", secondary="task_tags", back_populates="tasks", lazy="selectin"

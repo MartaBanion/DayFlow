@@ -6,9 +6,10 @@ The current stable release is **v0.3.1**. It contains the V0.1 Task
 foundation, V0.2 Inbox and organization features, and the V0.3 Calendar and
 Time Blocking implementation with the V0.3.1 UI/UX polish release.
 
-V0.4 Projects architecture is frozen for implementation review, but Project
-product code and Migration 0004 have not yet been implemented. The real
-database is currently at `0003_add_task_schedule`.
+V0.4 Phase 1 Project Backend, Migration 0004, and their tests are implemented
+and validated on isolated temporary databases. Project Frontend product code
+has not started. The real database remains at `0003_add_task_schedule` until
+explicit migration approval.
 
 ## Architecture
 
@@ -265,10 +266,10 @@ V0.3 schema work is implemented as `0003_add_task_schedule`, based on
 `0002_add_priority_categories_tags`; the real database is now at `0003`.
 `0001` and `0002` remain immutable.
 
-V0.4 schema work is planned as `0004_add_projects`, based on `0003`. It must be
-tested on a clean temporary database and a copy of the real database before any
-real-data migration approval. Existing Tasks must retain all legacy values and
-receive `project_id = NULL`.
+V0.4 schema work is implemented as `0004_add_projects`, based on `0003`, and
+has been tested on clean temporary databases. It must also be tested on a copy
+of the real database before any real-data migration approval. Existing Tasks
+must retain all legacy values and receive `project_id = NULL`.
 
 Before a real-data migration, the Backend must be stopped, a verified backup
 must be created, and the migration must pass on a copy of the current database.
@@ -288,8 +289,9 @@ The V0.4 implementation order is:
 
 ```text
 0004 temporary migration → Project backend/model/API → backend regression
-tests → Hash-based Project list/detail → Task Editor integration → Vitest and
-Browser E2E → real-data backup and migration approval → manual acceptance
+tests → Phase 1 review → Hash-based Project list/detail → Task Editor
+integration → Vitest and Browser E2E → real-data backup and migration approval
+→ manual acceptance
 ```
 
 No V0.4 product implementation may enter a release outside its approved

@@ -121,10 +121,11 @@ One Task has at most one Time Block. A separate `time_blocks` table is deferred
 until multiple blocks, split execution, or external Calendar Events become a
 real requirement.
 
-## V0.4 Schema Plan: `0004_add_projects`
+## V0.4 Schema: `0004_add_projects`
 
-`0004_add_projects` is a design plan only. It must depend on
-`0003_add_task_schedule`, and it must not modify `0001`, `0002`, or `0003`.
+`0004_add_projects` depends on `0003_add_task_schedule` and does not modify
+`0001`, `0002`, or `0003`. It is implemented and tested on temporary
+databases, but has not been applied to the real database.
 
 ### Projects
 
@@ -162,9 +163,11 @@ service rules. Progress is not a column: it is calculated from active Tasks as
 On upgrade from the real V0.3.1 schema, all existing Tasks must retain their
 IDs, titles, descriptions, statuses, dates, completion/deletion timestamps,
 priorities, Categories, Tags, schedule fields, and versions. Their new
-`project_id` value must be `NULL`. SQLite batch migration is allowed where table
+`project_id` value must be `NULL`. SQLite batch migration is used where table
 recreation is required, with foreign-key enforcement enabled on every
-connection.
+connection. Because recreating `tasks` can cascade-delete rows from
+`task_tags`, the migration temporarily backs up and restores the normalized
+tag relationships around the batch operation.
 
 Downgrade must fail closed if any Project row exists or any Task has a
 non-`NULL` `project_id`; it must never silently discard Project data or
@@ -173,19 +176,18 @@ is empty and whose Task relationships are all `NULL`.
 
 Before real migration, stop the Backend, create and verify a backup, migrate a
 temporary copy from `0003` to `0004`, compare all legacy Task fields and IDs,
-test Project relationships/progress and rollback behavior, then request
-explicit approval. Do not create or run this migration in the current design
-review phase.
+verify Category/Tag relationships and schedule fields, test Project
+relationships/progress and rollback behavior, then request explicit approval.
+Do not run this migration against the real database without that approval.
 
 ## Migration Procedure
 
-Before applying any future migration to real data (the next planned one is
-`0004_add_projects`):
+Before applying `0004_add_projects` to real data:
 
 1. Keep the Backend stopped.
 2. Create and verify a pre-migration backup.
 3. Copy the real V0.3.1 database to a temporary test location.
-4. Run the candidate `0004` only against the copy.
+4. Run `0004` only against the copy.
 5. Verify `integrity_check` and `foreign_key_check`.
 6. Verify Alembic head and all legacy Task fields.
 7. Verify `project_id` is `NULL` for existing Tasks and all V0.3 schedule
