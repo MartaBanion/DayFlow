@@ -9,13 +9,17 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: V0.3.1
+## Current Schema: V0.4.0
 
 The real database is currently at:
 
 ```text
-0003_add_task_schedule
+0004_add_projects
 ```
+
+Current application version: `v0.4.0`. V0.4 Projects functionality is
+complete, the Project Backend and Frontend are implemented, and final acceptance
+and database verification passed. V0.5 is the next planned development version.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -40,6 +44,7 @@ columns.
 | `start_at_utc` | `VARCHAR(32)` | yes | Optional Time Block start UTC instant |
 | `end_at_utc` | `VARCHAR(32)` | yes | Optional Time Block end UTC instant |
 | `schedule_timezone` | `VARCHAR(64)` | yes | IANA timezone for the Time Block |
+| `project_id` | `VARCHAR(36)` | yes | Nullable Project foreign key |
 
 ### Organization Tables
 
@@ -124,8 +129,8 @@ real requirement.
 ## V0.4 Schema: `0004_add_projects`
 
 `0004_add_projects` depends on `0003_add_task_schedule` and does not modify
-`0001`, `0002`, or `0003`. It is implemented and tested on temporary
-databases, but has not been applied to the real database.
+`0001`, `0002`, or `0003`. It is implemented, tested on temporary and real-data
+copies, and applied to the real database after backup and explicit approval.
 
 ### Projects
 
@@ -160,7 +165,7 @@ service rules. Progress is not a column: it is calculated from active Tasks as
 
 ### Migration Safety and Downgrade
 
-On upgrade from the real V0.3.1 schema, all existing Tasks must retain their
+The upgrade from the V0.3.1 schema retained all existing Tasks'
 IDs, titles, descriptions, statuses, dates, completion/deletion timestamps,
 priorities, Categories, Tags, schedule fields, and versions. Their new
 `project_id` value must be `NULL`. SQLite batch migration is used where table
@@ -174,15 +179,14 @@ non-`NULL` `project_id`; it must never silently discard Project data or
 relationships. Downgrade is safe only for a test database whose Project table
 is empty and whose Task relationships are all `NULL`.
 
-Before real migration, stop the Backend, create and verify a backup, migrate a
-temporary copy from `0003` to `0004`, compare all legacy Task fields and IDs,
-verify Category/Tag relationships and schedule fields, test Project
-relationships/progress and rollback behavior, then request explicit approval.
-Do not run this migration against the real database without that approval.
+The real-data migration followed the same procedure: Backend stopped, verified
+pre-migration backup created, temporary-copy migration and regression checks
+completed, then explicit approval was obtained before applying `0004`.
 
-## Migration Procedure
+## Completed V0.4 Migration Procedure
 
-Before applying `0004_add_projects` to real data:
+The following procedure was completed before applying `0004_add_projects` to
+real data:
 
 1. Keep the Backend stopped.
 2. Create and verify a pre-migration backup.
@@ -195,7 +199,7 @@ Before applying `0004_add_projects` to real data:
 8. Test Project CRUD, assignment/clearing, delete detach semantics, progress,
    lifecycle transitions, rollback, and restart persistence on the copy.
 9. Run the complete Backend, Frontend, and Browser regression suites.
-10. Request explicit approval before upgrading the real database.
+10. Receive explicit approval before upgrading the real database.
 
 SQLite batch migration must be used where table recreation is required. The
 migration must not edit `0001_create_tasks` or
@@ -210,8 +214,9 @@ test database.
 
 ## Backup
 
-Stop the Backend before copying `data/dayflow.sqlite3`. DayFlow still uses the
-manual backup procedure; V0.4 does not add an automatic backup service.
+Stop the Backend before copying `data/dayflow.sqlite3`. Verified maintenance
+backups can use SQLite's Online Backup API; DayFlow still does not provide an
+automatic Backup Service or Restore UI.
 
 ## Test Isolation
 

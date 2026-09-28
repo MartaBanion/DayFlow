@@ -2,13 +2,11 @@
 
 ## Current Version
 
-The current stable release is **v0.3.1**. It contains the V0.1 Task
-foundation, V0.2 Inbox and organization features, and the V0.3 Calendar and
-Time Blocking implementation with the V0.3.1 UI/UX polish release.
-
-V0.4 Project Backend, Migration 0004, Project Frontend, and their tests are
-implemented and validated on isolated temporary databases. The real database
-remains at `0003_add_task_schedule` until explicit migration approval.
+Current application version: **v0.4.0** — V0.4 Projects.
+V0.4 Projects functionality is complete. The Project Backend, Migration 0004,
+Project Frontend, and their tests are implemented. Final acceptance and database
+verification passed, and the real database schema is `0004_add_projects`.
+V0.5 is the next planned development version.
 
 ## Architecture
 
@@ -262,13 +260,14 @@ loading, error, empty, and conflict states.
 ## Migration Safety
 
 V0.3 schema work is implemented as `0003_add_task_schedule`, based on
-`0002_add_priority_categories_tags`; the real database is now at `0003`.
+`0002_add_priority_categories_tags`; the real database advanced to `0004` after
+the V0.4 migration.
 `0001` and `0002` remain immutable.
 
 V0.4 schema work is implemented as `0004_add_projects`, based on `0003`, and
-has been tested on clean temporary databases. It must also be tested on a copy
-of the real database before any real-data migration approval. Existing Tasks
-must retain all legacy values and receive `project_id = NULL`.
+has been tested on clean and real-data temporary copies before approval. It is
+now applied to the real database. Existing Tasks retained all legacy values
+and received `project_id = NULL`.
 
 Before a real-data migration, the Backend must be stopped, a verified backup
 must be created, and the migration must pass on a copy of the current database.
@@ -284,13 +283,13 @@ The approved order is:
 → Vitest → Browser E2E → real-data migration approval → manual acceptance
 ```
 
-The V0.4 implementation order is:
+The V0.4 implementation order was:
 
 ```text
 0004 temporary migration → Project backend/model/API → backend regression
 tests → Phase 1 review → Hash-based Project list/detail → Task Editor
 integration → Vitest and Browser E2E → real-data backup and migration approval
-→ manual acceptance
+→ final acceptance and database verification
 ```
 
 No V0.4 product implementation may enter a release outside its approved

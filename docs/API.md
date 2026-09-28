@@ -6,6 +6,13 @@
 /api/v1
 ```
 
+## Current Version
+
+Current application version: `v0.4.0`. V0.4 Projects functionality is complete;
+the Project Backend and Frontend are implemented. Final acceptance and database
+verification passed, and the real database schema is `0004_add_projects`. V0.5
+is the next planned development version.
+
 ## Current System Endpoint
 
 ```http

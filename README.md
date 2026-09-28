@@ -4,12 +4,11 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**v0.3.1 — stable release.** Inbox, Task organization, Search, Calendar
-Day/Week/Month views, single-Task Time Blocks, and the V0.3.1 UI/UX polish are
-complete. The current development target is **v0.4.0 — V0.4 Projects**. Project
-Backend, Migration 0004, Project Frontend, and acceptance tests are implemented
-and validated on temporary databases; the real database remains at
-`0003_add_task_schedule` pending explicit migration approval.
+**Current application version: v0.4.0.** V0.4 Projects functionality is
+complete. The Project Backend, Migration 0004, Project Frontend, and acceptance
+tests are implemented. Final acceptance and database verification passed, and
+the real database schema is `0004_add_projects`. V0.5 is the next planned
+development version.
 
 ## V0.1 Features
 
@@ -37,7 +36,7 @@ V0.2 keeps the V0.1 API paths and behavior compatible. The `v0.2.0` and
 `v0.2.1` release tags are local stable checkpoints. V0.3 adds the Hash-based
 Calendar frontend, Day/Week/Month views, Task Editor Time Blocking, Calendar
 range API, Runtime API, timezone/DST validation, and conflict detection. The
-real database is currently at `0003_add_task_schedule`.
+real database was later upgraded to `0004_add_projects` for V0.4.
 
 V0.1 deliberately excluded Projects, Priority, Category, Tags, Reminders,
 Recurrence, Calendar, AI, and ScheduleBlock.
@@ -46,6 +45,15 @@ V0.3 adds Calendar, Day/Week/Month views, date-only Tasks, and one optional
 Time Block per Task. V0.3 does not include Drag & Drop, Resize, cross-day Time
 Blocks, Repeat, Projects, Reminders, AI Scheduling, or external Calendar
 integration.
+
+## V0.4 Features
+
+- Project CRUD with Hash-based Project list and detail views.
+- Project assignment and clearing from Task Editor and existing Task views.
+- Project progress, complete/reopen, soft delete, and restore.
+- Project-aware Search filtering with existing Today, Inbox, and Calendar flows.
+- Migration `0004_add_projects`, temporary-database validation, and real-data
+  migration acceptance.
 
 ## Technology
 
@@ -64,7 +72,10 @@ data/dayflow.sqlite3
 
 It is excluded from Git. V0.1 does not provide an automated Backup Service or Restore UI.
 
-For a manual backup, stop the Backend first, then copy `data/dayflow.sqlite3` to a location outside the repository with a timestamped name. Do not copy the database while the Backend is writing to it.
+For a manual backup, stop the Backend first, then create a timestamped backup
+with SQLite's Online Backup API or copy `data/dayflow.sqlite3` to a location
+outside the repository. Do not copy the database while the Backend is writing
+to it. DayFlow still has no automatic Backup Service or Restore UI.
 
 ## Development Setup
 
@@ -77,11 +88,11 @@ npm ci --prefix frontend
 DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend alembic upgrade head
 ```
 
-The real SQLite file is managed by Alembic and remains at
-`0003_add_task_schedule` while V0.4 real-data migration is pending explicit
-approval. Runtime code does not call `Base.metadata.create_all()`. Before
-applying any future migration to real data, stop the Backend, create a verified
-backup, and validate the migration on a copy of the current database first.
+The real SQLite file is managed by Alembic and is currently at
+`0004_add_projects`. Runtime code does not call `Base.metadata.create_all()`.
+Before applying any future migration to real data, stop the Backend, create a
+verified backup, and validate the migration on a copy of the current database
+first.
 
 ## Run
 
@@ -91,10 +102,9 @@ Backend:
 DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-The V0.3 development command above uses the temporary database initialized
-by the setup command. Do not start the V0.3 Backend against
-`data/dayflow.sqlite3` until the real-data migration has been separately
-approved.
+The development command above uses the temporary database initialized by the
+setup command. Use isolated temporary databases for tests and migration
+rehearsals; reserve `data/dayflow.sqlite3` for normal personal use.
 
 Frontend:
 

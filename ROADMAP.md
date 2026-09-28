@@ -1,7 +1,9 @@
 # DayFlow Personal Roadmap
 
-Current stable release: **v0.3.1**. Current development target: **v0.4.0 —
-V0.4 Projects**. The real database is at `0003_add_task_schedule`.
+Current application version: **v0.4.0 — V0.4 Projects**. V0.4 Projects
+functionality is complete. The Project Backend and Frontend are implemented;
+final acceptance and database verification passed. The real database schema is
+`0004_add_projects`. V0.5 is the next planned development version.
 
 ## Current
 
@@ -43,7 +45,8 @@ work released as `v0.2.1`.
 ### V0.3 — Calendar and Time Blocking
 
 Status: Completed and released as `v0.3.0`; UI/UX polish released as
-`v0.3.1`. The real database is at `0003_add_task_schedule`.
+`v0.3.1`. Its schema is `0003_add_task_schedule`; the real database later
+advanced to `0004_add_projects` during V0.4 preparation.
 
 Scope:
 
@@ -80,10 +83,9 @@ this roadmap entry.
 
 ### V0.4 — Projects
 
-Status: Phase 1 Backend, Migration 0004, Phase 2 Project Frontend, and Phase 3
-acceptance are implemented and validated on temporary databases. Release
-preparation is in progress; the real database remains at
-`0003_add_task_schedule` pending explicit migration approval.
+Status: Completed. Phase 1 Backend, Migration 0004, Phase 2 Project Frontend,
+Phase 3 acceptance, and real-data migration are complete. The real database is
+at `0004_add_projects`.
 
 Scope:
 
@@ -95,7 +97,8 @@ Scope:
 - Dynamic Project progress from active Tasks, with empty Projects at 0%
 - Project-aware Task filtering and compact Project display in existing views
 - Optimistic Version, atomic relationship updates, and grouped progress queries
-- `0004_add_projects` tested on temporary databases before real-data approval
+- `0004_add_projects` tested on temporary databases and applied to real data
+  after backup and explicit approval
 
 Frozen lifecycle rules:
 
@@ -116,9 +119,9 @@ Explicitly out of scope:
 
 V0.4 implementation completed in this order: Phase 1 temporary `0004`
 migration rehearsal and Backend model/service/API, Phase 2 Frontend Hash views
-and Task Editor integration, Vitest and Browser E2E regression, and Phase 3
-full acceptance. Real-data migration approval and the `v0.4.0` release remain
-pending.
+and Task Editor integration, Vitest and Browser E2E regression, Phase 3 full
+acceptance, and approved real-data migration. V0.5 is the next planned
+development version.
 
 ## Later
 

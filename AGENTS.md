@@ -6,12 +6,11 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Stable release: `v0.3.1`.
-
-Current development target: `v0.4.0` — V0.4 Projects. The Project Backend,
-Migration 0004, Project Frontend, and acceptance tests are implemented and
-validated only on isolated temporary databases. The real database remains at
-`0003_add_task_schedule` until explicit migration approval.
+Current application version: `v0.4.0` — V0.4 Projects.
+V0.4 Projects functionality is complete. The Project Backend, Migration 0004,
+Project Frontend, and acceptance tests are implemented. Final acceptance and
+database verification passed, and the real database schema is
+`0004_add_projects`. V0.5 is the next planned development version.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -69,8 +68,9 @@ Only the version currently being implemented may be changed. Do not start later 
 - SQLite data is not source code and must not enter Git.
 - V0.2 Task organization and V0.3 schedule fields must be added only through
   Alembic.
-- The real database must remain at its approved migration until a verified
-  temporary-copy migration and explicit approval are complete.
+- The real database must remain at its currently approved migration until a
+  verified temporary-copy migration and explicit approval are complete. The
+  currently approved real-data migration is `0004_add_projects`.
 - Database writes go through services and transactions.
 - Do not use `Base.metadata.create_all()` in application runtime.
 
@@ -98,14 +98,15 @@ Only the version currently being implemented may be changed. Do not start later 
 ## Prohibited Actions
 
 - No Drag & Drop, Resize, Reminder, Recurrence, AI, external Calendar, PWA,
-  Authentication, Docker, CI/CD, or remote Git work during V0.4 release
-  preparation.
+  Authentication, Docker, CI/CD, or remote Git work during V0.4 development
+  and stabilization.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
 
-A V0.4 release candidate is complete only when Project Backend, Migration 0004,
+A V0.4 implementation is complete when Project Backend, Migration 0004,
 Project Frontend, and their tests run against isolated temporary `0004` data,
 V0.1–V0.3.1 regression tests pass, no secrets or personal data are exposed,
-documentation is synchronized, and the real database remains unchanged until
-explicit migration approval.
+documentation is synchronized, and the approved real database is verified at
+`0004_add_projects`. Final acceptance and database verification must be recorded
+before the next planned development version begins.
