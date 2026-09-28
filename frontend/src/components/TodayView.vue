@@ -2,11 +2,11 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { taskApi } from '../api'
+import { projectApi, taskApi } from '../api'
 import { getTaskErrorMessage } from '../constants/labels'
 import { calculateCompletionRate, formatDisplayDate } from '../date'
 import { updateTaskWithConflict } from '../taskSave'
-import type { Category, Tag, Task, TaskUpdatePayload } from '../types'
+import type { Category, Project, Tag, Task, TaskUpdatePayload } from '../types'
 import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
 import TaskEditor from './TaskEditor.vue'
@@ -26,6 +26,7 @@ const isEditDialogOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
+const projects = ref<Project[]>([])
 const metadataLoaded = ref(false)
 
 const pendingTasks = computed(() => tasks.value.filter((task) => task.status === 'pending'))
@@ -84,12 +85,14 @@ async function retryToday(): Promise<void> {
 async function loadMetadata(): Promise<void> {
   if (metadataLoaded.value) return
   try {
-    const [loadedCategories, loadedTags] = await Promise.all([
+    const [loadedCategories, loadedTags, loadedProjects] = await Promise.all([
       taskApi.listCategories(),
       taskApi.listTags(),
+      projectApi.list(),
     ])
     categories.value = loadedCategories
     tags.value = loadedTags
+    projects.value = loadedProjects
     metadataLoaded.value = true
   } catch (error) {
     showError(error)
@@ -362,6 +365,7 @@ onMounted(initializeToday)
     :task="editingTask"
     :categories="categories"
     :tags="tags"
+    :projects="projects"
     :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
     @update:open="isEditDialogOpen = $event"

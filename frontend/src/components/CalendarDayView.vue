@@ -51,6 +51,7 @@ function taskStyle(task: Task): Record<string, string> {
         @click="emit('select', task)"
       >
         <span>{{ task.title }}</span>
+        <small v-if="task.project">{{ task.project.name }}</small>
         <small v-if="task.status === 'completed'">已完成</small>
       </button>
       <p v-if="untimedTasks.length === 0" class="calendar-muted">暂无未安排时间的任务</p>
@@ -72,7 +73,7 @@ function taskStyle(task: Task): Record<string, string> {
           @click="emit('select', task)"
         >
           <strong>{{ task.title }}</strong>
-          <small>{{ taskTimeLabel(task) }}<span v-if="task.status === 'completed'"> · 已完成</span></small>
+          <small>{{ taskTimeLabel(task) }}<span v-if="task.project"> · {{ task.project.name }}</span><span v-if="task.status === 'completed'"> · 已完成</span></small>
         </button>
         <p v-if="timedTasks.length === 0" class="calendar-muted timeline-empty">暂无时间安排</p>
       </div>

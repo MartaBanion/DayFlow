@@ -2,10 +2,10 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { taskApi } from '../api'
+import { projectApi, taskApi } from '../api'
 import { getTaskErrorMessage } from '../constants/labels'
 import { updateTaskWithConflict } from '../taskSave'
-import type { Category, Tag, Task, TaskPriority, TaskUpdatePayload } from '../types'
+import type { Category, Project, Tag, Task, TaskPriority, TaskUpdatePayload } from '../types'
 import MetadataManager from './MetadataManager.vue'
 import TaskCard from './TaskCard.vue'
 import TaskEditor from './TaskEditor.vue'
@@ -23,13 +23,26 @@ const searchQuery = ref('')
 const priorityFilter = ref<TaskPriority | ''>('')
 const categoryFilter = ref('')
 const tagFilter = ref('')
+const projectFilter = ref('')
 const isSearchMode = computed(() => props.searchOnly || searchQuery.value.trim().length > 0)
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
+const projects = ref<Project[]>([])
 const metadataLoaded = ref(false)
 const isEditDialogOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 const runtimeTimezone = ref('')
+
+function taskListParams(): Parameters<typeof taskApi.list>[0] {
+  return {
+    inbox: !isSearchMode.value,
+    query: searchQuery.value.trim() || undefined,
+    priority: priorityFilter.value || undefined,
+    categoryId: categoryFilter.value || undefined,
+    tagId: tagFilter.value || undefined,
+    ...(projectFilter.value ? { projectId: projectFilter.value } : {}),
+  }
+}
 
 type RestoreTarget = Pick<Task, 'id' | 'version'>
 type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
@@ -47,13 +60,7 @@ async function loadTasks(): Promise<void> {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    tasks.value = await taskApi.list({
-      inbox: !isSearchMode.value,
-      query: searchQuery.value.trim() || undefined,
-      priority: priorityFilter.value || undefined,
-      categoryId: categoryFilter.value || undefined,
-      tagId: tagFilter.value || undefined,
-    })
+    tasks.value = await taskApi.list(taskListParams())
     loadState.value = 'loaded'
   } catch (error) {
     loadState.value = 'error'
@@ -65,12 +72,14 @@ async function loadTasks(): Promise<void> {
 
 async function loadMetadata(): Promise<void> {
   if (metadataLoaded.value) return
-  const [loadedCategories, loadedTags] = await Promise.all([
+  const [loadedCategories, loadedTags, loadedProjects] = await Promise.all([
     taskApi.listCategories(),
     taskApi.listTags(),
+    projectApi.list(),
   ])
   categories.value = loadedCategories
   tags.value = loadedTags
+  projects.value = loadedProjects
   metadataLoaded.value = true
 }
 
@@ -86,13 +95,7 @@ async function initializeInbox(): Promise<void> {
   errorMessage.value = ''
   try {
     await loadMetadata()
-    tasks.value = await taskApi.list({
-      inbox: !isSearchMode.value,
-      query: searchQuery.value.trim() || undefined,
-      priority: priorityFilter.value || undefined,
-      categoryId: categoryFilter.value || undefined,
-      tagId: tagFilter.value || undefined,
-    })
+    tasks.value = await taskApi.list(taskListParams())
     loadState.value = 'loaded'
   } catch (error) {
     loadState.value = 'error'
@@ -328,6 +331,9 @@ onMounted(initializeInbox)
         <el-select v-model="tagFilter" clearable placeholder="标签" @change="loadTasks">
           <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
         </el-select>
+        <el-select v-model="projectFilter" clearable placeholder="项目" @change="loadTasks">
+          <el-option v-for="project in projects" :key="project.id" :label="project.name" :value="project.id" />
+        </el-select>
       </div>
     </section>
 
@@ -368,6 +374,7 @@ onMounted(initializeInbox)
     :task="editingTask"
     :categories="categories"
     :tags="tags"
+    :projects="projects"
     :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
     @update:open="isEditDialogOpen = $event"

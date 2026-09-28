@@ -51,6 +51,9 @@ const emit = defineEmits<{
           <el-tag v-if="task.category" effect="plain" size="small">
             {{ task.category.name }}
           </el-tag>
+          <el-tag v-if="task.project" effect="plain" size="small">
+            {{ task.project.name }}
+          </el-tag>
           <el-tag v-for="tag in task.tags" :key="tag.id" effect="plain" size="small">
             {{ tag.name }}
           </el-tag>

@@ -4,20 +4,34 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import InboxView from './components/InboxView.vue'
 import TodayView from './components/TodayView.vue'
 import CalendarView from './components/CalendarView.vue'
+import ProjectDetailView from './components/ProjectDetailView.vue'
+import ProjectsView from './components/ProjectsView.vue'
 
-type ViewName = 'today' | 'inbox' | 'calendar' | 'search'
+type ViewName = 'today' | 'inbox' | 'calendar' | 'search' | 'projects' | 'project-detail'
 
 function viewFromHash(): ViewName {
-  if (window.location.hash === '#inbox') return 'inbox'
-  if (window.location.hash === '#calendar') return 'calendar'
-  if (window.location.hash === '#search') return 'search'
+  const hash = window.location.hash
+  if (hash === '#inbox') return 'inbox'
+  if (hash === '#calendar') return 'calendar'
+  if (hash === '#search') return 'search'
+  if (hash === '#projects') return 'projects'
+  if (hash.startsWith('#project:')) return 'project-detail'
   return 'today'
 }
 
+function projectIdFromHash(): string | null {
+  const prefix = '#project:'
+  return window.location.hash.startsWith(prefix)
+    ? window.location.hash.slice(prefix.length) || null
+    : null
+}
+
 const currentView = ref<ViewName>(viewFromHash())
+const currentProjectId = ref<string | null>(projectIdFromHash())
 
 function syncViewFromHash(): void {
   currentView.value = viewFromHash()
+  currentProjectId.value = projectIdFromHash()
 }
 
 onMounted(() => window.addEventListener('hashchange', syncViewFromHash))
@@ -68,7 +82,14 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         >
           搜索 <span>04</span>
         </a>
-        <span class="nav-item is-disabled">项目</span>
+        <a
+          class="nav-item"
+          :class="{ 'is-active': currentView === 'projects' || currentView === 'project-detail' }"
+          href="#projects"
+          @click="currentView = 'projects'"
+        >
+          项目 <span>05</span>
+        </a>
       </nav>
 
       <div class="sidebar-note">
@@ -77,15 +98,26 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       </div>
 
       <div class="sidebar-footer">
-        <el-tag type="info" effect="plain">v0.3.0</el-tag>
+        <el-tag type="info" effect="plain">v0.3.1</el-tag>
         <span>本地优先</span>
       </div>
     </aside>
 
-    <main class="workspace" :class="{ 'workspace-calendar': currentView === 'calendar' }">
+    <main
+      class="workspace"
+      :class="{
+        'workspace-calendar': currentView === 'calendar',
+        'workspace-projects': currentView === 'projects' || currentView === 'project-detail',
+      }"
+    >
       <TodayView v-if="currentView === 'today'" />
       <InboxView v-else-if="currentView === 'inbox'" />
       <InboxView v-else-if="currentView === 'search'" search-only />
+      <ProjectsView v-else-if="currentView === 'projects'" />
+      <ProjectDetailView
+        v-else-if="currentView === 'project-detail'"
+        :project-id="currentProjectId ?? ''"
+      />
       <CalendarView v-else />
     </main>
   </div>

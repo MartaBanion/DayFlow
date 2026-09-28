@@ -7,6 +7,10 @@ import type {
   RuntimeInfo,
   TaskUpdatePayload,
   Tag,
+  Project,
+  ProjectCreatePayload,
+  ProjectStatus,
+  ProjectUpdatePayload,
 } from './types'
 
 const API_BASE = '/api/v1'
@@ -79,6 +83,7 @@ export const taskApi = {
     priority?: TaskPriority
     categoryId?: string
     tagId?: string
+    projectId?: string
   } = {}): Promise<Task[]> {
     const query = new URLSearchParams()
     if (params.inbox) query.set('inbox', 'true')
@@ -86,6 +91,7 @@ export const taskApi = {
     if (params.priority) query.set('priority', params.priority)
     if (params.categoryId) query.set('category_id', params.categoryId)
     if (params.tagId) query.set('tag_id', params.tagId)
+    if (params.projectId) query.set('project_id', params.projectId)
     const suffix = query.toString() ? `?${query.toString()}` : ''
     return request<Task[]>(`/tasks${suffix}`)
   },
@@ -173,6 +179,59 @@ export const taskApi = {
   remove(id: string, version: number): Promise<void> {
     return request<void>(
       `/tasks/${encodeURIComponent(id)}`,
+      jsonRequest('DELETE', { version }),
+    )
+  },
+}
+
+export const projectApi = {
+  list(params: { includeDeleted?: boolean; status?: ProjectStatus } = {}): Promise<Project[]> {
+    const query = new URLSearchParams()
+    if (params.includeDeleted) query.set('include_deleted', 'true')
+    if (params.status) query.set('status', params.status)
+    const suffix = query.toString() ? `?${query.toString()}` : ''
+    return request<Project[]>(`/projects${suffix}`)
+  },
+
+  get(id: string): Promise<Project> {
+    return request<Project>(`/projects/${encodeURIComponent(id)}`)
+  },
+
+  create(payload: ProjectCreatePayload): Promise<Project> {
+    return request<Project>('/projects', jsonRequest('POST', payload))
+  },
+
+  update(id: string, version: number, payload: ProjectUpdatePayload): Promise<Project> {
+    return request<Project>(
+      `/projects/${encodeURIComponent(id)}?version=${encodeURIComponent(String(version))}`,
+      jsonRequest('PATCH', payload),
+    )
+  },
+
+  complete(id: string, version: number): Promise<Project> {
+    return request<Project>(
+      `/projects/${encodeURIComponent(id)}/complete`,
+      jsonRequest('POST', { version }),
+    )
+  },
+
+  reopen(id: string, version: number): Promise<Project> {
+    return request<Project>(
+      `/projects/${encodeURIComponent(id)}/reopen`,
+      jsonRequest('POST', { version }),
+    )
+  },
+
+  restore(id: string, version: number): Promise<Project> {
+    return request<Project>(
+      `/projects/${encodeURIComponent(id)}/restore`,
+      jsonRequest('POST', { version }),
+    )
+  },
+
+  remove(id: string, version: number): Promise<void> {
+    return request<void>(
+      `/projects/${encodeURIComponent(id)}`,
       jsonRequest('DELETE', { version }),
     )
   },

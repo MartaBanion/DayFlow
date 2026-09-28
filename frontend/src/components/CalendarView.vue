@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { taskApi } from '../api'
+import { projectApi, taskApi } from '../api'
 import {
   calendarRange,
   formatCalendarDayTitle,
@@ -16,6 +16,7 @@ import { getCalendarErrorMessage } from '../constants/labels'
 import { createTaskWithConflict, updateTaskWithConflict } from '../taskSave'
 import type {
   Category,
+  Project,
   Tag,
   Task,
   TaskCreatePayload,
@@ -42,6 +43,7 @@ const editingTask = ref<Task | null>(null)
 const editorInitialDate = ref('')
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
+const projects = ref<Project[]>([])
 const metadataLoaded = ref(false)
 
 const range = computed(() => calendarRange(mode.value, anchorDate.value || '2000-01-01'))
@@ -117,12 +119,14 @@ async function goToToday(): Promise<void> {
 async function loadMetadata(): Promise<boolean> {
   if (metadataLoaded.value) return true
   try {
-    const [loadedCategories, loadedTags] = await Promise.all([
+    const [loadedCategories, loadedTags, loadedProjects] = await Promise.all([
       taskApi.listCategories(),
       taskApi.listTags(),
+      projectApi.list(),
     ])
     categories.value = loadedCategories
     tags.value = loadedTags
+    projects.value = loadedProjects
     metadataLoaded.value = true
     return true
   } catch (error) {
@@ -178,6 +182,7 @@ async function saveTask(payload: TaskUpdatePayload): Promise<void> {
         priority: payload.priority,
         category_id: payload.category_id,
         tag_ids: payload.tag_ids,
+        project_id: payload.project_id,
         schedule: payload.schedule,
       }
       saved = await createTaskWithConflict(createPayload, confirmScheduleConflict)
@@ -297,6 +302,7 @@ onMounted(initializeCalendar)
     :runtime-timezone="runtime?.timezone"
     :categories="categories"
     :tags="tags"
+    :projects="projects"
     :saving="isSaving"
     @update:open="isEditorOpen = $event"
     @submit="saveTask"

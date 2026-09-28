@@ -140,6 +140,10 @@ textarea {
   max-width: 1680px;
 }
 
+.workspace.workspace-projects {
+  width: min(100%, 1280px);
+}
+
 .page-header,
 .section-heading,
 .task-heading,
@@ -426,6 +430,162 @@ textarea {
   flex: 0 0 auto;
   align-items: center;
   gap: 2px;
+}
+
+.project-section {
+  margin-top: 34px;
+}
+
+.deleted-project-section {
+  padding-top: 4px;
+  border-top: 1px solid #edf1f6;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.project-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.project-card.is-completed {
+  background: #fbfcfd;
+}
+
+.project-card.is-deleted {
+  border-style: dashed;
+  background: #fbfcfd;
+}
+
+.project-card-main {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.project-card-main:hover h4 {
+  color: #2f7d73;
+}
+
+.project-card-heading,
+.project-progress-row,
+.project-detail-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.project-card-heading h4 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #243047;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-description {
+  margin: 10px 0 0;
+  overflow: hidden;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-progress-row {
+  margin-top: 18px;
+  color: #667085;
+  font-size: 12px;
+}
+
+.project-progress-row strong,
+.project-detail-status-row strong {
+  color: #245f58;
+  font-size: 15px;
+}
+
+.project-card .el-progress {
+  margin-top: 8px;
+}
+
+.project-card-meta {
+  margin: 9px 0 0;
+  color: #98a2b3;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.project-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px;
+  border-top: 1px solid #edf1f6;
+  padding-top: 10px;
+}
+
+.project-detail-header {
+  align-items: flex-start;
+}
+
+.back-link {
+  display: block;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  color: #477d76;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.back-link:hover {
+  color: #245f58;
+  text-decoration: underline;
+}
+
+.project-detail-summary {
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.project-detail-status-row {
+  justify-content: flex-start;
+  margin-bottom: 14px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.project-detail-status-row strong {
+  margin-left: auto;
+}
+
+.project-task-section {
+  margin-top: 28px;
 }
 
 .empty-mark {
@@ -1032,6 +1192,10 @@ textarea {
     width: 100%;
   }
 
+  .workspace.workspace-projects {
+    width: 100%;
+  }
+
   .capture-form {
     grid-template-columns: 1fr;
   }
@@ -1052,6 +1216,10 @@ textarea {
   .task-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .project-grid {
+    grid-template-columns: 1fr;
   }
 }
 

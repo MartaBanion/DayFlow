@@ -78,6 +78,7 @@ const dayLabels = computed(() => props.days.map((day) => ({
             @click="emit('select', task)"
           >
             <strong>{{ task.title }}</strong>
+            <small v-if="task.project">{{ task.project.name }}</small>
             <small v-if="task.status === 'completed'">已完成</small>
           </button>
         </div>
@@ -111,7 +112,7 @@ const dayLabels = computed(() => props.days.map((day) => ({
             @click="emit('select', task)"
           >
             <strong>{{ task.title }}</strong>
-            <small>{{ taskTimeLabel(task) }}<span v-if="task.status === 'completed'"> · 已完成</span></small>
+            <small>{{ taskTimeLabel(task) }}<span v-if="task.project"> · {{ task.project.name }}</span><span v-if="task.status === 'completed'"> · 已完成</span></small>
           </button>
         </div>
       </div>

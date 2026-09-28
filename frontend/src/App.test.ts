@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 
 import App from './App.vue'
-import { ApiRequestError, taskApi } from './api'
+import { ApiRequestError, projectApi, taskApi } from './api'
 import type { Task } from './types'
 
 const today = '2026-09-26'
@@ -35,6 +35,7 @@ let wrapper: VueWrapper | undefined
 
 beforeEach(() => {
   vi.spyOn(ElMessageBox, 'confirm').mockResolvedValue({ action: 'confirm' })
+  vi.spyOn(projectApi, 'list').mockResolvedValue([])
   vi.spyOn(taskApi, 'getRuntime').mockResolvedValue({
     timezone: 'Asia/Shanghai',
     local_date: today,

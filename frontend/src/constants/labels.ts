@@ -59,3 +59,26 @@ export function getMetadataLoadErrorMessage(error: unknown): string {
   }
   return '分类和标签加载失败，请确认后端服务正在运行。'
 }
+
+export function getProjectErrorMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    if (error.code === 'project_name_conflict') {
+      return '项目名称已存在，请换一个名称。'
+    }
+    if (error.code === 'project_version_conflict' || error.code === 'stale_version') {
+      return '项目已被其他操作更新，请刷新后重试。'
+    }
+    if (error.status === 404) return '项目不存在或已被删除。'
+    if (error.status === 422) return '项目信息不符合要求，请检查后重试。'
+    if (error.status === 409) return '项目操作发生冲突，请刷新后重试。'
+    return `项目操作失败，请稍后重试。（HTTP ${error.status}）`
+  }
+  return '项目操作失败，请确认后端服务正在运行。'
+}
+
+export function getProjectLoadErrorMessage(error: unknown): string {
+  if (error instanceof ApiRequestError) {
+    return `项目加载失败，请稍后重试。（HTTP ${error.status}）`
+  }
+  return '项目加载失败，请确认后端服务正在运行。'
+}

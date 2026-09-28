@@ -5,6 +5,7 @@ import { priorityLabels } from '../constants/labels'
 import { formatTaskTime } from '../calendar'
 import type {
   Category,
+  Project,
   Tag,
   Task,
   TaskPriority,
@@ -17,8 +18,10 @@ const props = defineProps<{
   task: Task | null
   categories: Category[]
   tags: Tag[]
+  projects?: Project[]
   saving?: boolean
   initialDate?: string
+  initialProjectId?: string | null
   runtimeTimezone?: string
 }>()
 
@@ -33,6 +36,7 @@ const plannedDate = ref('')
 const priority = ref<TaskPriority>('normal')
 const categoryId = ref<string | null>(null)
 const tagIds = ref<string[]>([])
+const projectId = ref<string | null>(null)
 const startTime = ref('')
 const endTime = ref('')
 const scheduleTouched = ref(false)
@@ -45,6 +49,7 @@ function syncForm(task: Task | null): void {
   priority.value = task?.priority ?? 'normal'
   categoryId.value = task?.category?.id ?? null
   tagIds.value = task?.tags.map((tag) => tag.id) ?? []
+  projectId.value = task?.project_id ?? task?.project?.id ?? props.initialProjectId ?? null
   startTime.value =
     task?.start_at_utc && task.schedule_timezone
       ? formatTaskTime(task.start_at_utc, task.schedule_timezone)
@@ -57,9 +62,13 @@ function syncForm(task: Task | null): void {
   formError.value = ''
 }
 
-watch([() => props.task, () => props.open, () => props.initialDate], () => syncForm(props.task), {
+watch(
+  [() => props.task, () => props.open, () => props.initialDate, () => props.initialProjectId],
+  () => syncForm(props.task),
+  {
   immediate: true,
-})
+  },
+)
 
 function clearSchedule(): void {
   startTime.value = ''
@@ -113,6 +122,7 @@ function submit(): void {
     priority: priority.value,
     category_id: categoryId.value ?? null,
     tag_ids: tagIds.value,
+    project_id: projectId.value ?? null,
   }
   if (schedule !== undefined) payload.schedule = schedule
   emit('submit', payload)
@@ -191,6 +201,22 @@ function submit(): void {
       <el-form-item label="标签">
         <el-select v-model="tagIds" multiple clearable placeholder="无标签" style="width: 100%">
           <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="项目">
+        <el-select
+          v-model="projectId"
+          clearable
+          placeholder="未归属项目"
+          style="width: 100%"
+          aria-label="项目"
+        >
+          <el-option
+            v-for="project in projects ?? []"
+            :key="project.id"
+            :label="project.name"
+            :value="project.id"
+          />
         </el-select>
       </el-form-item>
       <div class="dialog-actions">

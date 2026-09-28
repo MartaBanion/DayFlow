@@ -22,6 +22,8 @@ const task: Task = {
     { id: 'tag-1', name: 'linux' },
     { id: 'tag-2', name: 'lab' },
   ],
+  project_id: 'project-1',
+  project: { id: 'project-1', name: 'DayFlow', status: 'active' },
   created_at_utc: '2026-09-26T00:00:00.000000Z',
   updated_at_utc: '2026-09-26T00:00:00.000000Z',
   completed_at_utc: null,
@@ -40,6 +42,7 @@ describe('TaskCard organization metadata', () => {
     expect(wrapper.text()).toContain('Learning')
     expect(wrapper.text()).toContain('linux')
     expect(wrapper.text()).toContain('lab')
+    expect(wrapper.text()).toContain('DayFlow')
     expect(wrapper.text()).toContain('暂未安排日期')
   })
 })

@@ -64,6 +64,9 @@ const tags = [
   { id: 'tag-1', name: 'linux' },
   { id: 'tag-2', name: 'lab' },
 ]
+const projects = [
+  { id: 'project-1', name: 'DayFlow', status: 'active' as const },
+]
 
 describe('TaskEditor organization fields', () => {
   it('can select category and tags', async () => {
@@ -99,6 +102,27 @@ describe('TaskEditor organization fields', () => {
     expect(payload).toMatchObject({ category_id: null, tag_ids: [] })
     expect(Object.prototype.hasOwnProperty.call(payload, 'category_id')).toBe(true)
     expect(payload.category_id).toBeNull()
+  })
+
+  it('sends null when clearing a task project', async () => {
+    const projectTask: Task = {
+      ...task,
+      project_id: 'project-1',
+      project: projects[0],
+    }
+    const wrapper = mount(TaskEditor, {
+      props: { open: true, task: projectTask, categories, tags, projects },
+      global: { stubs },
+    })
+
+    const selects = wrapper.findAll('select')
+    await selects[3].setValue('')
+    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as Record<string, unknown>
+    expect(Object.prototype.hasOwnProperty.call(payload, 'project_id')).toBe(true)
+    expect(payload.project_id).toBeNull()
+    expect(payload.tag_ids).toEqual(['tag-1'])
   })
 
   it('sends schedule null when an existing time block is cleared', async () => {

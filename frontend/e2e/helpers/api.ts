@@ -1,6 +1,13 @@
 import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 
-import type { Category, Tag, Task, TaskPriority, TaskSchedulePayload } from '../../src/types'
+import type {
+  Category,
+  Project,
+  Tag,
+  Task,
+  TaskPriority,
+  TaskSchedulePayload,
+} from '../../src/types'
 
 export function uniqueName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -33,6 +40,7 @@ export async function createTask(
     priority?: TaskPriority
     category_id?: string | null
     tag_ids?: string[]
+    project_id?: string | null
     schedule?: TaskSchedulePayload | null
   },
 ): Promise<Task> {
@@ -43,11 +51,21 @@ export async function createTask(
       priority: 'normal',
       category_id: null,
       tag_ids: [],
+      project_id: null,
       schedule: null,
       ...payload,
     },
   })
   return responseJson<Task>(response)
+}
+
+export async function createProject(
+  request: APIRequestContext,
+  name: string,
+  description: string | null = null,
+): Promise<Project> {
+  const response = await request.post('/api/v1/projects', { data: { name, description } })
+  return responseJson<Project>(response)
 }
 
 export async function createCategory(
@@ -112,6 +130,16 @@ export async function chooseTaskTags(
     await page.getByRole('option', { name, exact: true }).click()
   }
   await page.keyboard.press('Escape')
+}
+
+export async function chooseTaskProject(
+  page: Page,
+  dialog: Locator,
+  name: string,
+): Promise<void> {
+  const item = dialog.locator('.el-form-item').filter({ hasText: '项目' })
+  await item.locator('.el-select').click()
+  await page.getByRole('option', { name, exact: true }).click()
 }
 
 export async function clearTaskSelect(dialog: Locator, label: string): Promise<void> {

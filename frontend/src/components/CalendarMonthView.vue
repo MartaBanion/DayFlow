@@ -53,6 +53,7 @@ const dayLabels = computed(() => props.days.map((day) => ({
         >
           <span>{{ task.title }}</span>
           <small v-if="task.start_at_utc">{{ taskTimeLabel(task) }}</small>
+          <small v-if="task.project">{{ task.project.name }}</small>
         </button>
         <p v-if="tasksForDay(item.day).length > 3" class="calendar-more">
           还有 {{ tasksForDay(item.day).length - 3 }} 项
