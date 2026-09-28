@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest'
 import {
   addDays,
   calendarRange,
+  formatCalendarDayTitle,
+  formatCalendarMonthTitle,
+  formatCalendarWeekSubtitle,
+  formatCalendarWeekTitle,
+  isoWeekNumber,
   listDays,
   shiftAnchor,
   startOfWeek,
@@ -68,5 +73,15 @@ describe('calendar task time helpers', () => {
   it('formats a persisted UTC time in the task timezone', () => {
     expect(taskLocalClockMinutes(task.start_at_utc, task.schedule_timezone)).toBe(14 * 60)
     expect(taskTimeLabel(task)).toBe('14:00–15:30')
+  })
+})
+
+describe('calendar display headers', () => {
+  it('formats natural Chinese day, week, and month headers', () => {
+    expect(formatCalendarDayTitle('2026-09-28')).toBe('9月28日 星期一')
+    expect(isoWeekNumber('2026-09-28')).toBe(40)
+    expect(formatCalendarWeekTitle('2026-09-28')).toBe('2026年9月 · 第40周')
+    expect(formatCalendarWeekSubtitle('2026-09-28', '2026-10-04')).toBe('9月28日 - 10月4日')
+    expect(formatCalendarMonthTitle('2026-09-28')).toBe('2026年9月')
   })
 })

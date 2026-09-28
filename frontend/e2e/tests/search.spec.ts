@@ -64,7 +64,8 @@ test('中文核心导航和空结果界面可见', async ({ page }) => {
   await expect(page.getByText('完成率', { exact: true })).toBeVisible()
 
   await page.getByRole('link', { name: /收件箱/ }).click()
-  await expect(page.getByRole('heading', { name: '未安排日期的任务', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '收件箱', exact: true })).toBeVisible()
+  await expect(page.getByText('暂时还没安排日期的任务，可以先放在这里。', { exact: true })).toBeVisible()
   await expect(page.getByLabel('搜索任务')).toBeVisible()
   await expect(page.getByRole('button', { name: '搜索', exact: true })).toBeVisible()
   await expect(page.getByText('优先级', { exact: true })).toBeVisible()

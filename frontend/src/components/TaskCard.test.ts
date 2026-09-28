@@ -40,6 +40,6 @@ describe('TaskCard organization metadata', () => {
     expect(wrapper.text()).toContain('Learning')
     expect(wrapper.text()).toContain('linux')
     expect(wrapper.text()).toContain('lab')
-    expect(wrapper.text()).toContain('计划日期：收件箱')
+    expect(wrapper.text()).toContain('暂未安排日期')
   })
 })

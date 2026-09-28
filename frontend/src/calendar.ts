@@ -76,6 +76,45 @@ export function formatCalendarDate(value: string, options: Intl.DateTimeFormatOp
   return new Intl.DateTimeFormat('zh-CN', options).format(dateFromKey(value))
 }
 
+export function formatCalendarDayTitle(value: string): string {
+  const date = dateFromKey(value)
+  const month = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' }).format(date)
+  const day = new Intl.DateTimeFormat('zh-CN', { day: 'numeric' }).format(date)
+  const weekday = new Intl.DateTimeFormat('zh-CN', { weekday: 'long' }).format(date)
+  return `${month}${day} ${weekday}`
+}
+
+export function isoWeekNumber(value: string): number {
+  const date = dateFromKey(value)
+  const day = (date.getDay() + 6) % 7
+  date.setDate(date.getDate() - day + 3)
+  const firstThursday = new Date(date.getFullYear(), 0, 4, 12)
+  return 1 + Math.round((date.getTime() - firstThursday.getTime()) / (7 * 86400000))
+}
+
+export function formatCalendarWeekTitle(value: string): string {
+  const year = new Intl.DateTimeFormat('zh-CN', { year: 'numeric' }).format(dateFromKey(value))
+  const month = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' }).format(dateFromKey(value))
+  return `${year}${month} · 第${isoWeekNumber(value)}周`
+}
+
+export function formatCalendarWeekSubtitle(start: string, end: string): string {
+  const format = (value: string) => {
+    const date = dateFromKey(value)
+    const month = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' }).format(date)
+    const day = new Intl.DateTimeFormat('zh-CN', { day: 'numeric' }).format(date)
+    return `${month}${day}`
+  }
+  return `${format(start)} - ${format(end)}`
+}
+
+export function formatCalendarMonthTitle(value: string): string {
+  const date = dateFromKey(value)
+  const year = new Intl.DateTimeFormat('zh-CN', { year: 'numeric' }).format(date)
+  const month = new Intl.DateTimeFormat('zh-CN', { month: 'numeric' }).format(date)
+  return `${year}${month}`
+}
+
 export function formatTaskTime(value: string, timezone: string): string {
   return new Intl.DateTimeFormat('zh-CN', {
     timeZone: timezone,

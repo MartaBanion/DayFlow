@@ -14,11 +14,12 @@ test('日历支持日周月视图、日期任务和时间块持久化', async ({
 
   await page.goto('/#calendar')
   await expect(page.locator('.page-header .eyebrow').filter({ hasText: '日历' })).toBeVisible()
+  await expect(page.locator('.calendar-header h2')).toHaveText(/^[0-9]{4}年[0-9]+月 · 第[0-9]+周$/)
+  await expect(page.locator('.calendar-header .muted')).toHaveText(/^[0-9]+月[0-9]+日 - [0-9]+月[0-9]+日$/)
   await expect(page.getByRole('button', { name: '周', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
-
   await page.getByRole('button', { name: '添加任务', exact: true }).click()
   const createDialog = page.locator('.el-dialog').filter({ hasText: '新建任务' }).last()
   await expect(createDialog).toBeVisible()
@@ -27,6 +28,9 @@ test('日历支持日周月视图、日期任务和时间块持久化', async ({
   await expect(createDialog).toBeHidden()
   await expect(page.locator('.calendar-task').filter({ hasText: dateOnlyTitle })).toBeVisible()
   await expect(page.getByText('未安排时间', { exact: true }).first()).toBeVisible()
+  await expect(page.locator('.calendar-week-untimed')).toBeVisible()
+  await expect(page.locator('.calendar-week-timeline')).toBeVisible()
+  await expect(page.locator('.calendar-week-column')).toHaveCount(7)
 
   await page.getByRole('button', { name: '添加任务', exact: true }).click()
   const timedDialog = page.locator('.el-dialog').filter({ hasText: '新建任务' }).last()
@@ -36,9 +40,11 @@ test('日历支持日周月视图、日期任务和时间块持久化', async ({
   await timedDialog.getByRole('button', { name: '创建任务', exact: true }).click()
   await expect(timedDialog).toBeHidden()
   await expect(page.locator('.calendar-task').filter({ hasText: timedTitle })).toContainText('14:00')
+  await expect(page.locator('.calendar-task-timed').filter({ hasText: timedTitle })).toContainText('14:00–15:00')
 
   await page.getByRole('button', { name: '日', exact: true }).click()
   await expect(page.locator('.calendar-day-view')).toBeVisible()
+  await expect(page.locator('.calendar-day-view .calendar-task-timed').filter({ hasText: timedTitle })).toBeVisible()
   await page.getByRole('button', { name: '月', exact: true }).click()
   await expect(page.locator('.calendar-month-view')).toBeVisible()
   await page.getByRole('button', { name: '周', exact: true }).click()

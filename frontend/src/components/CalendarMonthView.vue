@@ -8,6 +8,7 @@ const props = defineProps<{
   days: string[]
   tasks: Task[]
   month: string
+  today?: string
 }>()
 
 const emit = defineEmits<{ select: [task: Task] }>()
@@ -33,7 +34,10 @@ const dayLabels = computed(() => props.days.map((day) => ({
         v-for="item in dayLabels"
         :key="item.day"
         class="calendar-month-day"
-        :class="{ 'is-outside-month': !item.day.startsWith(month) }"
+        :class="{
+          'is-outside-month': !item.day.startsWith(month),
+          'is-today': item.day === today,
+        }"
       >
         <header class="calendar-month-day-header">
           <span>{{ item.number }}</span>

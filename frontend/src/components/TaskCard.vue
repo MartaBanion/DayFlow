@@ -42,7 +42,9 @@ const emit = defineEmits<{
         <h4>{{ task.title }}</h4>
         <p v-if="task.description" class="task-description">{{ task.description }}</p>
         <div class="task-badges">
-          <span class="task-meta">计划日期：{{ task.planned_date ?? '收件箱' }}</span>
+          <span class="task-meta">
+            {{ task.planned_date ? `计划日期：${task.planned_date}` : '暂未安排日期' }}
+          </span>
           <el-tag :type="task.priority === 'high' ? 'danger' : task.priority === 'low' ? 'info' : 'warning'" effect="plain" size="small">
             {{ priorityLabels[task.priority] }}
           </el-tag>

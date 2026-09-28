@@ -77,12 +77,12 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       </div>
 
       <div class="sidebar-footer">
-        <el-tag type="info" effect="plain">V0.3</el-tag>
+        <el-tag type="info" effect="plain">v0.3.0</el-tag>
         <span>本地优先</span>
       </div>
     </aside>
 
-    <main class="workspace">
+    <main class="workspace" :class="{ 'workspace-calendar': currentView === 'calendar' }">
       <TodayView v-if="currentView === 'today'" />
       <InboxView v-else-if="currentView === 'inbox'" />
       <InboxView v-else-if="currentView === 'search'" search-only />

@@ -7,6 +7,7 @@ import type { Task } from '../types'
 const props = defineProps<{
   date: string
   tasks: Task[]
+  today?: string
 }>()
 
 const emit = defineEmits<{ select: [task: Task] }>()
@@ -26,7 +27,11 @@ function taskStyle(task: Task): Record<string, string> {
 </script>
 
 <template>
-  <section class="calendar-day-view" aria-label="日视图">
+  <section
+    class="calendar-day-view"
+    :class="{ 'is-today': date === today }"
+    aria-label="日视图"
+  >
     <div class="calendar-day-heading">
       <div>
         <p class="eyebrow">{{ formatCalendarDate(date, { weekday: 'long' }) }}</p>

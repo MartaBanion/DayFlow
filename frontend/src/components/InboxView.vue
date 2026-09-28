@@ -257,9 +257,9 @@ onMounted(initializeInbox)
   <header class="page-header">
     <div>
       <p class="eyebrow">{{ props.searchOnly ? '搜索' : '收件箱' }}</p>
-      <h2>{{ props.searchOnly ? '搜索任务' : '未安排日期的任务' }}</h2>
+      <h2>{{ props.searchOnly ? '搜索任务' : '收件箱' }}</h2>
       <p class="muted">
-        {{ props.searchOnly ? '按标题或备注查找任务。' : '快速记录暂时还没有安排日期的任务。' }}
+        {{ props.searchOnly ? '按标题或备注查找任务。' : '暂时还没安排日期的任务，可以先放在这里。' }}
       </p>
     </div>
     <div class="page-header-actions">
@@ -285,7 +285,7 @@ onMounted(initializeInbox)
   <section v-if="loadState === 'loading'" class="today-state is-loading" aria-live="polite">
     <p class="eyebrow">加载中</p>
     <h3>正在加载收件箱</h3>
-    <p class="today-state-detail">正在加载未安排日期的任务…</p>
+    <p class="today-state-detail">正在加载待安排任务…</p>
   </section>
 
   <section v-else-if="loadState === 'error'" class="today-state is-error" role="alert">
@@ -302,7 +302,7 @@ onMounted(initializeInbox)
           <p class="eyebrow">快速记录</p>
           <h3>先记下来，稍后安排</h3>
         </div>
-        <span class="capture-hint">无需设置日期</span>
+        <span class="capture-hint">可以稍后安排日期</span>
       </div>
       <form class="capture-form" @submit.prevent="createQuickTask">
         <el-input v-model="quickTitle" size="large" placeholder="想先记下什么？" aria-label="新收件箱任务标题" />
@@ -335,7 +335,7 @@ onMounted(initializeInbox)
       <div class="section-heading task-heading">
         <div>
           <p class="eyebrow">{{ isSearchMode ? '搜索结果' : '收件箱' }}</p>
-          <h3>{{ isSearchMode ? '匹配的任务' : '未安排日期的任务' }}</h3>
+          <h3>{{ isSearchMode ? '匹配的任务' : '待安排任务' }}</h3>
         </div>
         <el-tag type="info" effect="plain">{{ tasks.length }}</el-tag>
       </div>

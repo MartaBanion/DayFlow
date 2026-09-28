@@ -14,8 +14,9 @@ test('收件箱任务可以安排日期、清空日期并完成', async ({ page 
 
   await page.goto('/#inbox')
   await expect(
-    page.locator('.page-header').getByRole('heading', { name: '未安排日期的任务', exact: true }),
+    page.locator('.page-header').getByRole('heading', { name: '收件箱', exact: true }),
   ).toBeVisible()
+  await expect(page.getByText('暂时还没安排日期的任务，可以先放在这里。', { exact: true })).toBeVisible()
   await page.getByLabel('新收件箱任务标题').fill(title)
   await page.getByRole('button', { name: '记录', exact: true }).click()
   await expect(taskCard(page, title)).toBeVisible()

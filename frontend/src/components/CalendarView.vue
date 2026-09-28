@@ -5,7 +5,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { taskApi } from '../api'
 import {
   calendarRange,
-  formatCalendarDate,
+  formatCalendarDayTitle,
+  formatCalendarMonthTitle,
+  formatCalendarWeekSubtitle,
+  formatCalendarWeekTitle,
   shiftAnchor,
   type CalendarMode,
 } from '../calendar'
@@ -43,11 +46,14 @@ const metadataLoaded = ref(false)
 
 const range = computed(() => calendarRange(mode.value, anchorDate.value || '2000-01-01'))
 const headerTitle = computed(() => {
-  if (mode.value === 'day') return formatCalendarDate(range.value.start, {
-    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
-  })
-  if (mode.value === 'week') return `${range.value.start} — ${range.value.end}`
-  return formatCalendarDate(anchorDate.value || range.value.start, { year: 'numeric', month: 'long' })
+  if (mode.value === 'day') return formatCalendarDayTitle(range.value.start)
+  if (mode.value === 'week') return formatCalendarWeekTitle(range.value.start)
+  return formatCalendarMonthTitle(anchorDate.value || range.value.start)
+})
+const headerSubtitle = computed(() => {
+  if (mode.value === 'week') return formatCalendarWeekSubtitle(range.value.start, range.value.end)
+  if (mode.value === 'day') return '按小时查看当天安排。'
+  return '按日期查看本月任务。'
 })
 
 function showError(error: unknown): void {
@@ -200,11 +206,7 @@ onMounted(initializeCalendar)
     <div>
       <p class="eyebrow">日历</p>
       <h2>{{ headerTitle }}</h2>
-      <p class="muted">按日期和时间安排任务，保持计划清晰可见。</p>
-    </div>
-    <div class="page-header-actions">
-      <el-button type="primary" @click="createTask">添加任务</el-button>
-      <el-button :loading="isLoading" plain @click="retryCalendar">刷新</el-button>
+      <p class="muted">{{ headerSubtitle }}</p>
     </div>
   </header>
 
@@ -223,9 +225,17 @@ onMounted(initializeCalendar)
       </button>
     </div>
     <div class="calendar-navigation">
-      <el-button plain @click="moveAnchor(-1)">上一个</el-button>
+      <el-button class="calendar-nav-button" plain aria-label="上一个时间段" title="上一个时间段" @click="moveAnchor(-1)">
+        ‹
+      </el-button>
       <el-button plain @click="goToToday">今天</el-button>
-      <el-button plain @click="moveAnchor(1)">下一个</el-button>
+      <el-button class="calendar-nav-button" plain aria-label="下一个时间段" title="下一个时间段" @click="moveAnchor(1)">
+        ›
+      </el-button>
+      <el-button class="calendar-refresh-button" :loading="isLoading" plain @click="retryCalendar">
+        刷新
+      </el-button>
+      <el-button type="primary" @click="createTask">添加任务</el-button>
     </div>
   </section>
 
@@ -260,6 +270,7 @@ onMounted(initializeCalendar)
       v-else-if="mode === 'day'"
       :date="range.start"
       :tasks="tasks"
+      :today="runtime?.local_date ?? ''"
       @select="openTask"
     />
     <CalendarWeekView
@@ -274,6 +285,7 @@ onMounted(initializeCalendar)
       :days="range.days"
       :tasks="tasks"
       :month="anchorDate.slice(0, 7)"
+      :today="runtime?.local_date ?? ''"
       @select="openTask"
     />
   </section>

@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased] — V0.3.1 UI/UX Polish
+
+### Changed
+
+- Refined Inbox wording to distinguish the inbox from tasks waiting for a date.
+- Expanded the Calendar workspace and unified Calendar navigation controls.
+- Reworked the Week view into a seven-column time-blocking timeline with a
+  shared “未安排时间” area.
+- Improved Day/Month date hierarchy, today highlighting, and completed Time
+  Block styling.
+- Kept the default user-facing interface in natural Simplified Chinese.
+
 ## [Unreleased] — V0.3 Calendar Frontend
 
 ### Added

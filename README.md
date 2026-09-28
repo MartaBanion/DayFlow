@@ -4,8 +4,9 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**v0.2.1 — stable release.** Inbox, Task organization, Search, the Category
-clearing fix, and Browser E2E acceptance infrastructure are complete.
+**v0.3.0 — stable release.** Inbox, Task organization, Search, Calendar
+Day/Week/Month views, and single-Task Time Blocks are complete. V0.3.1 is
+currently a UI/UX polish cycle and has not been released.
 
 ## V0.1 Features
 
@@ -30,12 +31,10 @@ mutations.
 - SQLite Foreign Key enforcement on every SQLAlchemy connection.
 
 V0.2 keeps the V0.1 API paths and behavior compatible. The `v0.2.0` and
-`v0.2.1` release tags are local stable checkpoints. V0.3 Phase 1 Backend
-schedule model, Migration 0003, Calendar range API, Runtime API, timezone/DST
-validation, and conflict detection are implemented. Phase 2 adds the Hash-based
-Calendar frontend, Day/Week/Month views, and Task Editor Time Blocking. The
-real database remains at `0002_add_priority_categories_tags` until separately
-approved.
+`v0.2.1` release tags are local stable checkpoints. V0.3 adds the Hash-based
+Calendar frontend, Day/Week/Month views, Task Editor Time Blocking, Calendar
+range API, Runtime API, timezone/DST validation, and conflict detection. The
+real database is currently at `0003_add_task_schedule`.
 
 V0.1 deliberately excluded Projects, Priority, Category, Tags, Reminders,
 Recurrence, Calendar, AI, and ScheduleBlock.
@@ -75,12 +74,11 @@ npm ci --prefix frontend
 DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend alembic upgrade head
 ```
 
-The real SQLite file is managed by Alembic, but it remains at
-`0002_add_priority_categories_tags` during V0.3 development. Runtime code does not
-call `Base.metadata.create_all()`. Do not run `alembic upgrade head` against
-the real database during this phase. Before applying any future migration to
-real data, stop the Backend, create a verified backup, and validate the
-migration on a copy of the current database first.
+The real SQLite file is managed by Alembic and is currently at
+`0003_add_task_schedule`. Runtime code does not call
+`Base.metadata.create_all()`. Before applying any future migration to real
+data, stop the Backend, create a verified backup, and validate the migration on
+a copy of the current database first.
 
 ## Run
 
