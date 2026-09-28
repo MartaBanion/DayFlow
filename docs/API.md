@@ -293,8 +293,10 @@ A minimal response shape is:
 `POST` requires a non-empty trimmed `name`; `description` is optional. `PATCH`
 supports `name` and `description` as partial fields and requires the current
 Project `version`. `GET /projects` excludes soft-deleted Projects by default;
-the restore action addresses deleted records without adding a recycle-bin
-feature.
+pass `include_deleted=true` when a management view needs to discover
+soft-deleted Projects for restoration. The restore action addresses deleted
+records without adding a recycle-bin feature. The existing `status` filter
+continues to apply with either list mode.
 
 Lifecycle semantics are explicit:
 

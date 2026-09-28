@@ -39,9 +39,13 @@ def _project_read(view: ProjectView) -> ProjectRead:
 @router.get("/projects", response_model=list[ProjectRead])
 def list_projects(
     status: ProjectStatusValue | None = Query(default=None),
+    include_deleted: bool = Query(default=False),
     session: Session = Depends(db_session),
 ) -> list[ProjectRead]:
-    return [_project_read(view) for view in service.list(session, status)]
+    return [
+        _project_read(view)
+        for view in service.list(session, status, include_deleted=include_deleted)
+    ]
 
 
 @router.post(

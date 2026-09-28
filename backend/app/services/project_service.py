@@ -39,8 +39,12 @@ class ProjectService:
         self,
         session: Session,
         status: ProjectStatusValue | None = None,
+        *,
+        include_deleted: bool = False,
     ) -> list[ProjectView]:
-        statement = select(Project).where(Project.deleted_at_utc.is_(None))
+        statement = select(Project)
+        if not include_deleted:
+            statement = statement.where(Project.deleted_at_utc.is_(None))
         if status is not None:
             statement = statement.where(Project.status == status.value)
         projects = list(

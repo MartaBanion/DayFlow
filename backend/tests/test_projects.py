@@ -285,6 +285,61 @@ def test_project_list_status_filter_and_soft_deleted_projects_are_hidden(
     }
 
 
+def test_project_list_include_deleted_supports_restore_without_mutation(
+    client: TestClient,
+) -> None:
+    active = create_project(client, "Visible active project")
+    completed = create_project(client, "Visible completed project")
+    assert client.post(
+        f"/api/v1/projects/{completed['id']}/complete", json={"version": 1}
+    ).status_code == 200
+    deleted = create_project(client, "Restorable project")
+    assert client.request(
+        "DELETE", f"/api/v1/projects/{deleted['id']}", json={"version": 1}
+    ).status_code == 204
+
+    default_projects = client.get("/api/v1/projects")
+    assert default_projects.status_code == 200
+    assert deleted["id"] not in {item["id"] for item in default_projects.json()}
+
+    included = client.get("/api/v1/projects?include_deleted=true")
+    assert included.status_code == 200
+    included_by_id = {item["id"]: item for item in included.json()}
+    assert set(included_by_id) == {active["id"], completed["id"], deleted["id"]}
+    deleted_read = included_by_id[deleted["id"]]
+    assert deleted_read["version"] == 2
+    assert deleted_read["deleted_at_utc"] is not None
+
+    active_included = client.get(
+        "/api/v1/projects?status=active&include_deleted=true"
+    )
+    assert {item["id"] for item in active_included.json()} == {
+        active["id"],
+        deleted["id"],
+    }
+    completed_included = client.get(
+        "/api/v1/projects?status=completed&include_deleted=true"
+    )
+    assert {item["id"] for item in completed_included.json()} == {completed["id"]}
+
+    unchanged = client.get("/api/v1/projects?include_deleted=true").json()
+    unchanged_deleted = next(
+        item for item in unchanged if item["id"] == deleted["id"]
+    )
+    assert unchanged_deleted["version"] == deleted_read["version"]
+    assert unchanged_deleted["deleted_at_utc"] == deleted_read["deleted_at_utc"]
+
+    restored = client.post(
+        f"/api/v1/projects/{deleted['id']}/restore", json={"version": 2}
+    )
+    assert restored.status_code == 200
+    assert restored.json()["deleted_at_utc"] is None
+    assert restored.json()["version"] == 3
+    assert deleted["id"] in {
+        item["id"] for item in client.get("/api/v1/projects").json()
+    }
+
+
 def test_project_optimistic_version_and_task_patch_progression(
     client: TestClient,
 ) -> None:
