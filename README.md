@@ -4,9 +4,10 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**v0.3.0 — stable release.** Inbox, Task organization, Search, Calendar
-Day/Week/Month views, and single-Task Time Blocks are complete. V0.3.1 is
-currently a UI/UX polish cycle and has not been released.
+**v0.3.1 — stable release.** Inbox, Task organization, Search, Calendar
+Day/Week/Month views, single-Task Time Blocks, and the V0.3.1 UI/UX polish are
+complete. The current development target is **v0.4.0 — V0.4 Projects**; its
+architecture is frozen and implementation has not started.
 
 ## V0.1 Features
 

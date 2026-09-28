@@ -1,7 +1,7 @@
 # DayFlow Personal Roadmap
 
-Current stable release: **v0.3.1**. The real database is at
-`0003_add_task_schedule`.
+Current stable release: **v0.3.1**. Current development target: **v0.4.0 —
+V0.4 Projects**. The real database is at `0003_add_task_schedule`.
 
 ## Current
 
@@ -38,7 +38,7 @@ work released as `v0.2.1`.
 - Search over title and description
 - Structured Priority, Category, and Tag filters
 
-## Next
+## Completed and Current Development
 
 ### V0.3 — Calendar and Time Blocking
 
@@ -118,7 +118,6 @@ manual acceptance, then release review.
 
 ## Later
 
-- V0.4: Projects and Project progress.
 - V0.5: Reminders, Deadlines, and Repeat Tasks.
 - V0.6: AI Provider abstraction and Mock Provider.
 - V0.7: Natural-language Task creation.

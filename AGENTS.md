@@ -6,10 +6,11 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-V0.3 Phase 2: Backend Task scheduling model, Migration 0003, timezone/DST
-validation, Calendar range API, conflict detection, Runtime API, and Calendar
-Frontend Day/Week/Month views. The real database remains at
-`0002_add_priority_categories_tags` until explicit migration approval.
+Stable release: `v0.3.1`.
+
+Current development target: `v0.4.0` — V0.4 Projects. The V0.4 architecture
+is frozen; implementation has not started. The real database is at
+`0003_add_task_schedule`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -37,7 +38,7 @@ Only the version currently being implemented may be changed. Do not start later 
 - Use typed Python and TypeScript interfaces for API data.
 - Do not silently swallow exceptions.
 - Validate input at the API boundary and enforce business rules in services.
-- Do not introduce future-version fields or abstractions without a current V0.3
+- Do not introduce future-version fields or abstractions without a current V0.4
   need.
 - DayFlow's default user language is Simplified Chinese. User-visible UI copy should use Simplified Chinese; code, APIs, database schema, and internal enum values remain in English. Do not introduce a full internationalization system at this stage.
 
@@ -95,14 +96,14 @@ Only the version currently being implemented may be changed. Do not start later 
 
 ## Prohibited Actions
 
-- No Drag & Drop, Resize, Project, Reminder, Recurrence, AI, external Calendar,
-  PWA, Authentication, Docker, CI/CD, or remote Git work during V0.3.
+- No Drag & Drop, Resize, Reminder, Recurrence, AI, external Calendar, PWA,
+  Authentication, Docker, CI/CD, or remote Git work during V0.4.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
 
-A V0.3 Phase 2 change is complete only when the Backend and Calendar Frontend
-run against isolated temporary `0003` data, schedule/DST/conflict tests and
-V0.1/V0.2 regression tests pass, Calendar Vitest and Browser E2E pass, no
-secrets or personal data are exposed, documentation is updated, and the real
-database remains unchanged until explicit approval.
+A V0.4 implementation change is complete only when the Project Backend and
+Frontend run against isolated temporary `0004` data, Project and migration
+tests plus V0.1–V0.3.1 regression tests pass, Project Vitest and Browser E2E
+pass, no secrets or personal data are exposed, documentation is updated, and
+the real database remains unchanged until explicit approval.
