@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
+import packageMetadata from '../package.json'
+
 import InboxView from './components/InboxView.vue'
 import TodayView from './components/TodayView.vue'
 import CalendarView from './components/CalendarView.vue'
@@ -28,6 +30,7 @@ function projectIdFromHash(): string | null {
 
 const currentView = ref<ViewName>(viewFromHash())
 const currentProjectId = ref<string | null>(projectIdFromHash())
+const applicationVersion = `v${packageMetadata.version}`
 
 function syncViewFromHash(): void {
   currentView.value = viewFromHash()
@@ -98,7 +101,7 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       </div>
 
       <div class="sidebar-footer">
-        <el-tag type="info" effect="plain">v0.3.1</el-tag>
+        <el-tag type="info" effect="plain">{{ applicationVersion }}</el-tag>
         <span>本地优先</span>
       </div>
     </aside>

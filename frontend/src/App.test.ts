@@ -110,6 +110,15 @@ describe('delete undo flow', () => {
   })
 })
 
+describe('application version display', () => {
+  it('shows the version from the frontend package metadata', () => {
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+
+    expect(wrapper.find('.sidebar-footer').text()).toContain('v0.4.0')
+    expect(wrapper.find('.sidebar-footer').text()).not.toContain('v0.3.1')
+  })
+})
+
 describe('Today load state', () => {
   it('shows a loading state instead of empty task content while loading', async () => {
     vi.spyOn(taskApi, 'listToday').mockReturnValue(new Promise<Task[]>(() => {}))
