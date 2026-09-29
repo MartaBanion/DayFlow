@@ -112,6 +112,31 @@ Frontend:
 npm run dev --prefix frontend
 ```
 
+### WSL 日常启动与停止
+
+在 WSL 项目根目录执行：
+
+```bash
+./scripts/dayflow-start.sh
+```
+
+启动脚本会检查 Node.js 24 LTS、Backend 虚拟环境、Frontend 依赖、端口和
+真实数据库版本（`0004_add_projects`），不会自动执行 Migration，也不会创建
+测试数据。启动成功后，在浏览器访问 `http://127.0.0.1:5173`；Backend 地址为
+`http://127.0.0.1:8000`。
+
+停止由启动脚本创建的服务：
+
+```bash
+./scripts/dayflow-stop.sh
+```
+
+停止脚本只会终止已记录且身份校验通过的 DayFlow Backend/Frontend 进程；遇到
+PID 复用或未知进程时会拒绝操作。
+
+Node.js 由 WSL 用户级 nvm 管理，启动脚本会从 nvm 默认版本加载 Node.js，
+不会依赖临时目录中的 Node 安装，也不会修改系统 Node.js。
+
 ## Test
 
 ```bash

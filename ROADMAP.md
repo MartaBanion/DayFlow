@@ -123,6 +123,9 @@ and Task Editor integration, Vitest and Browser E2E regression, Phase 3 full
 acceptance, and approved real-data migration. V0.5 is the next planned
 development version.
 
+Optional future tooling: Windows one-click WSL start/stop entrypoints. The
+currently supported workflow uses the WSL start and stop scripts directly.
+
 ## Later
 
 - V0.5: Reminders, Deadlines, and Repeat Tasks.
