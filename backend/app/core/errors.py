@@ -114,6 +114,61 @@ class CalendarRangeError(AppError):
         super().__init__("calendar_range_invalid", message, 422)
 
 
+class DeadlineValidationError(AppError):
+    def __init__(self, message: str):
+        super().__init__("deadline_validation_error", message, 422)
+
+
+class RecurrenceValidationError(AppError):
+    def __init__(self, message: str):
+        super().__init__("recurrence_validation_error", message, 422)
+
+
+class RecurrenceRuleNotFoundError(AppError):
+    def __init__(self, rule_id: str):
+        super().__init__("recurrence_rule_not_found", f"Recurrence rule '{rule_id}' was not found", 404)
+
+
+class RecurrenceRuleConflictError(AppError):
+    def __init__(self, message: str, details: Any = None):
+        super().__init__("recurrence_rule_conflict", message, 409, details)
+
+
+class RecurrenceVersionConflictError(AppError):
+    def __init__(self, rule_id: str, expected: int, actual: int):
+        super().__init__(
+            "recurrence_version_conflict",
+            "The recurrence rule changed since it was loaded; refresh before saving",
+            409,
+            {"rule_id": rule_id, "expected_version": expected, "actual_version": actual},
+        )
+
+
+class ReminderValidationError(AppError):
+    def __init__(self, message: str):
+        super().__init__("reminder_validation_error", message, 422)
+
+
+class ReminderNotFoundError(AppError):
+    def __init__(self, reminder_id: str):
+        super().__init__("reminder_not_found", f"Reminder '{reminder_id}' was not found", 404)
+
+
+class ReminderVersionConflictError(AppError):
+    def __init__(self, reminder_id: str, expected: int, actual: int):
+        super().__init__(
+            "reminder_version_conflict",
+            "The Reminder changed since it was loaded; refresh before saving",
+            409,
+            {"reminder_id": reminder_id, "expected_version": expected, "actual_version": actual},
+        )
+
+
+class ReminderStateError(AppError):
+    def __init__(self, message: str):
+        super().__init__("reminder_state_conflict", message, 409)
+
+
 def error_response(code: str, message: str, details: Any = None, status_code: int = 500) -> JSONResponse:
     payload: dict[str, Any] = {"error": {"code": code, "message": message}}
     if details is not None:

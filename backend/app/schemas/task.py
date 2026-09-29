@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time as time_type, timezone
 from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
-from app.models.task import Task, TaskPriority, TaskStatus
+from app.models.task import DeadlineStatus, Task, TaskPriority, TaskStatus
 from app.schemas.project import ProjectSummary
 
 
@@ -21,14 +21,22 @@ class PriorityValue(StrEnum):
     HIGH = TaskPriority.HIGH.value
 
 
+class DeadlineStatusValue(StrEnum):
+    NONE = DeadlineStatus.NONE.value
+    UPCOMING = DeadlineStatus.UPCOMING.value
+    DUE_TODAY = DeadlineStatus.DUE_TODAY.value
+    OVERDUE = DeadlineStatus.OVERDUE.value
+    COMPLETED = DeadlineStatus.COMPLETED.value
+
+
 class ScheduleInput(BaseModel):
-    start_time: time
-    end_time: time
+    start_time: time_type
+    end_time: time_type
     timezone: str | None = Field(default=None, max_length=64)
 
     @field_validator("start_time", "end_time")
     @classmethod
-    def schedule_time_must_be_local(cls, value: time) -> time:
+    def schedule_time_must_be_local(cls, value: time_type) -> time_type:
         if value.tzinfo is not None and value.utcoffset() is not None:
             raise ValueError("schedule times must not include a UTC offset")
         return value
@@ -43,6 +51,28 @@ class ScheduleInput(BaseModel):
             raise ValueError("timezone must not be blank")
         return value
 
+
+class DeadlineInput(BaseModel):
+    date: date
+    time: time_type | None = None
+    timezone: str | None = Field(default=None, max_length=64)
+
+    @field_validator("time")
+    @classmethod
+    def deadline_time_must_be_local(cls, value: time_type | None) -> time_type | None:
+        if value is not None and value.tzinfo is not None and value.utcoffset() is not None:
+            raise ValueError("deadline time must not include a UTC offset")
+        return value
+
+    @field_validator("timezone")
+    @classmethod
+    def deadline_timezone_must_not_be_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = value.strip()
+        if not value:
+            raise ValueError("timezone must not be blank")
+        return value
 
 def _serialize_utc(value: datetime | None) -> str | None:
     if value is None:
@@ -63,6 +93,7 @@ class TaskCreate(BaseModel):
     project_id: UUID | None = None
     tag_ids: list[UUID] = Field(default_factory=list)
     schedule: ScheduleInput | None = None
+    deadline: DeadlineInput | None = None
 
     @field_validator("title")
     @classmethod
@@ -94,6 +125,8 @@ class TaskUpdate(BaseModel):
     # ``exclude_unset`` distinguishes omitted schedule from explicit null,
     # which is required to preserve versus clear a time block.
     schedule: ScheduleInput | None = None
+    # ``exclude_unset`` distinguishes an omitted Deadline from ``deadline: null``.
+    deadline: DeadlineInput | None = None
 
     @field_validator("title")
     @classmethod
@@ -172,6 +205,10 @@ class TaskRead(BaseModel):
     status: TaskStatusValue
     planned_date: date | None
     priority: PriorityValue
+    deadline_date: date | None
+    deadline_at_utc: datetime | None
+    deadline_timezone: str | None
+    deadline_status: DeadlineStatusValue
     category: CategoryRead | None
     project_id: str | None = None
     project: ProjectSummary | None = None
@@ -179,6 +216,8 @@ class TaskRead(BaseModel):
     start_at_utc: datetime | None
     end_at_utc: datetime | None
     schedule_timezone: str | None
+    recurrence_rule_id: str | None
+    recurrence_occurrence_date: date | None
     created_at_utc: datetime
     updated_at_utc: datetime
     completed_at_utc: datetime | None
@@ -192,6 +231,7 @@ class TaskRead(BaseModel):
         "deleted_at_utc",
         "start_at_utc",
         "end_at_utc",
+        "deadline_at_utc",
     )
     def serialize_timestamps(self, value: datetime | None) -> str | None:
         return _serialize_utc(value)

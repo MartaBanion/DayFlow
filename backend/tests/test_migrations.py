@@ -364,7 +364,7 @@ def test_v03_data_is_preserved_by_project_upgrade(tmp_path: Path) -> None:
         assert connection.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"
         assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
         assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
-            "0004_add_projects"
+            "0005_add_deadlines_recurrence_reminders"
         )
         row = connection.execute(
             text(
@@ -463,7 +463,7 @@ def test_project_empty_downgrade_and_upgrade_round_trip(tmp_path: Path) -> None:
         assert connection.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"
         assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
         assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
-            "0004_add_projects"
+            "0005_add_deadlines_recurrence_reminders"
         )
     engine.dispose()
 
@@ -554,4 +554,262 @@ def test_project_constraints_reject_invalid_rows(tmp_path: Path) -> None:
                 ),
                 {**base_values, "id": "00000000-0000-0000-0000-000000000302"},
             )
+    engine.dispose()
+
+
+def test_v04_data_is_preserved_by_v05_upgrade(tmp_path: Path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'v04-copy.sqlite3'}"
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.attributes["database_url"] = database_url
+    command.upgrade(config, "0004_add_projects")
+
+    task_id = "00000000-0000-0000-0000-000000000501"
+    project_id = "00000000-0000-0000-0000-000000000502"
+    category_id = "00000000-0000-0000-0000-000000000503"
+    tag_id = "00000000-0000-0000-0000-000000000504"
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        connection.execute(text("PRAGMA foreign_keys=ON"))
+        connection.execute(
+            text(
+                "INSERT INTO projects (id, name, status, created_at_utc, updated_at_utc, version) "
+                "VALUES (:id, :name, 'active', :created, :updated, 3)"
+            ),
+            {
+                "id": project_id,
+                "name": "V0.4 project",
+                "created": "2026-09-26T00:00:00.000000Z",
+                "updated": "2026-09-26T01:00:00.000000Z",
+            },
+        )
+        connection.execute(
+            text("INSERT INTO categories (id, name) VALUES (:id, :name)"),
+            {"id": category_id, "name": "V0.4 category"},
+        )
+        connection.execute(
+            text("INSERT INTO tags (id, name) VALUES (:id, :name)"),
+            {"id": tag_id, "name": "v04-tag"},
+        )
+        connection.execute(
+            text(
+                "INSERT INTO tasks (id, title, description, status, planned_date, priority, "
+                "category_id, project_id, start_at_utc, end_at_utc, schedule_timezone, "
+                "created_at_utc, updated_at_utc, completed_at_utc, deleted_at_utc, version) "
+                "VALUES (:id, :title, :description, 'pending', :planned, 'high', :category, "
+                ":project, :start, :end, 'Asia/Shanghai', :created, :updated, NULL, NULL, 8)"
+            ),
+            {
+                "id": task_id,
+                "title": "Existing V0.4 task",
+                "description": "Preserve this data",
+                "planned": "2026-09-26",
+                "category": category_id,
+                "project": project_id,
+                "start": "2026-09-26T06:00:00.000000Z",
+                "end": "2026-09-26T07:00:00.000000Z",
+                "created": "2026-09-26T00:00:00.000000Z",
+                "updated": "2026-09-26T01:00:00.000000Z",
+            },
+        )
+        connection.execute(
+            text("INSERT INTO task_tags (task_id, tag_id) VALUES (:task, :tag)"),
+            {"task": task_id, "tag": tag_id},
+        )
+    engine.dispose()
+
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
+            "0005_add_deadlines_recurrence_reminders"
+        )
+        assert connection.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"
+        assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
+        row = connection.execute(
+            text(
+                "SELECT id, title, description, status, planned_date, priority, category_id, "
+                "project_id, start_at_utc, end_at_utc, schedule_timezone, version, "
+                "deadline_date, deadline_at_utc, deadline_timezone, recurrence_rule_id, "
+                "recurrence_occurrence_date FROM tasks"
+            )
+        ).one()
+        assert row == (
+            task_id,
+            "Existing V0.4 task",
+            "Preserve this data",
+            "pending",
+            "2026-09-26",
+            "high",
+            category_id,
+            project_id,
+            "2026-09-26T06:00:00.000000Z",
+            "2026-09-26T07:00:00.000000Z",
+            "Asia/Shanghai",
+            8,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        assert connection.execute(text("SELECT COUNT(*) FROM task_tags")).scalar() == 1
+        assert connection.execute(text("SELECT COUNT(*) FROM recurrence_rules")).scalar() == 0
+        assert connection.execute(text("SELECT COUNT(*) FROM reminders")).scalar() == 0
+        assert connection.execute(text("SELECT COUNT(*) FROM projects")).scalar() == 1
+    engine.dispose()
+
+
+def test_v05_empty_downgrade_and_upgrade_round_trip(tmp_path: Path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'v05-round-trip.sqlite3'}"
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.attributes["database_url"] = database_url
+    command.upgrade(config, "head")
+    command.downgrade(config, "0004_add_projects")
+    command.upgrade(config, "head")
+
+    engine = create_engine(database_url)
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
+            "0005_add_deadlines_recurrence_reminders"
+        )
+        assert connection.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"
+        assert connection.execute(text("PRAGMA foreign_key_check")).all() == []
+    engine.dispose()
+
+
+def test_v05_downgrade_fails_closed_for_deadline_data(tmp_path: Path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'v05-downgrade.sqlite3'}"
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.attributes["database_url"] = database_url
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO tasks (id, title, status, planned_date, priority, deadline_date, "
+                "deadline_timezone, created_at_utc, updated_at_utc, version) VALUES "
+                "(:id, 'Deadline', 'pending', '2026-09-26', 'normal', '2026-09-27', "
+                "'Asia/Shanghai', :created, :updated, 1)"
+            ),
+            {
+                "id": "00000000-0000-0000-0000-000000000601",
+                "created": "2026-09-26T00:00:00.000000Z",
+                "updated": "2026-09-26T00:00:00.000000Z",
+            },
+        )
+    engine.dispose()
+
+    with pytest.raises(RuntimeError, match="V0.5 data exists"):
+        command.downgrade(config, "0004_add_projects")
+
+    engine = create_engine(database_url)
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar() == (
+            "0005_add_deadlines_recurrence_reminders"
+        )
+        assert connection.execute(text("SELECT COUNT(*) FROM tasks WHERE deadline_date IS NOT NULL")).scalar() == 1
+    engine.dispose()
+
+
+def test_v05_structural_constraints_and_foreign_keys(tmp_path: Path) -> None:
+    database_url = f"sqlite:///{tmp_path / 'v05-constraints.sqlite3'}"
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.attributes["database_url"] = database_url
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+    task_constraints = {
+        constraint["name"] for constraint in inspect(engine).get_check_constraints("tasks")
+    }
+    assert {"ck_tasks_deadline_state", "ck_tasks_recurrence_pair"} <= task_constraints
+    recurrence_constraints = {
+        constraint["name"]
+        for constraint in inspect(engine).get_check_constraints("recurrence_rules")
+    }
+    assert {"ck_recurrence_rules_frequency", "ck_recurrence_rules_selector"} <= recurrence_constraints
+    reminder_constraints = {
+        constraint["name"] for constraint in inspect(engine).get_check_constraints("reminders")
+    }
+    assert "ck_reminders_state_timestamps" in reminder_constraints
+    task_fks = inspect(engine).get_foreign_keys("tasks")
+    recurrence_fk = next(
+        foreign_key
+        for foreign_key in task_fks
+        if foreign_key["referred_table"] == "recurrence_rules"
+    )
+    assert recurrence_fk["options"]["ondelete"] == "RESTRICT"
+    reminder_fks = inspect(engine).get_foreign_keys("reminders")
+    assert reminder_fks[0]["options"]["ondelete"] == "CASCADE"
+
+    with engine.begin() as connection:
+        connection.execute(text("PRAGMA foreign_keys=ON"))
+        connection.execute(
+            text(
+                "INSERT INTO recurrence_rules (id, frequency, starts_on, timezone, "
+                "created_at_utc, updated_at_utc, version) VALUES "
+                "('00000000-0000-0000-0000-000000000701', 'daily', '2026-09-26', "
+                "'Asia/Shanghai', '2026-09-26T00:00:00.000000Z', "
+                "'2026-09-26T00:00:00.000000Z', 1)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO tasks (id, title, status, planned_date, priority, "
+                "recurrence_rule_id, recurrence_occurrence_date, created_at_utc, "
+                "updated_at_utc, version) VALUES "
+                "('00000000-0000-0000-0000-000000000702', 'Occurrence', 'pending', "
+                "'2026-09-26', 'normal', '00000000-0000-0000-0000-000000000701', "
+                "'2026-09-26', '2026-09-26T00:00:00.000000Z', "
+                "'2026-09-26T00:00:00.000000Z', 1)"
+            )
+        )
+        with pytest.raises(IntegrityError):
+            connection.execute(
+                text(
+                    "DELETE FROM recurrence_rules "
+                    "WHERE id = '00000000-0000-0000-0000-000000000701'"
+                )
+            )
+    engine.dispose()
+
+
+@pytest.mark.parametrize("frequency", ["weekly", "monthly"])
+def test_v05_selector_null_is_rejected(database_engine, frequency):
+    with database_engine.begin() as connection:
+        with pytest.raises(IntegrityError):
+            connection.execute(text("""
+                INSERT INTO recurrence_rules
+                (id, frequency, starts_on, timezone, created_at_utc, updated_at_utc, version)
+                VALUES ('invalid-selector', :frequency, '2026-01-01', 'Asia/Shanghai',
+                        '2026-01-01T00:00:00.000000Z', '2026-01-01T00:00:00.000000Z', 1)
+            """), {"frequency": frequency})
+
+
+@pytest.mark.parametrize("kind", ["rule", "reminder"])
+def test_v05_downgrade_preserves_stopped_rule_or_dismissed_reminder(tmp_path, kind):
+    database_url = f"sqlite:///{tmp_path / 'protected.sqlite3'}"
+    config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+    config.attributes["database_url"] = database_url
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+    stamp = "2026-01-01T00:00:00.000000Z"
+    with engine.begin() as connection:
+        if kind == "rule":
+            connection.execute(text("""INSERT INTO recurrence_rules
+                (id, frequency, starts_on, timezone, stopped_at_utc, created_at_utc, updated_at_utc, version)
+                VALUES ('stopped', 'daily', '2026-01-01', 'Asia/Shanghai', :ts, :ts, :ts, 1)"""), {"ts": stamp})
+        else:
+            connection.execute(text("""INSERT INTO tasks
+                (id, title, status, priority, created_at_utc, updated_at_utc, version)
+                VALUES ('task', 'preserve', 'pending', 'normal', :ts, :ts, 1)"""), {"ts": stamp})
+            connection.execute(text("""INSERT INTO reminders
+                (id, task_id, trigger_at_utc, reminder_timezone, status, dismissed_at_utc, created_at_utc, updated_at_utc, version)
+                VALUES ('reminder', 'task', :ts, 'Asia/Shanghai', 'dismissed', :ts, :ts, :ts, 1)"""), {"ts": stamp})
+    with pytest.raises(RuntimeError, match="V0.5 data exists"):
+        command.downgrade(config, "0004_add_projects")
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == "0005_add_deadlines_recurrence_reminders"
+        assert connection.exec_driver_sql("PRAGMA integrity_check").scalar() == "ok"
+        assert connection.exec_driver_sql("PRAGMA foreign_key_check").all() == []
+        table = "recurrence_rules" if kind == "rule" else "reminders"
+        assert connection.exec_driver_sql(f"SELECT COUNT(*) FROM {table}").scalar() == 1
     engine.dispose()

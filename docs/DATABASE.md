@@ -19,7 +19,8 @@ The real database is currently at:
 
 Current application version: `v0.4.0`. V0.4 Projects functionality is
 complete, the Project Backend and Frontend are implemented, and final acceptance
-and database verification passed. V0.5 is the next planned development version.
+and database verification passed. V0.5 Phase 1 Backend work is implemented in
+the working tree; the real database remains at `0004_add_projects`.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -183,15 +184,16 @@ The real-data migration followed the same procedure: Backend stopped, verified
 pre-migration backup created, temporary-copy migration and regression checks
 completed, then explicit approval was obtained before applying `0004`.
 
-## Frozen V0.5 Schema: `0005_add_deadlines_recurrence_reminders`
+## V0.5 Phase 1 Schema: `0005_add_deadlines_recurrence_reminders`
 
-This is the approved V0.5 design only; it has not been implemented. The real
-database remains at `0004_add_projects`. Migration `0005` must depend on `0004`
-and must not modify `0001` through `0004`.
+The V0.5 Phase 1 Backend and Migration implementation is present and has been
+validated on isolated databases. The real database remains at
+`0004_add_projects`. Migration `0005` must depend on `0004` and must not modify
+`0001` through `0004`.
 
 ### Task Deadline Columns
 
-`tasks` will gain these nullable columns:
+Migration `0005` adds these nullable columns to `tasks`:
 
 | Column | SQLite type | Nullable | Meaning |
 | --- | --- | ---: | --- |
@@ -269,7 +271,7 @@ transactions; polling GETs never acknowledge or dismiss implicitly.
 
 ### Indexes and Foreign Keys
 
-The migration should add bounded-query indexes for:
+The migration adds bounded-query indexes for:
 
 - `tasks(deadline_date, deleted_at_utc, status)` for date Deadline queries.
 - `tasks(recurrence_rule_id, recurrence_occurrence_date)` for occurrence

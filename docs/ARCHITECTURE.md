@@ -6,7 +6,9 @@ Current application version: **v0.4.0** — V0.4 Projects.
 V0.4 Projects functionality is complete. The Project Backend, Migration 0004,
 Project Frontend, and their tests are implemented. Final acceptance and database
 verification passed, and the real database schema is `0004_add_projects`.
-V0.5 is the next planned development version.
+V0.5 Phase 1 Backend, Migration 0005, Deadline, Recurrence, and Reminder
+implementation is now in the working tree and has not been applied to the real
+database. V0.5 Frontend work has not started.
 
 ## Architecture
 
@@ -49,8 +51,9 @@ and transaction boundaries.
 - Tags use normalized `tags` and `task_tags` tables.
 - Search uses parameterized SQLite `LIKE` over title and description.
 - Every SQLAlchemy SQLite connection enables `PRAGMA foreign_keys=ON`.
-- AI, reminders, projects, recurrence, and ScheduleBlock are not current
-  schema dependencies.
+- AI and ScheduleBlock are not current schema dependencies. V0.5 recurrence,
+  Deadline, and Reminder tables exist only in the Phase 1 working-tree
+  migration; the approved real database remains at V0.4.
 
 ## Frozen V0.3 Decisions
 
@@ -206,12 +209,12 @@ Projects view, a Project detail view, and the existing Task Editor extension.
 No Vue Router, Pinia, new UI framework, Kanban board, or project-specific drag
 interaction is introduced.
 
-## Frozen V0.5 Design: Deadlines, Repeat, and Reminders
+## V0.5 Design and Phase 1 Implementation: Deadlines, Repeat, and Reminders
 
-V0.5 is the next planned development version. Its architecture is frozen for
-review, but no V0.5 schema, API, or product code has been implemented. The real
-database remains at `0004_add_projects` until the V0.5 migration is proven on a
-temporary copy and explicitly approved.
+V0.5 architecture is frozen. The Phase 1 Backend, schema, API, and isolated
+database implementation are present in the working tree. The real database
+remains at `0004_add_projects` until Migration 0005 is proven on a temporary
+copy and explicitly approved. V0.5 Frontend work has not started.
 
 ### Feature Boundary
 
@@ -329,9 +332,9 @@ browser session; it is not a server-side acknowledgement.
 
 ### V0.5 Maintenance and Test Boundary
 
-The current `App.vue` footer still displays `v0.3.1`. This is an independent
-V0.4 frontend version-copy maintenance fix and must not be mixed into Migration
-0005 or V0.5 feature work.
+The independent V0.4 footer maintenance fix was completed in `b7b5114`;
+`App.vue` reads the application version from the Frontend package metadata.
+It is separate from Migration 0005 and V0.5 feature work.
 
 V0.5 implementation remains phased: freeze this design, implement and test
 `0005` on isolated databases, implement Backend/API behavior, implement the

@@ -11,6 +11,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from app.core.errors import (
     CategoryNameConflictError,
     CategoryNotFoundError,
+    DeadlineValidationError,
     ProjectNotFoundError,
     ScheduleConflictError,
     ScheduleValidationError,
@@ -26,6 +27,7 @@ from app.core.schedule import (
     move_schedule_to_date,
     validate_persisted_schedule,
 )
+from app.core.deadline import local_deadline_to_utc, validate_persisted_deadline
 from app.models.category import Category
 from app.models.project import Project
 from app.models.tag import Tag, task_tags
@@ -57,6 +59,9 @@ class TaskService:
             start_at_utc, end_at_utc, schedule_timezone = self._schedule_for_create(
                 payload
             )
+            deadline_date, deadline_at_utc, deadline_timezone = self._deadline_for_create(
+                payload
+            )
             self._ensure_no_schedule_conflict(
                 session,
                 start_at_utc,
@@ -74,6 +79,9 @@ class TaskService:
                 start_at_utc=start_at_utc,
                 end_at_utc=end_at_utc,
                 schedule_timezone=schedule_timezone,
+                deadline_date=deadline_date,
+                deadline_at_utc=deadline_at_utc,
+                deadline_timezone=deadline_timezone,
             )
             session.add(task)
             self._commit(session, "create task")
@@ -216,6 +224,9 @@ class TaskService:
             start_at_utc, end_at_utc, schedule_timezone = self._schedule_for_update(
                 task, changes, planned_date
             )
+            deadline_date, deadline_at_utc, deadline_timezone = self._deadline_for_update(
+                task, changes
+            )
 
             changed = False
             for field in ("title", "description", "planned_date", "priority"):
@@ -247,6 +258,13 @@ class TaskService:
                 task.start_at_utc != start_at_utc
                 or task.end_at_utc != end_at_utc
                 or task.schedule_timezone != schedule_timezone
+            ):
+                changed = True
+
+            if (
+                task.deadline_date != deadline_date
+                or task.deadline_at_utc != deadline_at_utc
+                or task.deadline_timezone != deadline_timezone
             ):
                 changed = True
 
@@ -282,6 +300,9 @@ class TaskService:
             task.start_at_utc = start_at_utc
             task.end_at_utc = end_at_utc
             task.schedule_timezone = schedule_timezone
+            task.deadline_date = deadline_date
+            task.deadline_at_utc = deadline_at_utc
+            task.deadline_timezone = deadline_timezone
             self._touch(task)
             self._commit(session, "update task", (task.id, expected_version))
             session.refresh(task)
@@ -292,6 +313,12 @@ class TaskService:
 
     def complete(self, session: Session, task_id: str, expected_version: int) -> Task:
         task = self.get(session, task_id)
+        if task.recurrence_rule_id is not None:
+            from app.services.recurrence_service import RecurrenceService
+
+            return RecurrenceService().complete_occurrence(
+                session, task_id, expected_version
+            )
         self._check_version(task, expected_version)
         if task.status == TaskStatus.COMPLETED.value:
             return task
@@ -452,6 +479,70 @@ class TaskService:
             instants.timezone_name,
         )
         return instants.start_at_utc, instants.end_at_utc, instants.timezone_name
+
+    @staticmethod
+    def _deadline_for_create(
+        payload: TaskCreate,
+    ) -> tuple[date | None, datetime | None, str | None]:
+        if payload.deadline is None:
+            return None, None, None
+        return TaskService._deadline_from_value(payload.deadline.model_dump())
+
+    @staticmethod
+    def _deadline_for_update(
+        task: Task,
+        changes: dict[str, object],
+    ) -> tuple[date | None, datetime | None, str | None]:
+        if "deadline" not in changes:
+            return task.deadline_date, task.deadline_at_utc, task.deadline_timezone
+        requested_deadline = changes["deadline"]
+        if requested_deadline is None:
+            return None, None, None
+        return TaskService._deadline_from_value(requested_deadline)
+
+    @staticmethod
+    def _deadline_from_value(
+        value: object,
+    ) -> tuple[date, datetime | None, str]:
+        if not isinstance(value, dict):
+            raise DeadlineValidationError("invalid Deadline value")
+        deadline_date = value.get("date")
+        deadline_time = value.get("time")
+        timezone_name = value.get("timezone") or get_settings().timezone
+        if not isinstance(deadline_date, date):
+            raise DeadlineValidationError("deadline date must be a valid date")
+        if not isinstance(timezone_name, str):
+            raise DeadlineValidationError("deadline timezone must be a valid IANA timezone")
+        if deadline_time is None:
+            # Resolve here as well as at conversion time so date-only Deadlines
+            # cannot persist an invalid IANA timezone.
+            from app.core.schedule import resolve_timezone
+
+            try:
+                resolve_timezone(timezone_name)
+            except Exception as error:
+                if isinstance(error, DeadlineValidationError):
+                    raise
+                raise DeadlineValidationError(str(error)) from error
+            return deadline_date, None, timezone_name.strip()
+        if not hasattr(deadline_time, "tzinfo"):
+            raise DeadlineValidationError("deadline time must be a valid local time")
+        try:
+            instants = local_deadline_to_utc(deadline_date, deadline_time, timezone_name)
+        except Exception as error:
+            if isinstance(error, DeadlineValidationError):
+                raise
+            raise DeadlineValidationError(str(error)) from error
+        validate_persisted_deadline(
+            instants.deadline_date,
+            instants.deadline_at_utc,
+            instants.timezone_name,
+        )
+        return (
+            instants.deadline_date,
+            instants.deadline_at_utc,
+            instants.timezone_name,
+        )
 
     @staticmethod
     def _schedule_for_update(

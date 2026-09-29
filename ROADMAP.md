@@ -3,7 +3,8 @@
 Current application version: **v0.4.0 — V0.4 Projects**. V0.4 Projects
 functionality is complete. The Project Backend and Frontend are implemented;
 final acceptance and database verification passed. The real database schema is
-`0004_add_projects`. V0.5 is the next planned development version.
+`0004_add_projects`. V0.5 Phase 1 Backend implementation is in progress;
+V0.5 Frontend work has not started.
 
 ## Current
 
@@ -120,8 +121,8 @@ Explicitly out of scope:
 V0.4 implementation completed in this order: Phase 1 temporary `0004`
 migration rehearsal and Backend model/service/API, Phase 2 Frontend Hash views
 and Task Editor integration, Vitest and Browser E2E regression, Phase 3 full
-acceptance, and approved real-data migration. V0.5 is the next planned
-development version.
+acceptance, and approved real-data migration. V0.5 Phase 1 Backend work is in
+progress; Frontend work has not started.
 
 Optional future tooling: Windows one-click WSL start/stop entrypoints. The
 currently supported workflow uses the WSL start and stop scripts directly.
@@ -130,9 +131,10 @@ currently supported workflow uses the WSL start and stop scripts directly.
 
 ### V0.5 — Deadlines, Repeat Tasks, and Reminders
 
-Status: Architecture frozen; implementation has not started. The real database
-remains at `0004_add_projects` until a temporary-copy migration, full test gate,
-backup, and explicit approval are complete.
+Status: Architecture frozen; Phase 1 Backend implementation and isolated-database
+tests are complete for review. The real database remains at
+`0004_add_projects` until a temporary-copy migration, full test gate, backup,
+and explicit approval are complete. Frontend work has not started.
 
 #### Frozen Scope
 
@@ -188,8 +190,8 @@ the Backend is stopped.
 
 #### Migration and Test Gate
 
-The frozen schema plan is `0005_add_deadlines_recurrence_reminders`; migrations
-`0001` through `0004` remain immutable. Phase 1 must validate upgrade,
+The implemented schema is `0005_add_deadlines_recurrence_reminders`; migrations
+`0001` through `0004` remain immutable. Phase 1 validates upgrade,
 constraints, UTC/timezone and DST behavior, repeat idempotence and rollback,
 reminder state transitions, and all V0.4 regression suites on isolated
 databases before any real-data migration is considered.

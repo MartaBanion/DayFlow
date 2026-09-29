@@ -383,11 +383,11 @@ cover Hash navigation, Project list/detail, Task Editor assignment/clear,
 progress, lifecycle actions, error states, refresh persistence, and continued
 V0.3 regression coverage.
 
-## V0.5 Frozen API Contract
+## V0.5 Phase 1 API Contract
 
-V0.5 is architecture-frozen but not implemented. The real API remains at the
-V0.4 contract and the real database remains at `0004_add_projects` until the
-temporary-copy migration and approval gates pass.
+V0.5 architecture is frozen and the Phase 1 Backend endpoints below are
+implemented in the working tree. The real database remains at
+`0004_add_projects` until the temporary-copy migration and approval gates pass.
 
 ### Deadline Write and Read Shape
 
@@ -449,8 +449,13 @@ POST /api/v1/tasks/{id}/skip
 Creating a rule requires `daily`, `weekly` with selected weekdays, or
 `monthly` with a day from 1 through 28, plus `starts_on` and an IANA timezone.
 The attached Task must have a planned date and no Time Block in this first
-version. Rule mutation requires the current rule `version`; occurrence Task
+version. Creating a rule requires the current Task `version` in the JSON body.
+Rule mutation requires the current rule `version`; occurrence Task
 mutation continues to require the Task `version`.
+
+Successful generation advances the rule version once within the same transaction,
+preventing concurrent stop/edit/generation from using an obsolete rule snapshot.
+Returning an existing pending occurrence does not change either version.
 
 The lifecycle contract is:
 
@@ -505,6 +510,11 @@ changes status or timestamps. Only explicit acknowledge/dismiss requests
 change state, using the current Reminder `version` and returning HTTP 409 for
 stale updates. Frontend polling may use `sessionStorage` to deduplicate
 dialogs; this does not replace server acknowledgement.
+
+Repeated acknowledge/dismiss requests have no additional side effects: an old
+version returns `409 reminder_version_conflict`; a current version applied to
+an already handled reminder returns `409 reminder_state_conflict`. An explicit
+time edit resets the reminder to pending and clears both handled timestamps.
 
 ### V0.5 Errors and Test Contract
 

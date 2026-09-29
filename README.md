@@ -7,8 +7,14 @@ DayFlow Personal is a local-first, single-user productivity application.
 **Current application version: v0.4.0.** V0.4 Projects functionality is
 complete. The Project Backend, Migration 0004, Project Frontend, and acceptance
 tests are implemented. Final acceptance and database verification passed, and
-the real database schema is `0004_add_projects`. V0.5 is the next planned
-development version.
+the real database schema is `0004_add_projects`. V0.5 Phase 1 Backend work for
+Deadlines, Repeat Tasks, and Reminders is implemented in the working tree;
+V0.5 Frontend work and the real `0005` migration are not yet released.
+
+While the working tree contains V0.5 Backend changes, do not restart that code
+against the real `0004` database. Use an explicitly configured temporary `0005`
+database for development; the existing non-reloading V0.4 process may remain
+running. Real-data upgrade still requires separate approval.
 
 ## V0.1 Features
 
