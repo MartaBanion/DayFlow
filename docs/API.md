@@ -382,3 +382,147 @@ filters in Search, Inbox, Today, and Calendar. Frontend and Browser E2E must
 cover Hash navigation, Project list/detail, Task Editor assignment/clear,
 progress, lifecycle actions, error states, refresh persistence, and continued
 V0.3 regression coverage.
+
+## V0.5 Frozen API Contract
+
+V0.5 is architecture-frozen but not implemented. The real API remains at the
+V0.4 contract and the real database remains at `0004_add_projects` until the
+temporary-copy migration and approval gates pass.
+
+### Deadline Write and Read Shape
+
+Task Create and Patch will accept an optional structured `deadline` value:
+
+```json
+{
+  "deadline": {
+    "date": "2026-10-20",
+    "time": "17:00",
+    "timezone": "Asia/Shanghai"
+  }
+}
+```
+
+`time` is optional. Omitting it creates a date-only Deadline. `timezone` may be
+omitted and then defaults to `DAYFLOW_TIMEZONE`; the resolved IANA timezone is
+persisted. The API will return the normalized fields:
+
+```json
+{
+  "deadline_date": "2026-10-20",
+  "deadline_at_utc": "2026-10-20T09:00:00.000000Z",
+  "deadline_timezone": "Asia/Shanghai",
+  "deadline_status": "upcoming"
+}
+```
+
+For a date-only Deadline, `deadline_at_utc` is `null`. With no Deadline, all
+three stored fields are `null` and the computed status is `none`.
+
+Partial-update semantics are:
+
+- `deadline` omitted: preserve the existing Deadline.
+- `deadline: null`: clear all Deadline fields.
+- Date-only values use the saved timezone and are overdue only after the
+  Backend local date passes the saved `deadline_date`.
+- Timed values are converted from local date/time to UTC in the saved timezone.
+- Invalid timezone, ambiguous/nonexistent DST time, or inconsistent local date
+  returns HTTP 422.
+
+Deadline updates never alter `planned_date`, a Time Block, Project membership,
+Category, Tags, or Task status. Completion preserves the stored Deadline;
+normal due/overdue queries exclude completed and soft-deleted Tasks.
+
+### Recurrence Endpoints
+
+The minimal recurrence contract is:
+
+```text
+POST /api/v1/tasks/{id}/recurrence
+GET  /api/v1/recurrence-rules/{id}
+PATCH /api/v1/recurrence-rules/{id}
+POST /api/v1/recurrence-rules/{id}/stop
+POST /api/v1/recurrence-rules/{id}/materialize
+POST /api/v1/tasks/{id}/skip
+```
+
+Creating a rule requires `daily`, `weekly` with selected weekdays, or
+`monthly` with a day from 1 through 28, plus `starts_on` and an IANA timezone.
+The attached Task must have a planned date and no Time Block in this first
+version. Rule mutation requires the current rule `version`; occurrence Task
+mutation continues to require the Task `version`.
+
+The lifecycle contract is:
+
+- Completing an occurrence of an active rule completes it and creates the next
+  occurrence in the same transaction. A stopped rule creates nothing.
+- `POST /api/v1/tasks/{id}/skip` soft-deletes the current occurrence of an
+  active rule and creates the next one in the same transaction; a stopped rule
+  creates nothing.
+- A normal Task `DELETE` soft-deletes only the current occurrence and creates
+  nothing.
+- The next occurrence date is strictly later than both the current occurrence
+  date and today in the rule timezone. Missed occurrences are not backfilled.
+- Stopping a rule sets `stopped_at_utc` and preserves historical Tasks.
+- Restoring a Task restores only that Task and does not restart its rule.
+- `materialize` is explicit, never called by startup or a GET, creates at most
+  one occurrence, and returns the existing pending occurrence when one already
+  exists. Historical soft-deleted occurrences still reserve their dates.
+
+Rule edits affect future materialization only. Existing generated unfinished
+Tasks are snapshots and are not rewritten. Generated occurrences do not copy
+absolute Deadlines, Reminders, or Time Blocks; ordinary metadata is copied only
+after current validity checks. The pair of recurrence fields is always set or
+cleared together.
+
+Successful multi-step occurrence operations are one transaction. Validation,
+stale version, date collision, or database failure rolls back both the current
+occurrence change and any attempted next-occurrence creation. A stale version
+cannot be bypassed by materialization or a skip request.
+
+### Reminder Endpoints
+
+The initial Reminder contract is:
+
+```text
+GET    /api/v1/tasks/{id}/reminders
+POST   /api/v1/tasks/{id}/reminders
+PATCH  /api/v1/reminders/{id}
+DELETE /api/v1/reminders/{id}
+GET    /api/v1/reminders/due
+POST   /api/v1/reminders/{id}/acknowledge
+POST   /api/v1/reminders/{id}/dismiss
+```
+
+Reminders accept an explicitly specified local trigger time and timezone and
+store the normalized UTC instant. They do not inherit or copy a Deadline, and
+repeat generation does not copy them. Status is only `pending`,
+`acknowledged`, or `dismissed`.
+
+`GET /api/v1/reminders/due` is pure read. It returns pending reminders whose
+UTC trigger is due and whose Task is not completed or soft-deleted. It never
+changes status or timestamps. Only explicit acknowledge/dismiss requests
+change state, using the current Reminder `version` and returning HTTP 409 for
+stale updates. Frontend polling may use `sessionStorage` to deduplicate
+dialogs; this does not replace server acknowledgement.
+
+### V0.5 Errors and Test Contract
+
+Expected validation and conflict codes include:
+
+- `deadline_validation_error` — invalid local date/time, timezone, or DST
+  state.
+- `recurrence_validation_error` — invalid frequency, selector, date, or
+  unsupported scheduled Task.
+- `recurrence_rule_conflict` — occurrence date or rule state conflict.
+- `recurrence_version_conflict` — stale rule version.
+- `reminder_validation_error` — invalid trigger or timezone.
+- `reminder_version_conflict` — stale Reminder version.
+
+The V0.5 test gate must cover upgrade `0004 → 0005`, preservation of all
+existing Task/Project/Category/Tag/Time Block data, Deadline date-only and
+timed behavior, UTC and DST validation, recurrence next-date calculation,
+missed-date no-backfill, delete/skip/complete/stop/restore semantics,
+materialize idempotence, historical soft-delete uniqueness, transaction
+rollback, Reminder due/acknowledge/dismiss behavior, read-only due polling,
+Frontend error states, and V0.4 regression plus Browser E2E coverage.

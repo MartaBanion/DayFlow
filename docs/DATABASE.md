@@ -183,6 +183,119 @@ The real-data migration followed the same procedure: Backend stopped, verified
 pre-migration backup created, temporary-copy migration and regression checks
 completed, then explicit approval was obtained before applying `0004`.
 
+## Frozen V0.5 Schema: `0005_add_deadlines_recurrence_reminders`
+
+This is the approved V0.5 design only; it has not been implemented. The real
+database remains at `0004_add_projects`. Migration `0005` must depend on `0004`
+and must not modify `0001` through `0004`.
+
+### Task Deadline Columns
+
+`tasks` will gain these nullable columns:
+
+| Column | SQLite type | Nullable | Meaning |
+| --- | --- | ---: | --- |
+| `deadline_date` | `DATE` | yes | Local date of a date-only or timed Deadline |
+| `deadline_at_utc` | `VARCHAR(32)` | yes | UTC instant for a specific-time Deadline |
+| `deadline_timezone` | `VARCHAR(64)` | yes | Persisted IANA timezone for Deadline interpretation |
+| `recurrence_rule_id` | `VARCHAR(36)` | yes | Nullable FK to `recurrence_rules.id` |
+| `recurrence_occurrence_date` | `DATE` | yes | Local occurrence date within the rule timezone |
+
+Database checks must allow only these Deadline states:
+
+```text
+all three NULL
+or deadline_date and deadline_timezone NOT NULL with deadline_at_utc NULL
+or all three NOT NULL
+```
+
+The database does not validate IANA names, DST, or the relationship between a
+UTC instant and a local date; those remain Backend business validation. For a
+timed Deadline, the service must ensure `deadline_date` is the local date of
+`deadline_at_utc` in `deadline_timezone`.
+
+The recurrence columns use a paired check: `recurrence_rule_id` and
+`recurrence_occurrence_date` are both NULL or both non-NULL. A unique index on
+`(recurrence_rule_id, recurrence_occurrence_date)` prevents duplicate
+occurrences for one rule. Because soft-deleted rows remain in the table, they
+also reserve their historical occurrence dates.
+
+### `recurrence_rules`
+
+The normalized table contains:
+
+| Column | SQLite type | Nullable | Meaning |
+| --- | --- | ---: | --- |
+| `id` | `VARCHAR(36)` | no | Application-generated UUID |
+| `frequency` | `VARCHAR(20)` | no | `daily`, `weekly`, or `monthly` |
+| `weekdays_mask` | `INTEGER` | yes | Selected weekdays for weekly rules |
+| `month_day` | `INTEGER` | yes | Day 1–28 for monthly rules |
+| `starts_on` | `DATE` | no | First local occurrence date |
+| `timezone` | `VARCHAR(64)` | no | Persisted IANA rule timezone |
+| `stopped_at_utc` | `VARCHAR(32)` | yes | Set when the rule is stopped |
+| `created_at_utc` | `VARCHAR(32)` | no | Creation UTC instant |
+| `updated_at_utc` | `VARCHAR(32)` | no | Last rule mutation UTC instant |
+| `version` | `INTEGER` | no | Optimistic version, starting at 1 |
+
+Structural checks require weekly rules to have a non-empty weekday mask,
+monthly rules to have `month_day` between 1 and 28, and daily rules to have
+neither weekly nor monthly selector. IANA validity and the exact next-date
+algorithm remain service rules. `tasks.recurrence_rule_id` references this
+table with `ON DELETE RESTRICT`; a stopped rule is retained rather than
+physically deleted.
+
+### `reminders`
+
+Reminders are separate records for explicitly specified trigger times:
+
+| Column | SQLite type | Nullable | Meaning |
+| --- | --- | ---: | --- |
+| `id` | `VARCHAR(36)` | no | Application-generated UUID |
+| `task_id` | `VARCHAR(36)` | no | FK to `tasks.id`, `ON DELETE CASCADE` |
+| `trigger_at_utc` | `VARCHAR(32)` | no | UTC trigger instant |
+| `reminder_timezone` | `VARCHAR(64)` | no | Persisted source/display timezone |
+| `status` | `VARCHAR(20)` | no | `pending`, `acknowledged`, or `dismissed` |
+| `acknowledged_at_utc` | `VARCHAR(32)` | yes | Explicit acknowledgement time |
+| `dismissed_at_utc` | `VARCHAR(32)` | yes | Explicit dismissal time |
+| `created_at_utc` | `VARCHAR(32)` | no | Creation UTC instant |
+| `updated_at_utc` | `VARCHAR(32)` | no | Last state mutation UTC instant |
+| `version` | `INTEGER` | no | Optimistic version, starting at 1 |
+
+Database checks constrain status and timestamp combinations. `due` is not a
+stored status: it is a read-only query condition over `pending` reminders whose
+trigger has passed. Completed or soft-deleted Tasks are excluded from due
+results without changing Reminder rows. Reminder state changes are explicit
+transactions; polling GETs never acknowledge or dismiss implicitly.
+
+### Indexes and Foreign Keys
+
+The migration should add bounded-query indexes for:
+
+- `tasks(deadline_date, deleted_at_utc, status)` for date Deadline queries.
+- `tasks(recurrence_rule_id, recurrence_occurrence_date)` for occurrence
+  lookup and idempotent generation.
+- `recurrence_rules(stopped_at_utc)` for active-rule selection.
+- `reminders(status, trigger_at_utc)` for due lookup.
+- `reminders(task_id, status)` for Task reminder management.
+
+Foreign-key enforcement remains `PRAGMA foreign_keys=ON` on every SQLAlchemy
+connection, test connection, and migration connection. The recurrence FK is
+`ON DELETE RESTRICT`; the Reminder-to-Task FK is `ON DELETE CASCADE`. Normal
+Task deletion remains soft delete, so it does not silently remove reminders.
+
+### Migration and Downgrade Safety
+
+SQLite batch migration must preserve all existing Task fields, Project
+relationships, Category/Tag rows, `task_tags`, and Time Block values. Existing
+Tasks receive `NULL` Deadline and recurrence fields. No existing Task receives
+a generated occurrence, Reminder, or copied Deadline during upgrade.
+
+Downgrade must fail closed if any Deadline column is populated, any recurrence
+rule exists, any Task references a rule, any occurrence row exists, or any
+Reminder exists. It is safe only on a test database with all V0.5 data empty.
+The downgrade must never silently discard Deadline, recurrence, or Reminder
+data.
+
 ## Completed V0.4 Migration Procedure
 
 The following procedure was completed before applying `0004_add_projects` to

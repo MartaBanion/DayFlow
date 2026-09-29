@@ -206,6 +206,139 @@ Projects view, a Project detail view, and the existing Task Editor extension.
 No Vue Router, Pinia, new UI framework, Kanban board, or project-specific drag
 interaction is introduced.
 
+## Frozen V0.5 Design: Deadlines, Repeat, and Reminders
+
+V0.5 is the next planned development version. Its architecture is frozen for
+review, but no V0.5 schema, API, or product code has been implemented. The real
+database remains at `0004_add_projects` until the V0.5 migration is proven on a
+temporary copy and explicitly approved.
+
+### Feature Boundary
+
+V0.5 contains only:
+
+- Date-only and specific-time Deadlines.
+- `daily`, `weekly` with selected weekdays, and `monthly` rules for days 1–28.
+- Explicitly specified-time Reminders.
+
+V0.5 does not contain repeated Time Blocks, relative Deadline Reminders,
+background reminder services, complex recurrence protocols, external calendar
+integration, AI scheduling, or other V0.6+ features.
+
+### Deadline Model
+
+Deadline is independent from `planned_date` and from the optional Time Block.
+The proposed Task fields are:
+
+- `deadline_date`: nullable local calendar date.
+- `deadline_at_utc`: nullable UTC instant for a specific-time Deadline.
+- `deadline_timezone`: nullable persisted IANA timezone used for date-only
+  overdue evaluation and for interpreting a timed Deadline.
+
+The valid states are:
+
+```text
+No Deadline:    deadline_date = NULL, deadline_at_utc = NULL,
+                deadline_timezone = NULL
+Date-only:      deadline_date != NULL, deadline_at_utc = NULL,
+                deadline_timezone != NULL
+Timed:          deadline_date != NULL, deadline_at_utc != NULL,
+                deadline_timezone != NULL
+```
+
+For a timed Deadline, `deadline_date` must equal the local date of
+`deadline_at_utc` in `deadline_timezone`. The Backend uses the saved timezone,
+not the browser timezone, to determine overdue state. A date-only Deadline is
+overdue when the Backend's local date in that saved timezone is later than the
+saved date. A timed Deadline is overdue when the current UTC instant reaches
+the saved instant. Completed Tasks retain their Deadline data but are not
+reported as currently overdue; deleted Tasks are excluded from normal due and
+overdue queries.
+
+Deadline conversion uses `zoneinfo` and rejects invalid, ambiguous, or
+nonexistent local times with HTTP 422. Deadline changes do not change
+`planned_date`, a Time Block, Project membership, Category, Tags, or Task
+status.
+
+### Repeat Model and Lifecycle
+
+V0.5 uses a normalized `recurrence_rules` table and adds a nullable paired
+`recurrence_rule_id` plus `recurrence_occurrence_date` to `tasks`. A Task is an
+occurrence snapshot; it may belong to at most one rule. Repeated Time Blocks
+are not supported, so a recurring Task cannot create a repeated schedule.
+
+Rules store frequency, the weekly weekday mask or monthly day when applicable,
+the first local occurrence date, the persisted IANA timezone,
+`stopped_at_utc`, timestamps, and an optimistic `version`. Daily rules do not
+store a weekday mask; weekly rules require at least one selected weekday;
+monthly rules accept only days 1–28.
+
+The pair `recurrence_rule_id` and `recurrence_occurrence_date` is either both
+NULL or both non-NULL. Occurrence dates are unique per rule, including rows
+that are soft-deleted. `tasks.recurrence_rule_id` uses `ON DELETE RESTRICT` so a
+referenced rule cannot be physically deleted; normal stopping uses
+`stopped_at_utc`.
+
+The lifecycle is deliberately explicit:
+
+- Normal Task `DELETE` soft-deletes only the current occurrence and does not
+  generate another one.
+- For an active rule, `Skip` soft-deletes the current occurrence and creates
+  its next occurrence in one transaction; a stopped rule creates nothing.
+- For an active rule, `Complete` completes the current occurrence and creates
+  its next occurrence in one transaction; a stopped rule creates nothing.
+- The next date must be later than both the current occurrence date and today
+  in the rule timezone. Missed dates are never backfilled.
+- `Stop` stops the rule without deleting historical Tasks.
+- `Restore` restores only the selected Task; it does not restart the rule or
+  restore historical relationships.
+- Explicit `Materialize` is the only standalone generation operation. It is
+  never called from frontend startup or a GET endpoint, creates at most one
+  occurrence, does not backfill, and is idempotent when a pending occurrence
+  already exists. A candidate date that conflicts with any historical,
+  including soft-deleted, occurrence is skipped.
+
+Editing an occurrence changes that Task snapshot only. Editing a recurrence
+rule changes future generation; already generated unfinished Tasks are not
+rewritten, deleted, or silently rescheduled. Generated occurrences do not copy
+absolute Deadlines, Reminders, or Time Blocks. Valid ordinary metadata such as
+title, description, priority, Category, Tags, and Project may be copied under
+service validation.
+
+### Reminder Model and Runtime Behavior
+
+Reminders are separate records so a Task can have more than one explicitly
+specified trigger. Their persisted state is:
+
+```text
+pending → acknowledged
+pending → dismissed
+```
+
+`due` is derived from `pending` plus `trigger_at_utc <= now_utc` and is never
+stored. A due query may exclude completed or soft-deleted Tasks without
+mutating their Reminder rows. `GET /api/v1/reminders/due` is strictly
+read-only. Only explicit user actions call acknowledge or dismiss endpoints.
+
+When the browser and Backend are running, frontend polling can surface due
+Reminders. When the browser is closed but the Backend runs, due records remain
+available but no reliable browser popup is promised. When the Backend is
+stopped, real-time reminders are unavailable. On reopening, pending due
+Reminders can be displayed. `sessionStorage` deduplicates dialogs within one
+browser session; it is not a server-side acknowledgement.
+
+### V0.5 Maintenance and Test Boundary
+
+The current `App.vue` footer still displays `v0.3.1`. This is an independent
+V0.4 frontend version-copy maintenance fix and must not be mixed into Migration
+0005 or V0.5 feature work.
+
+V0.5 implementation remains phased: freeze this design, implement and test
+`0005` on isolated databases, implement Backend/API behavior, implement the
+minimal Frontend surfaces, run Vitest and Browser E2E, rehearse on a copy of
+the real database, create a verified backup, obtain explicit approval, migrate
+real data, and complete manual acceptance before a release tag.
+
 ## Timezone Strategy
 
 - Database stores Time Block instants in UTC.

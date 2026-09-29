@@ -126,9 +126,80 @@ development version.
 Optional future tooling: Windows one-click WSL start/stop entrypoints. The
 currently supported workflow uses the WSL start and stop scripts directly.
 
+## Next Planned Development
+
+### V0.5 — Deadlines, Repeat Tasks, and Reminders
+
+Status: Architecture frozen; implementation has not started. The real database
+remains at `0004_add_projects` until a temporary-copy migration, full test gate,
+backup, and explicit approval are complete.
+
+#### Frozen Scope
+
+- Deadline values may be date-only or a specific local time.
+- Repeat rules support `daily`, `weekly` with selected weekdays, and `monthly`
+  on days 1–28.
+- Reminders support one or more explicitly specified trigger times per Task;
+  relative Deadline reminders are out of scope.
+- Existing Task, Project, Category, Tag, Calendar, and Time Block behavior
+  remains compatible.
+
+Deadline data is independent from `planned_date` and Time Blocks. Date-only
+deadlines use a persisted IANA `deadline_timezone` for overdue evaluation;
+timed deadlines are converted to and stored as UTC instants with their source
+timezone. Completing a Task does not erase its deadline, but completed Tasks
+are not treated as currently overdue.
+
+Repeat rules do not create repeated Time Blocks, copy absolute Deadlines, or
+copy Reminders. A generated occurrence may copy ordinary Task metadata when it
+is still valid, but its Deadline, Reminder, and Time Block start empty.
+
+#### Repeat Lifecycle Rules
+
+- A normal Task `DELETE` soft-deletes only the current occurrence and does not
+  generate another occurrence.
+- For an active rule, `Skip` soft-deletes the current occurrence and creates the
+  next occurrence in the same transaction; a stopped rule creates nothing.
+- For an active rule, `Complete` completes the current occurrence and creates
+  the next occurrence in the same transaction; a stopped rule creates nothing.
+- The next occurrence is strictly later than both the current occurrence date
+  and today in the rule timezone. Missed dates are not backfilled.
+- `Stop` sets `stopped_at_utc` on the rule and keeps all historical Tasks.
+- `Restore` restores only the selected Task; it never restarts a rule or
+  reconstructs historical relationships.
+- Explicit `Materialize` is the only operation that may create a next
+  occurrence without completing or skipping the current one. It is never
+  triggered by frontend startup or a GET request, creates at most one Task,
+  does not backfill history, and is idempotent when a pending occurrence
+  already exists. Soft-deleted historical occurrences still participate in
+  date and uniqueness checks.
+- Editing an occurrence edits that snapshot only. Editing a rule affects future
+  materialization and does not rewrite already generated unfinished Tasks.
+
+#### Reminder Lifecycle Rules
+
+Reminder status is `pending`, `acknowledged`, or `dismissed`. `due` is a
+read-only query condition (`pending` and trigger time reached), not a stored
+status. `GET /api/v1/reminders/due` never writes. A user action is required to
+acknowledge or dismiss a reminder. Frontend polling uses `sessionStorage` to
+avoid duplicate dialogs in one browser session; reopening DayFlow can still
+show unprocessed due reminders. No real-time notification is promised while
+the Backend is stopped.
+
+#### Migration and Test Gate
+
+The frozen schema plan is `0005_add_deadlines_recurrence_reminders`; migrations
+`0001` through `0004` remain immutable. Phase 1 must validate upgrade,
+constraints, UTC/timezone and DST behavior, repeat idempotence and rollback,
+reminder state transitions, and all V0.4 regression suites on isolated
+databases before any real-data migration is considered.
+
+An independent V0.4 maintenance fix is still required for the stale `v0.3.1`
+version text currently displayed by `frontend/src/App.vue`; it is not part of
+V0.5 Migration 0005 or V0.5 feature implementation.
+
 ## Later
 
-- V0.5: Reminders, Deadlines, and Repeat Tasks.
 - V0.6: AI Provider abstraction and Mock Provider.
 - V0.7: Natural-language Task creation.
 - V0.8: AI Task decomposition.
