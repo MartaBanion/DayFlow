@@ -51,12 +51,12 @@ afterEach(() => {
 })
 
 async function deleteTaskFromToday(): Promise<HTMLButtonElement> {
-  const deleteButton = wrapper
-    ?.findAll('.task-actions button')
-    .find((button) => button.text() === '删除')
+  await wrapper!.get('button[aria-label^="更多操作"]').trigger('click')
+  await flushPromises()
+  const deleteButton = Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]')).find(button => button.textContent?.trim() === '删除')
   expect(deleteButton).toBeDefined()
 
-  await deleteButton!.trigger('click')
+  deleteButton!.click()
   await flushPromises()
 
   const undoButton = document.querySelector<HTMLButtonElement>('.delete-undo')

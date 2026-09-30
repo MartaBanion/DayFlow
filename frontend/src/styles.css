@@ -443,6 +443,101 @@ textarea {
   background: #fbfcfd;
 }
 
+.summary-compact {
+  display: block;
+}
+
+.today-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.today-overview span {
+  color: var(--color-text-secondary);
+}
+
+.today-overview strong {
+  margin-left: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-section-title);
+}
+
+.task-copy {
+  min-width: 0;
+}
+
+.task-card .task-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.task-secondary-meta {
+  opacity: 0.85;
+}
+
+.task-card h4 {
+  font-size: var(--font-size-task-title);
+}
+
+.task-card .task-actions {
+  flex-wrap: wrap;
+  align-self: flex-start;
+}
+
+.task-editor-dialog {
+  --el-dialog-border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100dvh - 48px);
+  margin: var(--space-5) auto;
+}
+
+.task-editor-dialog .el-dialog__body {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.task-editor-dialog .el-dialog__footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.editor-group {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.editor-group summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-size-section-title);
+  padding: var(--space-2);
+  border-radius: var(--radius-control);
+}
+
+.editor-group summary:focus-visible {
+  outline: var(--focus-width) solid var(--color-primary);
+}
+
+.editor-group[open] summary {
+  margin-bottom: var(--space-4);
+}
+
+.editor-group .deadline-fields {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
 .task-main {
   display: flex;
   flex: 1;

@@ -4,7 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import TaskEditor from './TaskEditor.vue'
-import { recurrenceApi, reminderApi } from '../api'
+import { recurrenceApi, reminderApi, taskApi } from '../api'
 import type { Task } from '../types'
 
 const stubs = {
@@ -19,7 +19,7 @@ const stubs = {
   },
   'el-dialog': {
     props: ['modelValue'],
-    template: '<div v-if="modelValue"><slot /></div>',
+    template: '<div v-if="modelValue"><slot /><slot name="footer" /></div>',
   },
   'el-form': {
     template: '<form @submit.prevent="$emit(\'submit\')"><slot /></form>',
@@ -82,7 +82,7 @@ describe('TaskEditor organization fields', () => {
     const selects = wrapper.findAll('select')
     await selects[1].setValue('category-2')
     await selects[2].setValue(['tag-2'])
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       category_id: 'category-2',
@@ -99,7 +99,7 @@ describe('TaskEditor organization fields', () => {
     const selects = wrapper.findAll('select')
     await selects[1].setValue('')
     await selects[2].setValue([])
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     const payload = wrapper.emitted('submit')?.[0]?.[0] as Record<string, unknown>
 
@@ -121,7 +121,7 @@ describe('TaskEditor organization fields', () => {
 
     const selects = wrapper.findAll('select')
     await selects[3].setValue('')
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     const payload = wrapper.emitted('submit')?.[0]?.[0] as Record<string, unknown>
     expect(Object.prototype.hasOwnProperty.call(payload, 'project_id')).toBe(true)
@@ -143,7 +143,7 @@ describe('TaskEditor organization fields', () => {
     })
 
     await wrapper.get('.clear-schedule-button').trigger('click')
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       planned_date: '2026-09-26',
@@ -165,7 +165,7 @@ describe('TaskEditor organization fields', () => {
     })
 
     await wrapper.findAll('input')[1].setValue('')
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       planned_date: null,
@@ -190,7 +190,7 @@ describe('TaskEditor organization fields', () => {
     const timeInputs = wrapper.findAll('input[type="time"]')
     await timeInputs[0].setValue('14:00')
     await timeInputs[1].setValue('15:00')
-    await wrapper.findAll('button').find((button) => button.text() === '创建任务')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       title: 'New timed task',
@@ -219,7 +219,7 @@ describe('TaskEditor organization fields', () => {
     const dateInputs = wrapper.findAll('input[type="date"]')
     await dateInputs[1].setValue('')
     await dateInputs[1].trigger('change')
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({ deadline: null })
   })
@@ -236,7 +236,7 @@ describe('TaskEditor organization fields', () => {
     await dateInputs[1].trigger('change')
     const timeInputs = wrapper.findAll('input[type="time"]')
     await timeInputs[2].setValue('17:00')
-    await wrapper.findAll('button').find((button) => button.text() === '创建任务')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
       planned_date: '2026-09-26',
@@ -261,7 +261,7 @@ describe('TaskEditor organization fields', () => {
     const deadlineTimeInput = wrapper.findAll('input[type="time"]')[2]
     await deadlineTimeInput.setValue('')
     await deadlineTimeInput.trigger('input')
-    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+    await wrapper.findAll('button').find((button) => button.text() === '保存任务')!.trigger('click')
 
     const payload = wrapper.emitted('submit')?.[0]?.[0] as Record<string, unknown>
     expect(payload.planned_date).toBe('2026-09-26')
@@ -270,6 +270,7 @@ describe('TaskEditor organization fields', () => {
 
   it('creates a repeat rule with the current Task version', async () => {
     vi.spyOn(reminderApi, 'list').mockResolvedValue([])
+    vi.spyOn(taskApi, 'get').mockResolvedValue({ ...task, version: 5 })
     const create = vi.spyOn(recurrenceApi, 'create').mockResolvedValue({
       id: 'rule-1', frequency: 'daily', weekdays: null, month_day: null,
       starts_on: '2026-09-26', timezone: 'Asia/Shanghai', stopped_at_utc: null,
@@ -288,5 +289,73 @@ describe('TaskEditor organization fields', () => {
     expect(create).toHaveBeenCalledWith('task-1', expect.objectContaining({ version: 4, frequency: 'daily' }))
     expect(create).toHaveBeenCalledTimes(1)
     expect(wrapper.emitted('changed')).toBeTruthy()
+  })
+
+  it('keeps draft and untouched deadline when the same task is refreshed', async () => {
+    const original = { ...task, deadline_date: '2026-10-20', deadline_timezone: 'Asia/Shanghai' }
+    const wrapper = mount(TaskEditor, { props: { open: true, task: original, categories, tags }, global: { stubs } })
+    await wrapper.get('input').setValue('未保存的标题')
+    await wrapper.setProps({ task: { ...original, version: 5 }, saveError: '保存失败，请重试。' })
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('未保存的标题')
+    expect(wrapper.text()).toContain('保存失败，请重试。')
+    const group = wrapper.get('details')
+    group.element.removeAttribute('open')
+    group.element.setAttribute('open', '')
+    await wrapper.findAll('button').find(b => b.text() === '保存任务')!.trigger('click')
+    const payload = wrapper.emitted('submit')![0]![0] as Record<string, unknown>
+    expect(payload.title).toBe('未保存的标题')
+    expect(payload).not.toHaveProperty('deadline')
+    expect(payload).not.toHaveProperty('schedule')
+  })
+
+  it('saves repeat immediately without closing or submitting the Task draft', async () => {
+    vi.spyOn(reminderApi, 'list').mockResolvedValue([])
+    vi.spyOn(recurrenceApi, 'create').mockResolvedValue({ id: 'rule-1', frequency: 'daily', weekdays: null, month_day: null, starts_on: '2026-09-26', timezone: 'Asia/Shanghai', stopped_at_utc: null, created_at_utc: '', updated_at_utc: '', version: 1 })
+    vi.spyOn(taskApi, 'get').mockResolvedValue({ ...task, version: 5, recurrence_rule_id: 'rule-1' })
+    const wrapper = mount(TaskEditor, { props: { open: true, task: { ...task, planned_date: '2026-09-26' }, categories, tags, runtimeTimezone: 'Asia/Shanghai' }, global: { stubs } })
+    await wrapper.get('input').setValue('重复操作前的草稿')
+    await wrapper.findAll('button').find(b => b.text() === '启用重复')!.trigger('click')
+    await flushPromises()
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('重复操作前的草稿')
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    expect(wrapper.emitted('update:open')).toBeUndefined()
+    expect(wrapper.emitted('changed')![0]![0]).toMatchObject({ version: 5 })
+  })
+
+  it('keeps Task draft after independently saving a reminder', async () => {
+    vi.spyOn(reminderApi, 'create').mockResolvedValue({} as never)
+    vi.spyOn(reminderApi, 'list').mockResolvedValue([])
+    const wrapper = mount(TaskEditor, { props: { open: true, task: { ...task, planned_date: '2026-09-26' }, categories, tags }, global: { stubs } })
+    await wrapper.get('input').setValue('提醒操作前的草稿')
+    await wrapper.get('input[aria-label="提醒时间"]').setValue('14:00')
+    await wrapper.findAll('button').find(b => b.text() === '新增提醒')!.trigger('click')
+    await flushPromises()
+    expect(reminderApi.create).toHaveBeenCalledTimes(1)
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('提醒操作前的草稿')
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    expect(wrapper.emitted('update:open')).toBeUndefined()
+  })
+
+  it('explains why new tasks cannot edit recurrence or reminders', () => {
+    const wrapper = mount(TaskEditor, { props: { open: true, task: null, categories, tags }, global: { stubs } })
+    expect(wrapper.text()).toContain('保存任务后可设置重复规则和提醒。')
+    expect(wrapper.findAll('button').some(b => ['启用重复', '新增提醒'].includes(b.text()))).toBe(false)
+    expect(wrapper.text()).not.toContain('保存全部')
+  })
+
+  it('does not discard unsaved draft when skipping the current occurrence', async () => {
+    const rule = { id: 'rule-1', frequency: 'daily' as const, weekdays: null, month_day: null, starts_on: '2026-09-26', timezone: 'Asia/Shanghai', stopped_at_utc: null, created_at_utc: '', updated_at_utc: '', version: 1 }
+    vi.spyOn(reminderApi, 'list').mockResolvedValue([])
+    vi.spyOn(recurrenceApi, 'get').mockResolvedValue(rule)
+    const skip = vi.spyOn(recurrenceApi, 'skip').mockResolvedValue({} as never)
+    const wrapper = mount(TaskEditor, { props: { open: false, task: { ...task, recurrence_rule_id: rule.id }, categories, tags }, global: { stubs } })
+    await wrapper.setProps({ open: true })
+    await flushPromises()
+    await wrapper.get('input').setValue('需要保留的草稿')
+    await wrapper.findAll('button').find(b => b.text() === '跳过本次')!.trigger('click')
+    expect(skip).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('请先保存任务草稿')
+    expect(wrapper.emitted('update:open')).toBeUndefined()
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('需要保留的草稿')
   })
 })

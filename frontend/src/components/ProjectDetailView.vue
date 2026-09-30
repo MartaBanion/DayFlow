@@ -298,8 +298,9 @@ onMounted(loadProject)
     :initial-project-id="project?.id"
     :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
+    :save-error="errorMessage"
     @update:open="isEditorOpen = $event"
     @submit="saveTask"
-    @changed="loadProject"
+    @changed="(task) => { if (task) editingTask = task; void loadProject() }"
   />
 </template>

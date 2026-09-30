@@ -32,6 +32,15 @@ const task: Task = {
 }
 
 describe('TaskCard organization metadata', () => {
+  it('shows high and overdue as explicit labels and a neutral normal priority', () => {
+    const wrapper = mount(TaskCard, { props: { task: { ...task, deadline_date: '2026-01-01', deadline_status: 'overdue', deadline_timezone: 'Asia/Shanghai' } }, global: { plugins: [ElementPlus] } })
+    expect(wrapper.text()).toContain('高')
+    expect(wrapper.text()).toContain('已逾期')
+    const normal = mount(TaskCard, { props: { task: { ...task, priority: 'normal', planned_date: '2026-09-30' }, contextDate: '2026-09-30' }, global: { plugins: [ElementPlus] } })
+    expect(normal.text()).not.toContain('计划日期：')
+    expect(normal.find('.el-tag--info').text()).toContain('普通')
+    expect(wrapper.find('button[aria-label^="更多操作"]').exists()).toBe(true)
+  })
   it('renders priority, category, tags, and Inbox date semantics', () => {
     const wrapper = mount(TaskCard, {
       props: { task },

@@ -53,7 +53,7 @@ test('搜索支持标题、备注和结构化筛选', async ({ page, request }) 
 
   await query.fill(uniqueName('E2E-没有结果'))
   await searchButton.click()
-  await expect(page.getByText('没有找到相关任务', { exact: true })).toBeVisible()
+  await expect(page.getByText('暂无匹配任务', { exact: true })).toBeVisible()
 })
 
 test('中文核心导航和空结果界面可见', async ({ page }) => {

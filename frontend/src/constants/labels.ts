@@ -9,9 +9,9 @@ export const priorityLabels: Record<TaskPriority, string> = {
 
 export function getTaskErrorMessage(
   error: unknown,
-  area: 'today' | 'inbox',
+  area: 'today' | 'inbox' | 'search',
 ): string {
-  const areaLabel = area === 'today' ? '今天的任务' : '收件箱'
+  const areaLabel = area === 'today' ? '今天的任务' : area === 'search' ? '搜索' : '收件箱'
   if (error instanceof ApiRequestError) {
     if (error.status === 409) {
       return `任务内容可能已被其他操作更新，请刷新${areaLabel}后重试。`

@@ -44,7 +44,7 @@ test('项目支持创建、关联任务、进度、删除和恢复', async ({ pa
   await page.locator('.page-header-actions').getByRole('button', { name: '新建任务', exact: true }).click()
   const taskDialog = page.locator('.el-dialog').filter({ hasText: '新建任务' }).last()
   await taskDialog.getByLabel('任务标题').fill(taskTitle)
-  await taskDialog.getByRole('button', { name: '创建任务', exact: true }).click()
+  await taskDialog.getByRole('button', { name: '保存任务', exact: true }).click()
   await expect(taskDialog).toBeHidden()
   await expect(taskCard(page, taskTitle)).toBeVisible()
   await expect(page.locator('.project-detail-summary')).toContainText('0%')

@@ -94,11 +94,15 @@ export async function openTaskEditor(page: Page, title: string): Promise<Locator
   await card.getByRole('button', { name: '编辑', exact: true }).click()
   const dialog = page.locator('.el-dialog').filter({ hasText: '编辑任务' }).last()
   await expect(dialog).toBeVisible()
+  for (const group of ['项目与分类', '重复与提醒']) {
+    const summary = dialog.getByText(group, { exact: true })
+    if (await summary.locator('..').getAttribute('open') === null) await summary.click()
+  }
   return dialog
 }
 
 export async function saveTaskEditor(dialog: Locator): Promise<void> {
-  await dialog.getByRole('button', { name: '保存修改', exact: true }).click()
+  await dialog.getByRole('button', { name: '保存任务', exact: true }).click()
   await expect(dialog).toBeHidden()
 }
 
@@ -140,6 +144,8 @@ export async function chooseTaskProject(
   dialog: Locator,
   name: string,
 ): Promise<void> {
+  const summary = dialog.getByText('项目与分类', { exact: true })
+  if (await summary.locator('..').getAttribute('open') === null) await summary.click()
   const item = dialog.locator('.el-form-item').filter({ hasText: '项目' })
   await item.locator('.el-select').click()
   await page.getByRole('option', { name, exact: true }).click()

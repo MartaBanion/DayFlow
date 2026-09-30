@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { recurrenceApi, reminderApi } from '../api'
+import { recurrenceApi, reminderApi, taskApi } from '../api'
 import { getFeatureErrorMessage, priorityLabels } from '../constants/labels'
 import { formatReminderTime, formatTaskTime } from '../calendar'
 import type {
@@ -29,6 +29,7 @@ const props = defineProps<{
   tags: Tag[]
   projects?: Project[]
   saving?: boolean
+  saveError?: string
   initialDate?: string
   initialProjectId?: string | null
   runtimeTimezone?: string
@@ -37,7 +38,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:open': [value: boolean]
   submit: [payload: TaskUpdatePayload]
-  changed: []
+  changed: [task?: Task]
 }>()
 
 const title = ref('')
@@ -113,7 +114,7 @@ function syncForm(task: Task | null): void {
 }
 
 watch(
-  [() => props.task, () => props.open, () => props.initialDate, () => props.initialProjectId],
+  [() => props.task?.id, () => props.open, () => props.initialDate, () => props.initialProjectId],
   () => syncForm(props.task),
   {
   immediate: true,
@@ -208,7 +209,7 @@ function submit(): void {
     planned_date: plannedDate.value || null,
     priority: priority.value,
     category_id: categoryId.value ?? null,
-    tag_ids: tagIds.value,
+    tag_ids: tagIds.value ?? [],
     project_id: projectId.value ?? null,
   }
   if (schedule !== undefined) payload.schedule = schedule
@@ -260,8 +261,7 @@ async function saveRepeat(): Promise<void> {
       recurrenceRule.value = await recurrenceApi.create(props.task.id, repeatPayload())
     }
     ElMessage.success('重复规则已保存')
-    emit('changed')
-    emit('update:open', false)
+    emit('changed', await taskApi.get(props.task.id))
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '重复规则')
   } finally {
@@ -283,10 +283,9 @@ async function stopRepeat(): Promise<void> {
   featureSaving.value = true
   featureError.value = ''
   try {
-    await recurrenceApi.stop(recurrenceRule.value.id, recurrenceRule.value.version)
+    recurrenceRule.value = await recurrenceApi.stop(recurrenceRule.value.id, recurrenceRule.value.version)
     ElMessage.success('重复规则已停止')
-    emit('changed')
-    emit('update:open', false)
+    emit('changed', await taskApi.get(props.task!.id))
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '重复规则')
   } finally {
@@ -301,8 +300,7 @@ async function materializeRepeat(): Promise<void> {
   try {
     await recurrenceApi.materialize(recurrenceRule.value.id)
     ElMessage.success('下一次任务已准备好')
-    emit('changed')
-    emit('update:open', false)
+    emit('changed', await taskApi.get(props.task!.id))
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '下一次任务')
   } finally {
@@ -312,10 +310,21 @@ async function materializeRepeat(): Promise<void> {
 
 async function skipCurrentOccurrence(): Promise<void> {
   if (!props.task?.recurrence_rule_id) return
+  const task = props.task
+  const draftChanged = title.value !== task.title || description.value !== (task.description ?? '')
+    || plannedDate.value !== (task.planned_date ?? '') || priority.value !== task.priority
+    || (categoryId.value ?? null) !== (task.category?.id ?? null)
+    || (projectId.value ?? null) !== (task.project_id ?? task.project?.id ?? null)
+    || JSON.stringify(tagIds.value ?? []) !== JSON.stringify(task.tags.map(tag => tag.id))
+    || scheduleTouched.value || deadlineTouched.value
+  if (draftChanged) {
+    featureError.value = '请先保存任务草稿，再跳过本次，避免丢失修改。'
+    return
+  }
   featureSaving.value = true
   featureError.value = ''
   try {
-    await recurrenceApi.skip(props.task.id, props.task.version)
+    await recurrenceApi.skip(task.id, task.version)
     ElMessage.success('本次任务已跳过，下一次任务已准备好')
     emit('changed')
     emit('update:open', false)
@@ -428,17 +437,32 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
   <el-dialog
     :model-value="open"
     :title="task ? '编辑任务' : '新建任务'"
-    width="560px"
+    width="700px"
+    class="task-editor-dialog"
     @update:model-value="emit('update:open', $event)"
   >
     <el-form label-position="top" @submit.prevent="submit">
+      <details class="editor-group" open>
+        <summary>基础信息</summary>
       <el-form-item label="任务标题" required>
-        <el-input v-model="title" placeholder="请输入任务标题" autofocus />
+        <el-input v-model="title" placeholder="请输入任务标题" aria-label="任务标题" autofocus />
       </el-form-item>
       <el-form-item label="备注">
-        <el-input v-model="description" type="textarea" :rows="4" placeholder="补充备注（可选）" />
+        <el-input v-model="description" type="textarea" :rows="2" placeholder="补充备注（可选）" />
       </el-form-item>
       <div class="form-grid">
+        <el-form-item label="优先级">
+          <el-select v-model="priority" style="width: 100%" aria-label="优先级">
+            <el-option :label="priorityLabels.low" value="low" />
+            <el-option :label="priorityLabels.normal" value="normal" />
+            <el-option :label="priorityLabels.high" value="high" />
+          </el-select>
+        </el-form-item>
+      </div>
+      </details>
+      <details class="editor-group" open>
+        <summary>日期与时间</summary>
+        <p class="schedule-hint">计划日期决定何时做；截止日期表示最晚何时完成。</p>
         <el-form-item label="计划日期">
           <el-date-picker
             v-model="plannedDate"
@@ -448,14 +472,7 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="优先级">
-          <el-select v-model="priority" style="width: 100%">
-            <el-option :label="priorityLabels.low" value="low" />
-            <el-option :label="priorityLabels.normal" value="normal" />
-            <el-option :label="priorityLabels.high" value="high" />
-          </el-select>
-        </el-form-item>
-      </div>
+      <p class="schedule-hint">时间安排时区：{{ task?.schedule_timezone ?? runtimeTimezone ?? '使用应用时区' }}</p>
       <div class="form-grid schedule-fields">
         <el-form-item label="开始时间">
           <input
@@ -476,7 +493,6 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
           />
         </el-form-item>
       </div>
-      <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
       <p v-if="plannedDate && !startTime && !endTime" class="schedule-hint">
         未安排时间
       </p>
@@ -519,6 +535,9 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
         />
       </el-form-item>
       <p v-if="deadlineDate" class="schedule-hint">截止日期独立于计划日期和具体时间安排。</p>
+      </details>
+      <details class="editor-group">
+        <summary>项目与分类</summary>
       <el-form-item label="分类">
         <el-select v-model="categoryId" clearable placeholder="未分类" style="width: 100%">
           <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
@@ -545,15 +564,21 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
           />
         </el-select>
       </el-form-item>
+      </details>
+      <details class="editor-group">
+        <summary>重复与提醒</summary>
+        <p class="schedule-hint">独立管理，操作立即生效，不随“保存任务”一起提交。</p>
+        <p v-if="!task" class="schedule-hint">保存任务后可设置重复规则和提醒。</p>
       <section v-if="task" class="feature-panel" aria-label="重复任务">
         <div class="feature-panel-heading">
           <div>
             <p class="eyebrow">重复任务</p>
             <h4>{{ recurrenceRule ? '重复规则' : '设置重复' }}</h4>
           </div>
-          <span v-if="recurrenceRule" class="feature-status">已启用</span>
+          <span v-if="recurrenceRule" class="feature-status">{{ recurrenceRule.stopped_at_utc ? '已停止' : '已启用' }} · 立即生效</span>
         </div>
         <p v-if="!recurrenceRule && !featureLoading" class="schedule-hint">保存后可按天、按周或按月重复。不复制截止日期、提醒和时间安排。</p>
+        <p v-if="task?.start_at_utc" class="schedule-hint">有时间安排的任务暂不支持重复，请先清除时间安排。</p>
         <div class="form-grid">
           <el-form-item label="重复方式">
             <el-select v-model="repeatFrequency" style="width: 100%">
@@ -580,7 +605,7 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
           </el-form-item>
         </div>
         <div class="feature-actions">
-          <el-button type="primary" native-type="button" :loading="featureSaving" @click="saveRepeat">{{ recurrenceRule ? '保存规则' : '启用重复' }}</el-button>
+          <el-button type="primary" native-type="button" :loading="featureSaving" :disabled="saving || featureLoading || Boolean(task?.start_at_utc)" @click="saveRepeat">{{ recurrenceRule ? '保存规则' : '启用重复' }}</el-button>
           <el-button v-if="recurrenceRule" native-type="button" :loading="featureSaving" @click="materializeRepeat">手动生成下一次</el-button>
           <el-button v-if="recurrenceRule" text native-type="button" :loading="featureSaving" @click="stopRepeat">停止重复</el-button>
           <el-button v-if="recurrenceRule" text native-type="button" :loading="featureSaving" @click="skipCurrentOccurrence">跳过本次</el-button>
@@ -620,18 +645,23 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
           <el-input v-model="reminderTimezone" placeholder="例如 Asia/Shanghai" />
         </el-form-item>
         <div class="feature-actions">
-          <el-button type="primary" native-type="button" :loading="featureSaving" @click="saveReminder">{{ editingReminderId ? '保存提醒' : '新增提醒' }}</el-button>
+          <el-button type="primary" native-type="button" :loading="featureSaving" :disabled="saving || featureLoading" @click="saveReminder">{{ editingReminderId ? '保存提醒' : '新增提醒' }}</el-button>
           <el-button v-if="editingReminderId" text native-type="button" @click="resetReminderForm">取消修改</el-button>
         </div>
       </section>
       <p v-if="featureLoading" class="schedule-hint">正在读取重复规则和提醒…</p>
       <p v-if="featureError" class="form-error" role="alert">{{ featureError }}</p>
+      <el-button v-if="featureError" native-type="button" :loading="featureLoading" @click="loadFeatures">重新加载重复规则与提醒</el-button>
+      </details>
+    </el-form>
+    <template #footer>
+      <p v-if="formError || saveError" class="form-error" role="alert">{{ formError || saveError }}</p>
       <div class="dialog-actions">
         <el-button @click="emit('update:open', false)">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="submit">
-          {{ task ? '保存修改' : '创建任务' }}
+        <el-button type="primary" :loading="saving" :disabled="featureSaving || featureLoading" @click="submit">
+          保存任务
         </el-button>
       </div>
-    </el-form>
+    </template>
   </el-dialog>
 </template>

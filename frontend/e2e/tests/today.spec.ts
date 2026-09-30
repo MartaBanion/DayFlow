@@ -33,7 +33,8 @@ test('今天页面支持任务完整生命周期和刷新持久化', async ({ pa
   await card.getByRole('button', { name: `恢复任务：${editedTitle}` }).click()
   await expect(card.getByText('已完成', { exact: true })).toHaveCount(0)
 
-  await card.getByRole('button', { name: '删除', exact: true }).click()
+  await card.getByRole('button', { name: /更多操作/ }).click()
+  await page.getByRole('menuitem', { name: '删除', exact: true }).click()
   const messageBox = page.locator('.el-message-box').last()
   await expect(messageBox).toContainText('点击“撤销”恢复')
   await messageBox.getByRole('button', { name: '删除', exact: true }).click()

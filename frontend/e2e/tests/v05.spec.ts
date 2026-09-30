@@ -81,7 +81,7 @@ test('可以在浏览器中创建具体时间截止日期并清除', async ({ pa
   await createDialog.getByLabel('任务标题').fill(title)
   await chooseTodayDateField(page, createDialog, '截止日期')
   await createDialog.locator('input[aria-label="截止时间"]').fill('23:59')
-  await createDialog.getByRole('button', { name: '创建任务', exact: true }).click()
+  await createDialog.getByRole('button', { name: '保存任务', exact: true }).click()
   await expect(createDialog).toBeHidden()
   await page.goto('/#today')
 
@@ -161,6 +161,9 @@ test('重复任务可以通过界面创建并跳过当前 occurrence', async ({ 
   await page.goto('/#today')
   const dialog = await openTaskEditor(page, title)
   await dialog.getByRole('button', { name: '启用重复', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   const afterCreate = await (await request.get(`/api/v1/tasks/${task.id}`)).json() as {
@@ -170,8 +173,9 @@ test('重复任务可以通过界面创建并跳过当前 occurrence', async ({ 
 
   await page.reload()
   const recurringCard = taskCard(page, title)
-  await expect(recurringCard.getByRole('button', { name: '跳过本次', exact: true })).toBeVisible()
-  await recurringCard.getByRole('button', { name: '跳过本次', exact: true }).click()
+  await recurringCard.getByRole('button', { name: /更多操作/ }).click()
+  await expect(page.getByRole('menuitem', { name: '跳过本次', exact: true })).toBeVisible()
+  await page.getByRole('menuitem', { name: '跳过本次', exact: true }).click()
 
   await expect(taskCard(page, title)).toHaveCount(0)
   const visibleTasks = await (await request.get(`/api/v1/tasks?q=${encodeURIComponent(title)}`)).json() as Array<{
@@ -194,6 +198,9 @@ test('每周重复可以设置多个星期、编辑并跳过本次', async ({ pa
   await weekdays.nth(1).check()
   await weekdays.nth(2).check()
   await dialog.getByRole('button', { name: '启用重复', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   const created = await (await request.get(`/api/v1/tasks/${task.id}`)).json() as {
@@ -217,6 +224,9 @@ test('每周重复可以设置多个星期、编辑并跳过本次', async ({ pa
   await weekdays.nth(2).uncheck()
   await weekdays.nth(4).check()
   await dialog.getByRole('button', { name: '保存规则', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   const editedRule = await getRecurrenceRule(request, created.recurrence_rule_id as string)
@@ -226,12 +236,16 @@ test('每周重复可以设置多个星期、编辑并跳过本次', async ({ pa
   await page.reload()
   dialog = await openTaskEditor(page, title)
   await dialog.getByRole('button', { name: '手动生成下一次', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
   expect(materializeCalls).toBe(1)
 
   await page.reload()
   const recurringCard = taskCard(page, title)
-  await recurringCard.getByRole('button', { name: '跳过本次', exact: true }).click()
+  await recurringCard.getByRole('button', { name: /更多操作/ }).click()
+  await page.getByRole('menuitem', { name: '跳过本次', exact: true }).click()
   await expect(taskCard(page, title)).toHaveCount(0)
   const visibleTasks = await (await request.get(`/api/v1/tasks?q=${encodeURIComponent(title)}`)).json() as Array<{
     recurrence_occurrence_date: string | null
@@ -250,6 +264,9 @@ test('每月重复可以修改日期并停止而不删除当前任务', async ({
   await chooseRepeatFrequency(page, dialog, '每月')
   await dialog.locator('input[aria-label="每月日期"]').fill('15')
   await dialog.getByRole('button', { name: '启用重复', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   const created = await (await request.get(`/api/v1/tasks/${task.id}`)).json() as {
@@ -265,6 +282,9 @@ test('每月重复可以修改日期并停止而不删除当前任务', async ({
   await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeVisible()
   await dialog.locator('input[aria-label="每月日期"]').fill('28')
   await dialog.getByRole('button', { name: '保存规则', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   const editedRule = await getRecurrenceRule(request, created.recurrence_rule_id as string)
@@ -277,6 +297,9 @@ test('每月重复可以修改日期并停止而不删除当前任务', async ({
   const confirm = page.locator('.el-message-box').last()
   await expect(confirm).toContainText('停止重复后不会再生成新的任务')
   await confirm.getByRole('button', { name: '停止重复', exact: true }).click()
+  await expect(dialog.getByRole('button', { name: '保存规则', exact: true })).toBeEnabled()
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '取消', exact: true }).click()
   await expect(dialog).toBeHidden()
 
   const stoppedRule = await getRecurrenceRule(request, created.recurrence_rule_id as string)

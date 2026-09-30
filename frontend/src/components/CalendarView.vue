@@ -305,9 +305,10 @@ onMounted(initializeCalendar)
     :tags="tags"
     :projects="projects"
     :saving="isSaving"
+    :save-error="errorMessage"
     @update:open="isEditorOpen = $event"
     @submit="saveTask"
-    @changed="loadCalendar"
+    @changed="(task) => { if (task) editingTask = task; void loadCalendar() }"
   />
 
   <div class="calendar-sr-actions" aria-hidden="true">

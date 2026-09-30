@@ -313,21 +313,12 @@ onMounted(initializeToday)
     <el-button type="primary" :loading="isLoading" @click="retryToday">重试</el-button>
   </section>
 
-  <section v-if="todayLoadState === 'loaded'" class="summary-grid" aria-label="今日概览">
-    <el-card shadow="never" class="summary-card">
-      <div class="summary-content">
-        <span class="summary-label">任务</span>
-        <strong class="summary-value">{{ tasks.length }}</strong>
-        <span class="summary-detail">{{ pendingTasks.length }} 待完成</span>
-      </div>
-    </el-card>
-    <el-card shadow="never" class="summary-card">
-      <div class="summary-content">
-        <span class="summary-label">完成率</span>
-        <strong class="summary-value">{{ completionRate }}%</strong>
-        <span class="summary-detail">保持下一步清晰可见</span>
-      </div>
-    </el-card>
+  <section v-if="todayLoadState === 'loaded'" class="summary-grid summary-compact" aria-label="今日概览">
+    <div class="today-overview">
+      <div><span>任务</span><strong>{{ tasks.length }}</strong></div>
+      <div><span>待完成</span><strong>{{ pendingTasks.length }}</strong></div>
+      <div><span>完成率</span><strong>{{ completionRate }}%</strong></div>
+    </div>
   </section>
 
   <el-card shadow="never" class="capture-card">
@@ -367,6 +358,7 @@ onMounted(initializeToday)
         v-for="task in tasks"
         :key="task.id"
         :task="task"
+        :context-date="selectedDate"
         @complete="completeTask"
         @restore="restoreTask"
         @edit="openEditDialog"
@@ -384,8 +376,9 @@ onMounted(initializeToday)
     :projects="projects"
     :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
+    :save-error="errorMessage"
     @update:open="isEditDialogOpen = $event"
     @submit="saveEdit"
-    @changed="loadToday"
+    @changed="(task) => { if (task) editingTask = task; void loadToday() }"
   />
 </template>

@@ -83,4 +83,15 @@ describe('Inbox project filter', () => {
       projectId: project.id,
     })
   })
+
+  it('uses search-specific loading and error copy and keeps Retry accessible', async () => {
+    vi.mocked(taskApi.list).mockRejectedValue(new Error('offline'))
+    wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })
+    expect(wrapper.text()).toContain('正在搜索')
+    expect(wrapper.text()).not.toContain('正在加载收件箱')
+    await flushPromises()
+    expect(wrapper.text()).toContain('搜索失败')
+    expect(wrapper.text()).not.toContain('收件箱加载失败')
+    expect(wrapper.findAll('button').some(b => b.text() === '重试')).toBe(true)
+  })
 })

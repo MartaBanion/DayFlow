@@ -48,7 +48,7 @@ type RestoreTarget = Pick<Task, 'id' | 'version'>
 type MetadataSnapshot = { categories: Category[]; tags: Tag[] }
 
 function getErrorMessage(error: unknown): string {
-  return getTaskErrorMessage(error, 'inbox')
+  return getTaskErrorMessage(error, props.searchOnly ? 'search' : 'inbox')
 }
 
 function showError(error: unknown): void {
@@ -302,14 +302,14 @@ onMounted(initializeInbox)
 
   <section v-if="loadState === 'loading'" class="today-state is-loading" aria-live="polite">
     <p class="eyebrow">加载中</p>
-    <h3>正在加载收件箱</h3>
-    <p class="today-state-detail">正在加载待安排任务…</p>
+    <h3>{{ props.searchOnly ? '正在搜索' : '正在加载收件箱' }}</h3>
+    <p class="today-state-detail">{{ props.searchOnly ? '正在查找匹配任务…' : '正在加载待安排任务…' }}</p>
   </section>
 
   <section v-else-if="loadState === 'error'" class="today-state is-error" role="alert">
-    <p class="eyebrow">收件箱暂不可用</p>
-    <h3>收件箱加载失败</h3>
-    <p class="today-state-detail">{{ errorMessage || '收件箱加载失败，请稍后重试。' }}</p>
+    <p class="eyebrow">{{ props.searchOnly ? '搜索暂不可用' : '收件箱暂不可用' }}</p>
+    <h3>{{ props.searchOnly ? '搜索失败' : '收件箱加载失败' }}</h3>
+    <p class="today-state-detail">{{ errorMessage }}</p>
     <el-button type="primary" :loading="isLoading" @click="initializeInbox">重试</el-button>
   </section>
 
@@ -363,7 +363,7 @@ onMounted(initializeInbox)
 
       <el-empty
         v-if="tasks.length === 0"
-        :description="isSearchMode ? '没有找到相关任务' : '收件箱为空'"
+        :description="isSearchMode ? '暂无匹配任务' : '收件箱为空'"
       >
         <template #image>
           <div class="empty-mark">✓</div>
@@ -393,8 +393,9 @@ onMounted(initializeInbox)
     :projects="projects"
     :runtime-timezone="runtimeTimezone"
     :saving="isSaving"
+    :save-error="errorMessage"
     @update:open="isEditDialogOpen = $event"
     @submit="saveEdit"
-    @changed="loadTasks"
+    @changed="(task) => { if (task) editingTask = task; void loadTasks() }"
   />
 </template>
