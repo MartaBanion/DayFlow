@@ -5,7 +5,8 @@
 Current application version: **v0.5.0** — Deadlines, Repeat Tasks, and Reminders.
 Backend and Frontend are complete; final acceptance and database verification
 passed. The real database schema is `0005_add_deadlines_recurrence_reminders`.
-Release status is confirmed by Git tags. V0.6 is the next planned development version.
+The stable release is `v0.5.0`. V0.5.1 UI/UX architecture is frozen below;
+implementation has not started. V0.6 remains a later feature-development version.
 
 ## Architecture
 
@@ -337,6 +338,158 @@ V0.5 implementation remains phased: freeze this design, implement and test
 minimal Frontend surfaces, run Vitest and Browser E2E, rehearse on a copy of
 the real database, create a verified backup, obtain explicit approval, migrate
 real data, and complete manual acceptance before a release tag.
+
+## Frozen V0.5.1 UI/UX Architecture
+
+### Scope and Non-Goals
+
+V0.5.1 refactors presentation and interaction consistency only. It keeps Vue 3,
+TypeScript, Vite, Element Plus, and existing Hash navigation. No new business
+feature, dependency, Router, Pinia, UI/state framework, or generic CRUD engine
+is introduced. Backend APIs and Task/Project/Deadline/Recurrence/Reminder
+semantics remain unchanged. Any improvement requiring Backend support must be
+reported for separate approval rather than worked around or added silently.
+No migration is created; the real schema remains
+`0005_add_deadlines_recurrence_reminders`. Product metadata stays at `0.5.0`
+until separately approved release preparation.
+
+### Design Tokens
+
+Use CSS variables, Element Plus theme variables, and local component classes.
+Avoid widespread selectors targeting Element Plus internal DOM. The following
+values are the initial frozen design baseline, not already implemented CSS:
+
+| Token group | Baseline |
+| --- | --- |
+| Font family | System sans-serif; Chinese fallbacks PingFang SC and Microsoft YaHei; no downloaded fonts |
+| Typography | Page title 28px/1.3; section title 18px/1.4; Task title 15px/1.5; body 14px/1.5; supporting copy 12px/1.5 |
+| Spacing | 4, 8, 12, 16, 24, 32, 48px |
+| Radius | Input/button 8px; cards and Dialogs 12px; badges 6px |
+| Border | 1px solid #E6EBF2; stronger control border #CBD5E1 |
+| Background | App #F5F7FB; surface #FFFFFF; subtle surface #F8FAFC |
+| Text | Primary #152033; secondary #475467; supporting #667085 |
+| Semantic colors | Brand #2F7D73; danger #B42318; warning #B54708; success #28705E; neutral #475467 |
+| Focus | Visible 2px brand outline with 2px offset; no removal without an equivalent indicator |
+| Control size | Default 36px; primary capture input 40px; compact controls no less than 32px |
+| Content width | Task pages max 1040px; Projects max 1280px; Calendar fills available width, max 1680px |
+| Sidebar | 220px normally; 192px in compact desktop layout |
+| Workspace padding | Horizontal 32px normally, 20px in compact desktop; vertical 32px normally, 24px compact |
+
+Normal Priority and organizational badges are neutral. High Priority and
+overdue deadlines get emphasis; warning color is reserved for relevant
+attention states such as due today. Completed Tasks remain visible with
+restrained styling. Meaning cannot rely on color alone. Validate text contrast,
+focus, and disabled-state legibility during implementation and visual review.
+Use one primary button per action area, clear labels for inputs/selects,
+consistent light-bordered cards, and a shared page-title/state design.
+
+### Responsive and Navigation Rules
+
+Acceptance viewports are 1440×900 and 1024×768. Compact desktop rules begin at
+approximately 1200px (the initial breakpoint is max-width: 1199px), not only at
+900px. Header actions and filters may wrap; task content must shrink safely.
+The Sidebar keeps 今天, 收件箱, 日历, 搜索, 项目 and existing Hash destinations.
+Remove decorative 01–05 indices; do not invent counts. Keep the brand and
+package-derived version. Active navigation has a visual and accessible state.
+
+Week View may use a clearly bounded internal horizontal scroll area. Header,
+date-only rows, and timeline columns stay aligned; horizontal overflow must
+not propagate to the whole page. No mobile acceptance claim is made.
+
+### TaskCard Contract
+
+1. Primary: completion state, title, and main edit entry.
+2. Secondary: Time Block, Deadline, and Project.
+3. Supporting: Category, Tags, Repeat, and other low-frequency metadata.
+
+Keep all existing actions accessible, including complete, restore, delete,
+Undo, and skip. A More Menu is allowed, but actions cannot depend on hover.
+Long titles/notes and many tags use restrained summaries with accessible full
+details. Normal Priority is neutral; High/Overdue are prominent. Do not change
+task-list membership, ordering, status, or deadline computation. Display-only
+summaries must not introduce per-card Rule/Reminder API queries.
+
+### TaskEditor Contract
+
+Keep one TaskEditor, grouped into 基础信息, 日期与时间, 项目与分类, and 重复与提醒.
+The Task save action is labelled 保存任务 and lives in the Dialog Footer.
+Use a 700px desktop Dialog (within the approved 680–720px range), constrained
+by available width. At 1024×768, the body scrolls internally and the Footer
+stays accessible; date/select popovers must remain usable.
+
+Repeat and Reminder use independent management areas and save actions marked
+立即生效. Never offer 保存全部: Task, Rule, and Reminder have separate API,
+version, and transaction boundaries. Before a Task exists, these areas are
+non-editable with the explanation 保存任务后可设置重复和提醒.
+
+Expanding/collapsing a section must preserve drafts, original values, touched
+flags, and validation. Invalid sections open and expose their errors. An
+independent operation must not silently close the editor and discard a Task
+draft; either preserve it or require an explicit discard decision. Cancelling
+the editor cannot undo already saved independent operations.
+
+Keep omitted/null semantics: untouched Deadline/Schedule fields stay omitted;
+explicit clearing sends null; clearing Tags sends []; Category and Project
+clear values normalize undefined to null at the API boundary. Deadline remains
+independent of planned_date and Time Block. Preserve stored timezones and
+Task/Rule/Reminder versions. Keep time conflict confirmation and stale-version
+handling distinct. Grouping is not a reason to change write payload semantics.
+
+### Page and Calendar Contracts
+
+Today uses compact statistics, Quick Capture, and Task List. Inbox puts Quick
+Capture first. Search separates its copy and presentation responsibility from
+Inbox while preserving existing query/filter semantics. Projects improves card
+hierarchy and the Detail Header, not workflow; progress remains Backend-owned.
+
+Calendar shares a compact toolbar and consistent Day/Week/Month design.
+Date-only Tasks remain 未安排时间. Empty ranges retain Calendar structure;
+loading and error are explicit and never presented as empty success. Short
+Time Blocks prioritize title and start/end time, with accessible full details.
+Overlapping blocks get display-only side-by-side lanes; do not move Tasks,
+forbid overlap, or alter conflict override semantics. Keep true time positions
+and duration geometry; do not inflate the scheduled interval to fit labels.
+Columns and hour scale align across local scrolling. Completed Tasks remain
+visible. Time Block formatting uses each Task's schedule_timezone; Today uses
+Backend runtime local_date, not browser timezone. Date-only parsing remains
+date-only. No Drag & Drop, Resize, Calendar library, or new range API is added.
+
+### Reminder Contract
+
+Add a global entry only for current due/pending Reminders, using existing
+GET /api/v1/reminders/due and existing Task/Reminder actions. This is not a
+global future/history Reminder Center. Opening, refreshing, polling, or merely
+closing its container cannot acknowledge or dismiss a Reminder.
+
+Keep 45-second polling and sessionStorage deduplication for automatic dialogs.
+Deduplication must not hide pending items from the visible due list or alter
+Backend state. Queue automatic prompts and prevent concurrent duplicate
+prompts. Only explicit 确认提醒 or 关闭提醒 performs the corresponding mutation.
+Acknowledgement failure never triggers dismissal. Polling/action failures show
+an understandable error and Retry rather than a normal empty list. A failed
+mutation preserves pending availability. Closing the global panel is not the
+same operation as closing a Reminder. No OS/background notification guarantee
+is made while the browser or Backend is stopped.
+
+### Component and Test Boundaries
+
+Permitted minimal extractions: PageHeader, PageState, Repeat management area,
+Reminder management area, and Calendar Time Block positioning/display helpers.
+App owns Hash navigation; TaskEditor owns Task drafts/payload construction;
+Repeat and Reminder areas retain their own independent API actions. Avoid
+generic CRUD engines, future-use abstractions, and unrelated service rewrites.
+
+Each Phase 0–5 requires independent review and commit; see ROADMAP.md for
+ordering. Relevant tests run at each phase, followed by the complete Phase 5
+gate: Backend regression, Frontend Vitest, type-check, build, all 21 existing
+Browser E2E scenarios plus focused additions, diff/secret checks, and manual
+visual review at both desktop sizes. Existing assertions cannot be deleted
+merely to turn tests green; copy/locator changes preserve behavioral checks.
+Add editor grouping/draft/payload coverage, overlap and short-block coverage,
+responsive overflow/Dialog coverage, and Reminder interaction/failure coverage.
+Automated success does not imply manual visual acceptance. All write tests use
+isolated temporary 0005 databases through the fail-closed E2E runner; never real
+Tasks or Projects. Do not start or replace real services for this design phase.
 
 ## Timezone Strategy
 

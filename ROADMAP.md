@@ -3,7 +3,8 @@
 Current application version: **v0.5.0 — Deadlines, Repeat Tasks, and Reminders**.
 Backend and Frontend are implemented; final acceptance and database verification
 passed. The real database schema is `0005_add_deadlines_recurrence_reminders`.
-Release status is confirmed by Git tags. V0.6 is the next planned development version.
+The stable release is `v0.5.0`. The current planned patch is V0.5.1 UI/UX
+refactoring; V0.6 remains a later feature-development version.
 
 ## Current
 
@@ -195,6 +196,45 @@ databases before any real-data migration is considered.
 
 The independent V0.4 version-display maintenance fix is complete: `App.vue`
 reads the application version from Frontend package metadata.
+
+## Current Planned Patch
+
+### V0.5.1 — UI/UX Consistency
+
+Status: Architecture frozen; implementation has not started. This is a
+presentation and interaction refactor, not a new business-feature release.
+The stable application/package version remains `v0.5.0`; the real database
+remains `0005_add_deadlines_recurrence_reminders`.
+
+Scope: CSS/Element Plus design tokens, App layout and Sidebar, Today, Inbox,
+Search, TaskCard, grouped TaskEditor, Projects, Calendar Day/Week/Month, and a
+global entry for currently due/pending Reminders. Business semantics and
+Backend API contracts stay unchanged. No schema change or migration is needed.
+The detailed frozen contracts are in `docs/ARCHITECTURE.md`.
+
+Implementation order (each phase requires an independent review and commit):
+
+1. Phase 0: design documentation freeze.
+2. Phase 1: Design System, App Layout, and Sidebar.
+3. Phase 2: Today, Inbox, Search, TaskCard, and TaskEditor.
+4. Phase 3: Projects and Calendar.
+5. Phase 4: Reminder UX.
+6. Phase 5: full automated regression and manual visual acceptance at
+   1440×900 and 1024×768.
+
+Preserve Backend regression, Frontend Vitest, and all 21 existing Browser E2E
+scenarios. Add focused coverage for editor sections and draft preservation,
+omitted/null payloads, Calendar overlap and short blocks, responsive layout,
+and Reminder interaction. Existing assertions cannot simply be removed to
+make the refactor pass; presentation-specific updates must preserve the
+original behavioral checks. E2E continues to use isolated temporary `0005`
+databases and the existing fail-closed runner, never real personal data.
+
+Explicitly excluded: new business features, Router, Pinia, a new UI/state
+framework, new dependencies, Kanban, Drag & Drop, Resize, a full global Reminder
+history, background notification services, and V0.6 feature work. Week View
+may scroll horizontally inside the Calendar; unintended whole-page overflow
+is not accepted. Mobile is not an acceptance target for this patch.
 
 ## Later
 
