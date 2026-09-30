@@ -56,6 +56,21 @@ if [[ "$database_path" != "$real_database" && "${DAYFLOW_ALLOW_NONREAL_DATABASE:
   die "默认启动只允许真实数据库；如需隔离测试，请显式设置 DAYFLOW_ALLOW_NONREAL_DATABASE=1。"
 fi
 
+application_version="$("$backend_python" - "$backend_root/pyproject.toml" "$frontend_root/package.json" <<'PY'
+import json
+import sys
+import tomllib
+from pathlib import Path
+
+version = tomllib.loads(Path(sys.argv[1]).read_text())["project"]["version"]
+frontend_version = json.loads(Path(sys.argv[2]).read_text())["version"]
+if version != frontend_version:
+    raise SystemExit("Backend 与 Frontend 项目版本不一致。")
+print(version)
+PY
+)"
+printf 'Application version: %s\n' "$application_version"
+
 "$backend_python" - "$database_path" <<'PY'
 import sqlite3
 import sys
@@ -65,12 +80,13 @@ with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
     version = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
     integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
-if version != "0004_add_projects":
-    raise SystemExit(f"数据库版本不是 0004_add_projects：{version}")
+if version != "0005_add_deadlines_recurrence_reminders":
+    raise SystemExit(f"数据库版本不是 0005_add_deadlines_recurrence_reminders：{version}")
 if integrity != "ok":
     raise SystemExit(f"数据库完整性检查失败：{integrity}")
 if foreign_keys:
     raise SystemExit(f"数据库存在外键错误：{len(foreign_keys)}")
+print(f"Database Alembic: {version}")
 PY
 
 load_node24() {
@@ -291,7 +307,7 @@ external_process_matches() {
 external_backend_healthy() {
   local body
   body="$(curl --noproxy '*' --fail --silent --show-error "http://$backend_host:$backend_port/healthz" || true)"
-  [[ "$body" == *'"status":"ok"'* && "$body" == *'"version":"0.4.0"'* ]]
+  [[ "$body" == *'"status":"ok"'* && "$body" == *"\"version\":\"$application_version\""* ]]
 }
 
 external_frontend_healthy() {
@@ -392,6 +408,11 @@ if ! wait_for_http Backend "http://$backend_host:$backend_port/healthz" "$backen
   stop_metadata "$frontend_meta" frontend || true
   stop_metadata "$backend_meta" backend || true
   die 'Backend 未能就绪。'
+fi
+if ! external_backend_healthy; then
+  stop_metadata "$frontend_meta" frontend || true
+  stop_metadata "$backend_meta" backend || true
+  die 'Backend 健康状态或应用版本与项目元数据不一致。'
 fi
 if ! wait_for_http Frontend "http://$frontend_host:$frontend_port/" "$frontend_pid" "$frontend_log"; then
   stop_metadata "$frontend_meta" frontend || true

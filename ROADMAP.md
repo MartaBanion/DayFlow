@@ -1,10 +1,9 @@
 # DayFlow Personal Roadmap
 
-Current application version: **v0.4.0 — V0.4 Projects**. V0.4 Projects
-functionality is complete. The Project Backend and Frontend are implemented;
-final acceptance and database verification passed. The real database schema is
-`0004_add_projects`. V0.5 Phase 1 Backend implementation is in progress;
-V0.5 Frontend work has not started.
+Current application version: **v0.5.0 — Deadlines, Repeat Tasks, and Reminders**.
+Backend and Frontend are implemented; final acceptance and database verification
+passed. The real database schema is `0005_add_deadlines_recurrence_reminders`.
+Release status is confirmed by Git tags. V0.6 is the next planned development version.
 
 ## Current
 
@@ -85,8 +84,8 @@ this roadmap entry.
 ### V0.4 — Projects
 
 Status: Completed. Phase 1 Backend, Migration 0004, Phase 2 Project Frontend,
-Phase 3 acceptance, and real-data migration are complete. The real database is
-at `0004_add_projects`.
+Phase 3 acceptance, and real-data migration are complete. Its migration is
+`0004_add_projects`; the real database later advanced to `0005` for V0.5.
 
 Scope:
 
@@ -121,20 +120,18 @@ Explicitly out of scope:
 V0.4 implementation completed in this order: Phase 1 temporary `0004`
 migration rehearsal and Backend model/service/API, Phase 2 Frontend Hash views
 and Task Editor integration, Vitest and Browser E2E regression, Phase 3 full
-acceptance, and approved real-data migration. V0.5 Phase 1 Backend work is in
-progress; Frontend work has not started.
+acceptance, and approved real-data migration.
 
 Optional future tooling: Windows one-click WSL start/stop entrypoints. The
 currently supported workflow uses the WSL start and stop scripts directly.
 
-## Next Planned Development
+## Completed Functionality
 
 ### V0.5 — Deadlines, Repeat Tasks, and Reminders
 
-Status: Architecture frozen; Phase 1 Backend implementation and isolated-database
-tests are complete for review. The real database remains at
-`0004_add_projects` until a temporary-copy migration, full test gate, backup,
-and explicit approval are complete. Frontend work has not started.
+Status: Backend and Frontend complete. Automated and manual visual acceptance,
+approved real-data migration to `0005`, and final read-only acceptance passed.
+Release status is confirmed by Git tags.
 
 #### Frozen Scope
 
@@ -196,9 +193,8 @@ constraints, UTC/timezone and DST behavior, repeat idempotence and rollback,
 reminder state transitions, and all V0.4 regression suites on isolated
 databases before any real-data migration is considered.
 
-An independent V0.4 maintenance fix is still required for the stale `v0.3.1`
-version text currently displayed by `frontend/src/App.vue`; it is not part of
-V0.5 Migration 0005 or V0.5 feature implementation.
+The independent V0.4 version-display maintenance fix is complete: `App.vue`
+reads the application version from Frontend package metadata.
 
 ## Later
 

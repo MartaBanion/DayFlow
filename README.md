@@ -4,17 +4,11 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**Current application version: v0.4.0.** V0.4 Projects functionality is
-complete. The Project Backend, Migration 0004, Project Frontend, and acceptance
-tests are implemented. Final acceptance and database verification passed, and
-the real database schema is `0004_add_projects`. V0.5 Phase 1 Backend work for
-Deadlines, Repeat Tasks, and Reminders is implemented in the working tree;
-V0.5 Frontend work and the real `0005` migration are not yet released.
-
-While the working tree contains V0.5 Backend changes, do not restart that code
-against the real `0004` database. Use an explicitly configured temporary `0005`
-database for development; the existing non-reloading V0.4 process may remain
-running. Real-data upgrade still requires separate approval.
+**Current application version: v0.5.0.** Deadlines, Repeat Tasks, and Reminders
+are implemented in both Backend and Frontend. Final acceptance and database
+verification passed; the real database schema is
+`0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
+tags. V0.6 is the next planned development version.
 
 ## V0.1 Features
 
@@ -61,6 +55,15 @@ integration.
 - Migration `0004_add_projects`, temporary-database validation, and real-data
   migration acceptance.
 
+## V0.5 Features
+
+- Date-only and timed Deadlines with saved timezone and DST validation.
+- Daily, selected-weekday, and monthly (1–28) Repeat rules with explicit
+  materialization, skip, stop, and preserved occurrence history.
+- Specified-time Reminders with pending, acknowledged, and dismissed states.
+- Read-only due polling and browser-session dialog deduplication.
+- No real-time Reminder guarantee while the Backend is stopped.
+
 ## Technology
 
 - Vue 3 + TypeScript + Vite + Element Plus
@@ -95,7 +98,7 @@ DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backen
 ```
 
 The real SQLite file is managed by Alembic and is currently at
-`0004_add_projects`. Runtime code does not call `Base.metadata.create_all()`.
+`0005_add_deadlines_recurrence_reminders`. Runtime code does not call `Base.metadata.create_all()`.
 Before applying any future migration to real data, stop the Backend, create a
 verified backup, and validate the migration on a copy of the current database
 first.
@@ -127,7 +130,8 @@ npm run dev --prefix frontend
 ```
 
 启动脚本会检查 Node.js 24 LTS、Backend 虚拟环境、Frontend 依赖、端口和
-真实数据库版本（`0004_add_projects`），不会自动执行 Migration，也不会创建
+真实数据库版本（`0005_add_deadlines_recurrence_reminders`），并从项目元数据
+读取应用版本、验证 Backend 健康接口版本一致。不会自动执行 Migration，也不会创建
 测试数据。启动成功后，在浏览器访问 `http://127.0.0.1:5173`；Backend 地址为
 `http://127.0.0.1:8000`。
 

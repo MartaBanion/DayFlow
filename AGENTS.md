@@ -6,12 +6,11 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Current stable application version: `v0.4.0` — V0.4 Projects.
-V0.4 Projects functionality is complete. The Project Backend, Migration 0004,
-Project Frontend, and acceptance tests are implemented. V0.5 Phase 1 Backend,
-Migration 0005, Deadline, Recurrence, and Reminder implementation is in the
-working tree for review; V0.5 Frontend work has not started. The real database
-schema remains `0004_add_projects`.
+Current application version: `v0.5.0` — Deadlines, Repeat Tasks, and Reminders.
+V0.5 Backend and Frontend functionality is complete. Final acceptance and
+database verification passed. The real database schema is
+`0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
+tags; V0.6 is the next planned development version.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -39,7 +38,7 @@ Only the version currently being implemented may be changed. Do not start later 
 - Use typed Python and TypeScript interfaces for API data.
 - Do not silently swallow exceptions.
 - Validate input at the API boundary and enforce business rules in services.
-- Do not introduce future-version fields or abstractions without a current V0.4
+- Do not introduce future-version fields or abstractions without a current V0.5
   need.
 - DayFlow's default user language is Simplified Chinese. User-visible UI copy should use Simplified Chinese; code, APIs, database schema, and internal enum values remain in English. Do not introduce a full internationalization system at this stage.
 
@@ -71,7 +70,7 @@ Only the version currently being implemented may be changed. Do not start later 
   Alembic.
 - The real database must remain at its currently approved migration until a
   verified temporary-copy migration and explicit approval are complete. The
-  currently approved real-data migration is `0004_add_projects`.
+  currently approved real-data migration is `0005_add_deadlines_recurrence_reminders`.
 - Database writes go through services and transactions.
 - Do not use `Base.metadata.create_all()` in application runtime.
 
@@ -98,16 +97,16 @@ Only the version currently being implemented may be changed. Do not start later 
 
 ## Prohibited Actions
 
-- No Drag & Drop, Resize, Reminder, Recurrence, AI, external Calendar, PWA,
-  Authentication, Docker, CI/CD, or remote Git work during V0.4 development
+- No Drag & Drop, Resize, AI, external Calendar, PWA,
+  Authentication, Docker, CI/CD, or remote Git work during V0.5 development
   and stabilization.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
 
-A V0.4 implementation is complete when Project Backend, Migration 0004,
-Project Frontend, and their tests run against isolated temporary `0004` data,
-V0.1–V0.3.1 regression tests pass, no secrets or personal data are exposed,
+A V0.5 implementation is complete when Deadline, Recurrence, Reminder Backend,
+Migration 0005, Frontend, and their tests run against isolated temporary `0005` data,
+V0.1–V0.4 regression tests pass, no secrets or personal data are exposed,
 documentation is synchronized, and the approved real database is verified at
-`0004_add_projects`. Final acceptance and database verification must be recorded
+`0005_add_deadlines_recurrence_reminders`. Final acceptance and database verification must be recorded
 before the next planned development version begins.

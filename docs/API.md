@@ -8,10 +8,10 @@
 
 ## Current Version
 
-Current application version: `v0.4.0`. V0.4 Projects functionality is complete;
-the Project Backend and Frontend are implemented. Final acceptance and database
-verification passed, and the real database schema is `0004_add_projects`. V0.5
-is the next planned development version.
+Current application version: `v0.5.0`. Deadline, Recurrence, and Reminder Backend
+and Frontend are complete. Final acceptance and database verification passed;
+the real database schema is `0005_add_deadlines_recurrence_reminders`. Release
+status is confirmed by Git tags. V0.6 is the next planned development version.
 
 ## Current System Endpoint
 
@@ -383,15 +383,14 @@ cover Hash navigation, Project list/detail, Task Editor assignment/clear,
 progress, lifecycle actions, error states, refresh persistence, and continued
 V0.3 regression coverage.
 
-## V0.5 Phase 1 API Contract
+## V0.5 API Contract
 
-V0.5 architecture is frozen and the Phase 1 Backend endpoints below are
-implemented in the working tree. The real database remains at
-`0004_add_projects` until the temporary-copy migration and approval gates pass.
+V0.5 architecture is frozen and the endpoints below are implemented and used by
+the Frontend. The approved real database is at `0005`; final acceptance passed.
 
 ### Deadline Write and Read Shape
 
-Task Create and Patch will accept an optional structured `deadline` value:
+Task Create and Patch accept an optional structured `deadline` value:
 
 ```json
 {
@@ -405,7 +404,7 @@ Task Create and Patch will accept an optional structured `deadline` value:
 
 `time` is optional. Omitting it creates a date-only Deadline. `timezone` may be
 omitted and then defaults to `DAYFLOW_TIMEZONE`; the resolved IANA timezone is
-persisted. The API will return the normalized fields:
+persisted. The API returns the normalized fields:
 
 ```json
 {

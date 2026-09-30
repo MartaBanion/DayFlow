@@ -9,18 +9,17 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: V0.4.0
+## Current Schema: V0.5.0
 
 The real database is currently at:
 
 ```text
-0004_add_projects
+0005_add_deadlines_recurrence_reminders
 ```
 
-Current application version: `v0.4.0`. V0.4 Projects functionality is
-complete, the Project Backend and Frontend are implemented, and final acceptance
-and database verification passed. V0.5 Phase 1 Backend work is implemented in
-the working tree; the real database remains at `0004_add_projects`.
+Current application version: `v0.5.0`. Deadline, Recurrence, and Reminder
+Backend and Frontend are complete. Final acceptance and database verification
+passed. Release status is confirmed by Git tags; V0.6 is the next planned version.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -184,12 +183,12 @@ The real-data migration followed the same procedure: Backend stopped, verified
 pre-migration backup created, temporary-copy migration and regression checks
 completed, then explicit approval was obtained before applying `0004`.
 
-## V0.5 Phase 1 Schema: `0005_add_deadlines_recurrence_reminders`
+## V0.5 Schema: `0005_add_deadlines_recurrence_reminders`
 
-The V0.5 Phase 1 Backend and Migration implementation is present and has been
-validated on isolated databases. The real database remains at
-`0004_add_projects`. Migration `0005` must depend on `0004` and must not modify
-`0001` through `0004`.
+The V0.5 Backend and Migration implementation was validated on isolated databases
+and real-data copies before backup and explicit approval to migrate the real
+database. The approved real schema is now `0005`. Migration `0005` depends on
+`0004`; migrations `0001` through `0004` remain unchanged.
 
 ### Task Deadline Columns
 

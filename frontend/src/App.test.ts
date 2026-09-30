@@ -4,6 +4,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import ElementPlus, { ElMessage, ElMessageBox } from 'element-plus'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { version } from '../package.json'
 
 import App from './App.vue'
 import { ApiRequestError, projectApi, taskApi } from './api'
@@ -114,7 +115,7 @@ describe('application version display', () => {
   it('shows the version from the frontend package metadata', () => {
     wrapper = mount(App, { global: { plugins: [ElementPlus] } })
 
-    expect(wrapper.find('.sidebar-footer').text()).toContain('v0.4.0')
+    expect(wrapper.find('.sidebar-footer').text()).toContain(`v${version}`)
     expect(wrapper.find('.sidebar-footer').text()).not.toContain('v0.3.1')
   })
 })
