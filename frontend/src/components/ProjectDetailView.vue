@@ -2,8 +2,8 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { projectApi, taskApi } from '../api'
-import { getProjectErrorMessage, getProjectLoadErrorMessage } from '../constants/labels'
+import { projectApi, recurrenceApi, taskApi } from '../api'
+import { getFeatureErrorMessage, getProjectErrorMessage, getProjectLoadErrorMessage } from '../constants/labels'
 import { createTaskWithConflict, updateTaskWithConflict } from '../taskSave'
 import type {
   Category,
@@ -133,6 +133,7 @@ async function saveTask(payload: TaskUpdatePayload): Promise<void> {
             ? project.value?.id ?? null
             : payload.project_id,
         schedule: payload.schedule,
+        deadline: payload.deadline,
       }
       saved = await createTaskWithConflict(createPayload, confirmScheduleConflict)
     }
@@ -155,6 +156,20 @@ async function completeTask(task: Task): Promise<void> {
     ElMessage.success('任务已完成')
   } catch (error) {
     showError(error)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+async function skipTask(task: Task): Promise<void> {
+  if (!task.recurrence_rule_id) return
+  isSaving.value = true
+  try {
+    await recurrenceApi.skip(task.id, task.version)
+    await loadProject()
+    ElMessage.success('本次任务已跳过，下一次任务已准备好')
+  } catch (error) {
+    errorMessage.value = getFeatureErrorMessage(error, '跳过本次任务')
   } finally {
     isSaving.value = false
   }
@@ -268,6 +283,7 @@ onMounted(loadProject)
           @restore="restoreTask"
           @edit="openEditTask"
           @delete="deleteTask"
+          @skip="skipTask"
         />
       </div>
     </section>
@@ -284,5 +300,6 @@ onMounted(loadProject)
     :saving="isSaving"
     @update:open="isEditorOpen = $event"
     @submit="saveTask"
+    @changed="loadProject"
   />
 </template>

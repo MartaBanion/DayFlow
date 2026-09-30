@@ -5,6 +5,7 @@ import type {
   Project,
   Tag,
   Task,
+  TaskDeadlinePayload,
   TaskPriority,
   TaskSchedulePayload,
 } from '../../src/types'
@@ -42,6 +43,7 @@ export async function createTask(
     tag_ids?: string[]
     project_id?: string | null
     schedule?: TaskSchedulePayload | null
+    deadline?: TaskDeadlinePayload | null
   },
 ): Promise<Task> {
   const response = await request.post('/api/v1/tasks', {
@@ -53,6 +55,7 @@ export async function createTask(
       tag_ids: [],
       project_id: null,
       schedule: null,
+      deadline: null,
       ...payload,
     },
   })
@@ -149,16 +152,19 @@ export async function clearTaskSelect(dialog: Locator, label: string): Promise<v
 }
 
 export async function chooseTodayDate(page: Page, dialog: Locator): Promise<void> {
-  const editor = dialog.locator('.el-date-editor')
+  const editor = dialog.locator('.el-form-item').filter({ hasText: '计划日期' }).locator('.el-date-editor')
   await editor.click()
   const picker = page.locator('.el-picker-panel:visible').last()
   await expect(picker).toBeVisible()
   const day = String(Number(todayDate().slice(-2)))
-  await picker.getByRole('gridcell', { name: day, exact: true }).click()
+  await picker
+    .locator('td.available:not(.prev-month):not(.next-month)')
+    .filter({ hasText: new RegExp(`^${day}$`) })
+    .click()
 }
 
 export async function clearTaskDate(dialog: Locator): Promise<void> {
-  const editor = dialog.locator('.el-date-editor')
+  const editor = dialog.locator('.el-form-item').filter({ hasText: '计划日期' }).locator('.el-date-editor')
   await editor.hover()
   await editor.locator('.clear-icon').click()
 }

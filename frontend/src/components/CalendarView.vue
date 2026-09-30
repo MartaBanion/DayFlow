@@ -184,6 +184,7 @@ async function saveTask(payload: TaskUpdatePayload): Promise<void> {
         tag_ids: payload.tag_ids,
         project_id: payload.project_id,
         schedule: payload.schedule,
+        deadline: payload.deadline,
       }
       saved = await createTaskWithConflict(createPayload, confirmScheduleConflict)
     }
@@ -306,6 +307,7 @@ onMounted(initializeCalendar)
     :saving="isSaving"
     @update:open="isEditorOpen = $event"
     @submit="saveTask"
+    @changed="loadCalendar"
   />
 
   <div class="calendar-sr-actions" aria-hidden="true">

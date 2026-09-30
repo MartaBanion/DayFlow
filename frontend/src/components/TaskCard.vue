@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { priorityLabels } from '../constants/labels'
+import { deadlineStatusLabel, taskDeadlineLabel } from '../calendar'
 import type { Task } from '../types'
 
 defineProps<{
@@ -11,6 +12,7 @@ const emit = defineEmits<{
   restore: [task: Task]
   edit: [task: Task]
   delete: [task: Task]
+  skip: [task: Task]
 }>()
 </script>
 
@@ -45,6 +47,14 @@ const emit = defineEmits<{
           <span class="task-meta">
             {{ task.planned_date ? `计划日期：${task.planned_date}` : '暂未安排日期' }}
           </span>
+          <el-tag
+            v-if="taskDeadlineLabel(task)"
+            :type="task.deadline_status === 'overdue' ? 'danger' : task.deadline_status === 'due_today' ? 'warning' : 'info'"
+            effect="plain"
+            size="small"
+          >
+            {{ taskDeadlineLabel(task) }}<span v-if="task.deadline_status"> · {{ deadlineStatusLabel(task.deadline_status) }}</span>
+          </el-tag>
           <el-tag :type="task.priority === 'high' ? 'danger' : task.priority === 'low' ? 'info' : 'warning'" effect="plain" size="small">
             {{ priorityLabels[task.priority] }}
           </el-tag>
@@ -65,6 +75,9 @@ const emit = defineEmits<{
       <el-button text @click="emit('edit', task)">编辑</el-button>
       <el-button v-if="task.status === 'completed'" text @click="emit('restore', task)">
         恢复
+      </el-button>
+      <el-button v-if="task.status === 'pending' && task.recurrence_rule_id" text @click="emit('skip', task)">
+        跳过本次
       </el-button>
       <el-button type="danger" text @click="emit('delete', task)">删除</el-button>
     </div>

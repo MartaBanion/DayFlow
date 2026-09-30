@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { formatCalendarDate, taskTimeLabel } from '../calendar'
+import { formatCalendarDate, taskDeadlineLabel, taskTimeLabel } from '../calendar'
 import type { Task } from '../types'
 
 const props = defineProps<{
@@ -54,6 +54,7 @@ const dayLabels = computed(() => props.days.map((day) => ({
           <span>{{ task.title }}</span>
           <small v-if="task.start_at_utc">{{ taskTimeLabel(task) }}</small>
           <small v-if="task.project">{{ task.project.name }}</small>
+          <small v-if="taskDeadlineLabel(task)">{{ taskDeadlineLabel(task) }}</small>
         </button>
         <p v-if="tasksForDay(item.day).length > 3" class="calendar-more">
           还有 {{ tasksForDay(item.day).length - 3 }} 项

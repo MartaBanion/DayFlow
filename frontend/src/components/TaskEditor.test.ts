@@ -1,19 +1,21 @@
 // @vitest-environment jsdom
 
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import TaskEditor from './TaskEditor.vue'
+import { recurrenceApi, reminderApi } from '../api'
 import type { Task } from '../types'
 
 const stubs = {
   'el-button': {
     props: ['nativeType'],
-    template: '<button :type="nativeType || \'button\'" @click="$emit(\'click\')"><slot /></button>',
+    inheritAttrs: false,
+    template: '<button :class="$attrs.class" :type="nativeType || \'button\'" @click="$emit(\'click\')"><slot /></button>',
   },
   'el-date-picker': {
     props: ['modelValue'],
-    template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    template: '<input type="date" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
   },
   'el-dialog': {
     props: ['modelValue'],
@@ -69,6 +71,8 @@ const projects = [
 ]
 
 describe('TaskEditor organization fields', () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it('can select category and tags', async () => {
     const wrapper = mount(TaskEditor, {
       props: { open: true, task, categories, tags },
@@ -197,5 +201,92 @@ describe('TaskEditor organization fields', () => {
         timezone: 'Asia/Shanghai',
       },
     })
+  })
+
+  it('supports a date-only deadline and explicitly clears it', async () => {
+    const deadlineTask: Task = {
+      ...task,
+      planned_date: '2026-09-26',
+      deadline_date: '2026-10-20',
+      deadline_timezone: 'Asia/Shanghai',
+      deadline_status: 'upcoming',
+    }
+    const wrapper = mount(TaskEditor, {
+      props: { open: true, task: deadlineTask, categories, tags, runtimeTimezone: 'Asia/Shanghai' },
+      global: { stubs },
+    })
+
+    const dateInputs = wrapper.findAll('input[type="date"]')
+    await dateInputs[1].setValue('')
+    await dateInputs[1].trigger('change')
+    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({ deadline: null })
+  })
+
+  it('submits a timed deadline without changing the planned date', async () => {
+    const wrapper = mount(TaskEditor, {
+      props: { open: true, task: null, initialDate: '2026-09-26', runtimeTimezone: 'Asia/Shanghai', categories, tags },
+      global: { stubs },
+    })
+
+    await wrapper.get('input').setValue('Deadline task')
+    const dateInputs = wrapper.findAll('input[type="date"]')
+    await dateInputs[1].setValue('2026-10-20')
+    await dateInputs[1].trigger('change')
+    const timeInputs = wrapper.findAll('input[type="time"]')
+    await timeInputs[2].setValue('17:00')
+    await wrapper.findAll('button').find((button) => button.text() === '创建任务')!.trigger('click')
+
+    expect(wrapper.emitted('submit')?.[0]?.[0]).toMatchObject({
+      planned_date: '2026-09-26',
+      deadline: { date: '2026-10-20', time: '17:00', timezone: 'Asia/Shanghai' },
+    })
+  })
+
+  it('changes a timed deadline to date-only without changing the planned date', async () => {
+    const timedDeadlineTask: Task = {
+      ...task,
+      planned_date: '2026-09-26',
+      deadline_date: '2026-10-20',
+      deadline_at_utc: '2026-10-20T09:00:00.000Z',
+      deadline_timezone: 'Asia/Shanghai',
+      deadline_status: 'upcoming',
+    }
+    const wrapper = mount(TaskEditor, {
+      props: { open: true, task: timedDeadlineTask, categories, tags, runtimeTimezone: 'Asia/Shanghai' },
+      global: { stubs },
+    })
+
+    const deadlineTimeInput = wrapper.findAll('input[type="time"]')[2]
+    await deadlineTimeInput.setValue('')
+    await deadlineTimeInput.trigger('input')
+    await wrapper.findAll('button').find((button) => button.text() === '保存修改')!.trigger('click')
+
+    const payload = wrapper.emitted('submit')?.[0]?.[0] as Record<string, unknown>
+    expect(payload.planned_date).toBe('2026-09-26')
+    expect(payload.deadline).toEqual({ date: '2026-10-20', timezone: 'Asia/Shanghai' })
+  })
+
+  it('creates a repeat rule with the current Task version', async () => {
+    vi.spyOn(reminderApi, 'list').mockResolvedValue([])
+    const create = vi.spyOn(recurrenceApi, 'create').mockResolvedValue({
+      id: 'rule-1', frequency: 'daily', weekdays: null, month_day: null,
+      starts_on: '2026-09-26', timezone: 'Asia/Shanghai', stopped_at_utc: null,
+      created_at_utc: '2026-09-26T00:00:00Z', updated_at_utc: '2026-09-26T00:00:00Z', version: 1,
+    })
+    const repeatTask = { ...task, planned_date: '2026-09-26', version: 4 }
+    const wrapper = mount(TaskEditor, {
+      props: { open: false, task: repeatTask, categories, tags, runtimeTimezone: 'Asia/Shanghai' },
+      global: { stubs },
+    })
+    await wrapper.setProps({ open: true })
+    await flushPromises()
+    await wrapper.findAll('button').find((button) => button.text() === '启用重复')!.trigger('click')
+    await flushPromises()
+
+    expect(create).toHaveBeenCalledWith('task-1', expect.objectContaining({ version: 4, frequency: 'daily' }))
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(wrapper.emitted('changed')).toBeTruthy()
   })
 })

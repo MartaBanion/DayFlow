@@ -2,8 +2,8 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-import { projectApi, taskApi } from '../api'
-import { getTaskErrorMessage } from '../constants/labels'
+import { projectApi, recurrenceApi, taskApi } from '../api'
+import { getFeatureErrorMessage, getTaskErrorMessage } from '../constants/labels'
 import { calculateCompletionRate, formatDisplayDate } from '../date'
 import { updateTaskWithConflict } from '../taskSave'
 import type { Category, Project, Tag, Task, TaskUpdatePayload } from '../types'
@@ -186,6 +186,21 @@ async function completeTask(task: Task): Promise<void> {
   }
 }
 
+async function skipTask(task: Task): Promise<void> {
+  if (!task.recurrence_rule_id) return
+  isSaving.value = true
+  errorMessage.value = ''
+  try {
+    await recurrenceApi.skip(task.id, task.version)
+    await loadToday()
+    ElMessage.success('本次任务已跳过，下一次任务已准备好')
+  } catch (error) {
+    errorMessage.value = getFeatureErrorMessage(error, '跳过本次任务')
+  } finally {
+    isSaving.value = false
+  }
+}
+
 async function restoreTask(task: RestoreTarget): Promise<boolean> {
   isSaving.value = true
   errorMessage.value = ''
@@ -356,6 +371,7 @@ onMounted(initializeToday)
         @restore="restoreTask"
         @edit="openEditDialog"
         @delete="deleteTask"
+        @skip="skipTask"
       />
     </div>
   </section>
@@ -370,5 +386,6 @@ onMounted(initializeToday)
     :saving="isSaving"
     @update:open="isEditDialogOpen = $event"
     @submit="saveEdit"
+    @changed="loadToday"
   />
 </template>

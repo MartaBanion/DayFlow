@@ -11,6 +11,11 @@ import type {
   ProjectCreatePayload,
   ProjectStatus,
   ProjectUpdatePayload,
+  RecurrenceCreatePayload,
+  RecurrenceRule,
+  RecurrenceUpdatePayload,
+  Reminder,
+  ReminderPayload,
 } from './types'
 
 const API_BASE = '/api/v1'
@@ -64,6 +69,10 @@ function jsonRequest(method: string, body: unknown): RequestInit {
 }
 
 export const taskApi = {
+  get(id: string): Promise<Task> {
+    return request<Task>(`/tasks/${encodeURIComponent(id)}`)
+  },
+
   listToday(date: string): Promise<Task[]> {
     return request<Task[]>(`/today?date=${encodeURIComponent(date)}`)
   },
@@ -180,6 +189,91 @@ export const taskApi = {
     return request<void>(
       `/tasks/${encodeURIComponent(id)}`,
       jsonRequest('DELETE', { version }),
+    )
+  },
+}
+
+export const recurrenceApi = {
+  create(taskId: string, payload: RecurrenceCreatePayload): Promise<RecurrenceRule> {
+    return request<RecurrenceRule>(
+      `/tasks/${encodeURIComponent(taskId)}/recurrence`,
+      jsonRequest('POST', payload),
+    )
+  },
+
+  get(ruleId: string): Promise<RecurrenceRule> {
+    return request<RecurrenceRule>(`/recurrence-rules/${encodeURIComponent(ruleId)}`)
+  },
+
+  update(ruleId: string, version: number, payload: RecurrenceUpdatePayload): Promise<RecurrenceRule> {
+    return request<RecurrenceRule>(
+      `/recurrence-rules/${encodeURIComponent(ruleId)}?version=${encodeURIComponent(String(version))}`,
+      jsonRequest('PATCH', payload),
+    )
+  },
+
+  stop(ruleId: string, version: number): Promise<RecurrenceRule> {
+    return request<RecurrenceRule>(
+      `/recurrence-rules/${encodeURIComponent(ruleId)}/stop`,
+      jsonRequest('POST', { version }),
+    )
+  },
+
+  materialize(ruleId: string): Promise<Task> {
+    return request<Task>(`/recurrence-rules/${encodeURIComponent(ruleId)}/materialize`, {
+      method: 'POST',
+    })
+  },
+
+  skip(taskId: string, version: number): Promise<Task> {
+    return request<Task>(
+      `/tasks/${encodeURIComponent(taskId)}/skip`,
+      jsonRequest('POST', { version }),
+    )
+  },
+}
+
+export const reminderApi = {
+  list(taskId: string): Promise<Reminder[]> {
+    return request<Reminder[]>(`/tasks/${encodeURIComponent(taskId)}/reminders`)
+  },
+
+  create(taskId: string, payload: ReminderPayload): Promise<Reminder> {
+    return request<Reminder>(
+      `/tasks/${encodeURIComponent(taskId)}/reminders`,
+      jsonRequest('POST', payload),
+    )
+  },
+
+  due(): Promise<Reminder[]> {
+    return request<Reminder[]>('/reminders/due')
+  },
+
+  update(reminderId: string, version: number, payload: ReminderPayload): Promise<Reminder> {
+    return request<Reminder>(
+      `/reminders/${encodeURIComponent(reminderId)}?version=${encodeURIComponent(String(version))}`,
+      jsonRequest('PATCH', payload),
+    )
+  },
+
+  remove(reminderId: string, version: number): Promise<void> {
+    return request<void>(
+      `/reminders/${encodeURIComponent(reminderId)}`,
+      jsonRequest('DELETE', { version }),
+    )
+  },
+
+  acknowledge(reminderId: string, version: number): Promise<Reminder> {
+    return request<Reminder>(
+      `/reminders/${encodeURIComponent(reminderId)}/acknowledge`,
+      jsonRequest('POST', { version }),
+    )
+  },
+
+  dismiss(reminderId: string, version: number): Promise<Reminder> {
+    return request<Reminder>(
+      `/reminders/${encodeURIComponent(reminderId)}/dismiss`,
+      jsonRequest('POST', { version }),
     )
   },
 }

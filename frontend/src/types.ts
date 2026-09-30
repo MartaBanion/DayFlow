@@ -1,6 +1,9 @@
 export type TaskStatus = 'pending' | 'completed'
 export type TaskPriority = 'low' | 'normal' | 'high'
 export type ProjectStatus = 'active' | 'completed'
+export type DeadlineStatus = 'none' | 'upcoming' | 'due_today' | 'overdue' | 'completed'
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly'
+export type ReminderStatus = 'pending' | 'acknowledged' | 'dismissed'
 
 export interface Category {
   id: string
@@ -43,6 +46,10 @@ export interface Task {
   end_at_utc: string | null
   schedule_timezone: string | null
   priority: TaskPriority
+  deadline_date?: string | null
+  deadline_at_utc?: string | null
+  deadline_timezone?: string | null
+  deadline_status?: DeadlineStatus
   category: Category | null
   tags: Tag[]
   project_id?: string | null
@@ -52,6 +59,8 @@ export interface Task {
   completed_at_utc: string | null
   deleted_at_utc: string | null
   version: number
+  recurrence_rule_id?: string | null
+  recurrence_occurrence_date?: string | null
 }
 
 export interface TaskCreatePayload {
@@ -63,6 +72,7 @@ export interface TaskCreatePayload {
   tag_ids?: string[]
   project_id?: string | null
   schedule?: TaskSchedulePayload | null
+  deadline?: TaskDeadlinePayload | null
 }
 
 export interface TaskUpdatePayload {
@@ -74,6 +84,7 @@ export interface TaskUpdatePayload {
   tag_ids?: string[]
   project_id?: string | null
   schedule?: TaskSchedulePayload | null
+  deadline?: TaskDeadlinePayload | null
 }
 
 export interface ProjectCreatePayload {
@@ -89,6 +100,61 @@ export interface ProjectUpdatePayload {
 export interface TaskSchedulePayload {
   start_time: string
   end_time: string
+  timezone?: string
+}
+
+export interface TaskDeadlinePayload {
+  date: string
+  time?: string
+  timezone?: string
+}
+
+export interface RecurrenceRule {
+  id: string
+  frequency: RecurrenceFrequency
+  weekdays: number[] | null
+  month_day: number | null
+  starts_on: string
+  timezone: string
+  stopped_at_utc: string | null
+  created_at_utc: string
+  updated_at_utc: string
+  version: number
+}
+
+export interface RecurrenceCreatePayload {
+  version: number
+  frequency: RecurrenceFrequency
+  starts_on: string
+  timezone?: string
+  weekdays?: number[] | null
+  month_day?: number | null
+}
+
+export interface RecurrenceUpdatePayload {
+  frequency?: RecurrenceFrequency
+  starts_on?: string
+  timezone?: string
+  weekdays?: number[] | null
+  month_day?: number | null
+}
+
+export interface Reminder {
+  id: string
+  task_id: string
+  trigger_at_utc: string
+  reminder_timezone: string
+  status: ReminderStatus
+  acknowledged_at_utc: string | null
+  dismissed_at_utc: string | null
+  created_at_utc: string
+  updated_at_utc: string
+  version: number
+}
+
+export interface ReminderPayload {
+  date: string
+  time: string
   timezone?: string
 }
 

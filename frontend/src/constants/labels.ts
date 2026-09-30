@@ -82,3 +82,17 @@ export function getProjectLoadErrorMessage(error: unknown): string {
   }
   return '项目加载失败，请确认后端服务正在运行。'
 }
+
+export function getFeatureErrorMessage(error: unknown, feature: string): string {
+  if (error instanceof ApiRequestError) {
+    if (error.code === 'recurrence_version_conflict' || error.code === 'reminder_version_conflict') {
+      return `${feature}已被其他操作更新，请刷新后重试。`
+    }
+    if (error.code === 'recurrence_rule_conflict' || error.code === 'reminder_state_conflict') {
+      return `${feature}状态已发生变化，请刷新后重试。`
+    }
+    if (error.status === 422) return `${feature}信息不符合要求，请检查后重试。`
+    return `${feature}操作失败，请稍后重试。（HTTP ${error.status}）`
+  }
+  return `${feature}操作失败，请确认后端服务正在运行。`
+}

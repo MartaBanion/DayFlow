@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { formatCalendarDate, taskLocalClockMinutes, taskTimeLabel } from '../calendar'
+import { formatCalendarDate, taskDeadlineLabel, taskLocalClockMinutes, taskTimeLabel } from '../calendar'
 import type { Task } from '../types'
 
 const props = defineProps<{
@@ -79,6 +79,7 @@ const dayLabels = computed(() => props.days.map((day) => ({
           >
             <strong>{{ task.title }}</strong>
             <small v-if="task.project">{{ task.project.name }}</small>
+            <small v-if="taskDeadlineLabel(task)">{{ taskDeadlineLabel(task) }}</small>
             <small v-if="task.status === 'completed'">已完成</small>
           </button>
         </div>
@@ -112,7 +113,7 @@ const dayLabels = computed(() => props.days.map((day) => ({
             @click="emit('select', task)"
           >
             <strong>{{ task.title }}</strong>
-            <small>{{ taskTimeLabel(task) }}<span v-if="task.project"> · {{ task.project.name }}</span><span v-if="task.status === 'completed'"> · 已完成</span></small>
+            <small>{{ taskTimeLabel(task) }}<span v-if="task.project"> · {{ task.project.name }}</span><span v-if="taskDeadlineLabel(task)"> · {{ taskDeadlineLabel(task) }}</span><span v-if="task.status === 'completed'"> · 已完成</span></small>
           </button>
         </div>
       </div>

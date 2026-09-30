@@ -8,6 +8,7 @@ import TodayView from './components/TodayView.vue'
 import CalendarView from './components/CalendarView.vue'
 import ProjectDetailView from './components/ProjectDetailView.vue'
 import ProjectsView from './components/ProjectsView.vue'
+import ReminderCenter from './components/ReminderCenter.vue'
 
 type ViewName = 'today' | 'inbox' | 'calendar' | 'search' | 'projects' | 'project-detail'
 
@@ -123,5 +124,6 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       />
       <CalendarView v-else />
     </main>
+    <ReminderCenter />
   </div>
 </template>

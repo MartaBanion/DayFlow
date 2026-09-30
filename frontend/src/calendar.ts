@@ -141,3 +141,31 @@ export function taskTimeLabel(task: Task): string {
   if (!task.start_at_utc || !task.end_at_utc || !task.schedule_timezone) return ''
   return `${formatTaskTime(task.start_at_utc, task.schedule_timezone)}–${formatTaskTime(task.end_at_utc, task.schedule_timezone)}`
 }
+
+export function taskDeadlineLabel(task: Task): string {
+  if (!task.deadline_date) return ''
+  if (task.deadline_at_utc && task.deadline_timezone) {
+    return `截止：${task.deadline_date} ${formatTaskTime(task.deadline_at_utc, task.deadline_timezone)}`
+  }
+  return `截止：${task.deadline_date}`
+}
+
+export function deadlineStatusLabel(status: Task['deadline_status']): string {
+  if (status === 'overdue') return '已逾期'
+  if (status === 'due_today') return '今天截止'
+  if (status === 'completed') return '已完成'
+  return ''
+}
+
+export function formatReminderTime(value: string, timezone: string): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).format(new Date(value))
+}
