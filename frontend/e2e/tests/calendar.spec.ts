@@ -13,7 +13,7 @@ test('日历支持日周月视图、日期任务和时间块持久化', async ({
   const timedTitle = uniqueName('E2E-日历-时间块')
 
   await page.goto('/#calendar')
-  await expect(page.locator('.page-header .eyebrow').filter({ hasText: '日历' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: '主要导航' }).getByRole('link', { name: '日历', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('.calendar-header h2')).toHaveText(/^[0-9]{4}年[0-9]+月 · 第[0-9]+周$/)
   await expect(page.locator('.calendar-header .muted')).toHaveText(/^[0-9]+月[0-9]+日 - [0-9]+月[0-9]+日$/)
   await expect(page.getByRole('button', { name: '周', exact: true })).toHaveAttribute(

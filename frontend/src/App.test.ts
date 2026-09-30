@@ -120,6 +120,35 @@ describe('application version display', () => {
   })
 })
 
+describe('application navigation', () => {
+  it('uses plain Chinese labels and marks the current Hash destination', async () => {
+    vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
+    vi.spyOn(taskApi, 'list').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listCategories').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
+    vi.spyOn(projectApi, 'get').mockRejectedValue(new ApiRequestError('Project not found', 404))
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+
+    const links = wrapper.findAll('nav[aria-label="主要导航"] a')
+    expect(links.map((link) => link.text())).toEqual(['今天', '收件箱', '日历', '搜索', '项目'])
+    expect(links[0]?.attributes('aria-current')).toBe('page')
+    expect(links.filter((link) => link.attributes('aria-current') === 'page')).toHaveLength(1)
+
+    window.location.hash = '#inbox'
+    window.dispatchEvent(new Event('hashchange'))
+    await flushPromises()
+    expect(links[1]?.attributes('aria-current')).toBe('page')
+    expect(links[0]?.attributes('aria-current')).toBeUndefined()
+
+    window.location.hash = '#project:project-1'
+    window.dispatchEvent(new Event('hashchange'))
+    await flushPromises()
+    expect(links[4]?.attributes('aria-current')).toBe('page')
+    expect(wrapper.find('.workspace-projects .workspace-content').exists()).toBe(true)
+  })
+})
+
 describe('Today load state', () => {
   it('shows a loading state instead of empty task content while loading', async () => {
     vi.spyOn(taskApi, 'listToday').mockReturnValue(new Promise<Task[]>(() => {}))

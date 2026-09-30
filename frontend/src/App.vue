@@ -57,42 +57,47 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         <a
           class="nav-item"
           :class="{ 'is-active': currentView === 'today' }"
+          :aria-current="currentView === 'today' ? 'page' : undefined"
           href="#today"
           @click="currentView = 'today'"
         >
-          今天 <span>01</span>
+          今天
         </a>
         <a
           class="nav-item"
           :class="{ 'is-active': currentView === 'inbox' }"
+          :aria-current="currentView === 'inbox' ? 'page' : undefined"
           href="#inbox"
           @click="currentView = 'inbox'"
         >
-          收件箱 <span>02</span>
+          收件箱
         </a>
         <a
           class="nav-item"
           :class="{ 'is-active': currentView === 'calendar' }"
+          :aria-current="currentView === 'calendar' ? 'page' : undefined"
           href="#calendar"
           @click="currentView = 'calendar'"
         >
-          日历 <span>03</span>
+          日历
         </a>
         <a
           class="nav-item"
           :class="{ 'is-active': currentView === 'search' }"
+          :aria-current="currentView === 'search' ? 'page' : undefined"
           href="#search"
           @click="currentView = 'search'"
         >
-          搜索 <span>04</span>
+          搜索
         </a>
         <a
           class="nav-item"
           :class="{ 'is-active': currentView === 'projects' || currentView === 'project-detail' }"
+          :aria-current="currentView === 'projects' || currentView === 'project-detail' ? 'page' : undefined"
           href="#projects"
           @click="currentView = 'projects'"
         >
-          项目 <span>05</span>
+          项目
         </a>
       </nav>
 
@@ -114,15 +119,17 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         'workspace-projects': currentView === 'projects' || currentView === 'project-detail',
       }"
     >
-      <TodayView v-if="currentView === 'today'" />
-      <InboxView v-else-if="currentView === 'inbox'" />
-      <InboxView v-else-if="currentView === 'search'" search-only />
-      <ProjectsView v-else-if="currentView === 'projects'" />
-      <ProjectDetailView
-        v-else-if="currentView === 'project-detail'"
-        :project-id="currentProjectId ?? ''"
-      />
-      <CalendarView v-else />
+      <div class="workspace-content">
+        <TodayView v-if="currentView === 'today'" />
+        <InboxView v-else-if="currentView === 'inbox'" />
+        <InboxView v-else-if="currentView === 'search'" search-only />
+        <ProjectsView v-else-if="currentView === 'projects'" />
+        <ProjectDetailView
+          v-else-if="currentView === 'project-detail'"
+          :project-id="currentProjectId ?? ''"
+        />
+        <CalendarView v-else />
+      </div>
     </main>
     <ReminderCenter />
   </div>
