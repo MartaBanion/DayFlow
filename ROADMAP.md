@@ -1,10 +1,10 @@
 # DayFlow Personal Roadmap
 
-Current application version: **v0.5.0 — Deadlines, Repeat Tasks, and Reminders**.
-Backend and Frontend are implemented; final acceptance and database verification
-passed. The real database schema is `0005_add_deadlines_recurrence_reminders`.
-The stable release is `v0.5.0`. The current planned patch is V0.5.1 UI/UX
-refactoring; V0.6 remains a later feature-development version.
+Current application version: **v0.5.1 — UI/UX refinement**.
+V0.5 Backend and Frontend are complete, and the V0.5.1 presentation-only patch
+is integrated into `main` and in release preparation. The real database schema
+remains `0005_add_deadlines_recurrence_reminders`; V0.6 remains the next
+planned feature-development version.
 
 ## Current
 
@@ -197,22 +197,24 @@ databases before any real-data migration is considered.
 The independent V0.4 version-display maintenance fix is complete: `App.vue`
 reads the application version from Frontend package metadata.
 
-## Current Planned Patch
+## Current UI/UX Patch
 
 ### V0.5.1 — UI/UX Consistency
 
-Status: Architecture frozen; implementation has not started. This is a
-presentation and interaction refactor, not a new business-feature release.
-The stable application/package version remains `v0.5.0`; the real database
-remains `0005_add_deadlines_recurrence_reminders`.
+Status: UI/UX implementation complete and integrated into `main`; release
+preparation is in progress. This is a presentation and interaction patch, not
+a new business-feature release. Release status is confirmed by Git tags. The
+real database remains `0005_add_deadlines_recurrence_reminders`.
 
 Scope: CSS/Element Plus design tokens, App layout and Sidebar, Today, Inbox,
-Search, TaskCard, grouped TaskEditor, Projects, Calendar Day/Week/Month, and a
-global entry for currently due/pending Reminders. Business semantics and
-Backend API contracts stay unchanged. No schema change or migration is needed.
-The detailed frozen contracts are in `docs/ARCHITECTURE.md`.
+Search, TaskCard, grouped TaskEditor, Projects, Calendar Day/Week/Month, and
+accessibility and responsive desktop polish. Business semantics and Backend
+API contracts stay unchanged. No schema change or migration is needed. The
+implementation passed Backend, Frontend, type-check, build, and Browser E2E
+regression gates; manual desktop visual acceptance also passed. The detailed
+contracts are in `docs/ARCHITECTURE.md`.
 
-Implementation order (each phase requires an independent review and commit):
+The completed implementation followed these reviewed phases:
 
 1. Phase 0: design documentation freeze.
 2. Phase 1: Design System, App Layout, and Sidebar.
@@ -220,7 +222,7 @@ Implementation order (each phase requires an independent review and commit):
 4. Phase 3: Projects and Calendar.
 5. Phase 4: Reminder UX.
 6. Phase 5: full automated regression and manual visual acceptance at
-   1440×900 and 1024×768.
+   1440×900, 1024×768, and 900×700.
 
 Preserve Backend regression, Frontend Vitest, and all 21 existing Browser E2E
 scenarios. Add focused coverage for editor sections and draft preservation,
@@ -235,6 +237,20 @@ framework, new dependencies, Kanban, Drag & Drop, Resize, a full global Reminder
 history, background notification services, and V0.6 feature work. Week View
 may scroll horizontally inside the Calendar; unintended whole-page overflow
 is not accepted. Mobile is not an acceptance target for this patch.
+
+### Future UI/UX Refinement Backlog
+
+The current UI is acceptable for this stage but is not treated as the final
+visual language. Future refinement remains a separate backlog and is not tied
+to V0.6 by default:
+
+- Theme and color refinement
+- Typography refinement
+- Further TaskCard and TaskEditor polish
+- Calendar density and interaction polish
+- Responsive desktop refinement
+- Broader design-language consistency
+- Dark Mode as a future candidate only
 
 ## Later
 

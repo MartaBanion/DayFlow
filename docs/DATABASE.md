@@ -9,7 +9,7 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: V0.5.0
+## Current Schema: V0.5 / V0.5.1 UI Patch
 
 The real database is currently at:
 
@@ -17,9 +17,10 @@ The real database is currently at:
 0005_add_deadlines_recurrence_reminders
 ```
 
-Current application version: `v0.5.0`. Deadline, Recurrence, and Reminder
-Backend and Frontend are complete. Final acceptance and database verification
-passed. Release status is confirmed by Git tags; V0.6 is the next planned version.
+Current application version: `v0.5.1`. V0.5.1 is a UI/UX-only patch: Backend
+and Frontend business semantics are unchanged, and no schema migration is
+included. The real schema remains `0005_add_deadlines_recurrence_reminders`.
+Release status is confirmed by Git tags; V0.6 is the next planned version.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block

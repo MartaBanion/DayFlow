@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased] — V0.5.1 UI/UX Refinement
+
+V0.5.1 is a presentation-only patch in release preparation. Release status is
+confirmed by Git tags.
+
+### Changed
+
+- Refined the shared Design System, Element Plus theme, App layout, Sidebar,
+  focus states, and responsive desktop behavior.
+- Improved Today, Inbox, Search, TaskCard, and grouped TaskEditor hierarchy.
+- Clarified independent Repeat and Reminder save boundaries without changing
+  their API semantics.
+- Improved Projects and Calendar readability, overlap presentation, short
+  Time Block display, and keyboard-accessible interactions.
+
+### Compatibility
+
+- Backend APIs and business semantics are unchanged.
+- The database schema remains `0005_add_deadlines_recurrence_reminders`; no
+  migration is included in this patch.
+
 ## [Unreleased] — V0.3.1 UI/UX Polish
 
 ### Changed

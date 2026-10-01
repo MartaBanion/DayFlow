@@ -6,9 +6,10 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Current application version: `v0.5.0` — Deadlines, Repeat Tasks, and Reminders.
-V0.5 Backend and Frontend functionality is complete. Final acceptance and
-database verification passed. The real database schema is
+Current application version: `v0.5.1` — UI/UX refinement.
+V0.5 Backend and Frontend functionality is complete. V0.5.1 is a
+presentation-only patch integrated into `main` and currently in release
+preparation; the real database schema remains
 `0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
 tags; V0.6 is the next planned development version.
 

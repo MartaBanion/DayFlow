@@ -1,6 +1,6 @@
 [project]
 name = "dayflow-backend"
-version = "0.5.0"
+version = "0.5.1"
 description = "DayFlow Personal backend"
 requires-python = ">=3.12,<3.13"
 dependencies = [

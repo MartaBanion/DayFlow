@@ -2,11 +2,12 @@
 
 ## Current Version
 
-Current application version: **v0.5.0** — Deadlines, Repeat Tasks, and Reminders.
-Backend and Frontend are complete; final acceptance and database verification
-passed. The real database schema is `0005_add_deadlines_recurrence_reminders`.
-The stable release is `v0.5.0`. V0.5.1 UI/UX architecture is frozen below;
-implementation has not started. V0.6 remains a later feature-development version.
+Current application version: **v0.5.1** — UI/UX refinement.
+V0.5 Backend and Frontend are complete; the V0.5.1 presentation-only patch is
+implemented and integrated into `main` for release preparation. The real
+database schema remains `0005_add_deadlines_recurrence_reminders`; V0.6
+remains the next planned feature-development version. Release status is
+confirmed by Git tags.
 
 ## Architecture
 
@@ -333,11 +334,10 @@ The independent V0.4 footer maintenance fix was completed in `b7b5114`;
 `App.vue` reads the application version from the Frontend package metadata.
 It is separate from Migration 0005 and V0.5 feature work.
 
-V0.5 implementation remains phased: freeze this design, implement and test
-`0005` on isolated databases, implement Backend/API behavior, implement the
-minimal Frontend surfaces, run Vitest and Browser E2E, rehearse on a copy of
-the real database, create a verified backup, obtain explicit approval, migrate
-real data, and complete manual acceptance before a release tag.
+V0.5 implementation and real-data acceptance are complete. The V0.5.1 UI/UX
+patch is kept separate from the V0.5 Backend and Migration 0005 work; it does
+not change API contracts or database schema. Future visual refinement remains
+backlog work and is not automatically part of V0.6.
 
 ## Frozen V0.5.1 UI/UX Architecture
 
@@ -350,14 +350,15 @@ is introduced. Backend APIs and Task/Project/Deadline/Recurrence/Reminder
 semantics remain unchanged. Any improvement requiring Backend support must be
 reported for separate approval rather than worked around or added silently.
 No migration is created; the real schema remains
-`0005_add_deadlines_recurrence_reminders`. Product metadata stays at `0.5.0`
-until separately approved release preparation.
+`0005_add_deadlines_recurrence_reminders`. Product metadata is `0.5.1` for
+this UI/UX release preparation; formal release status is determined by Git
+tags.
 
 ### Design Tokens
 
 Use CSS variables, Element Plus theme variables, and local component classes.
 Avoid widespread selectors targeting Element Plus internal DOM. The following
-values are the initial frozen design baseline, not already implemented CSS:
+values are the frozen and implemented design baseline:
 
 | Token group | Baseline |
 | --- | --- |
@@ -387,7 +388,7 @@ consistent light-bordered cards, and a shared page-title/state design.
 
 Acceptance viewports are 1440×900 and 1024×768. Compact desktop rules begin at
 approximately 1200px (the initial breakpoint is max-width: 1199px), not only at
-900px. Header actions and filters may wrap; task content must shrink safely.
+Header actions and filters may wrap; task content must shrink safely.
 The Sidebar keeps 今天, 收件箱, 日历, 搜索, 项目 and existing Hash destinations.
 Remove decorative 01–05 indices; do not invent counts. Keep the brand and
 package-derived version. Active navigation has a visual and accessible state.

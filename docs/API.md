@@ -8,10 +8,11 @@
 
 ## Current Version
 
-Current application version: `v0.5.0`. Deadline, Recurrence, and Reminder Backend
-and Frontend are complete. Final acceptance and database verification passed;
-the real database schema is `0005_add_deadlines_recurrence_reminders`. Release
-status is confirmed by Git tags. V0.6 is the next planned development version.
+Current application version: `v0.5.1`. V0.5.1 is a UI/UX-only patch; Deadline,
+Recurrence, and Reminder Backend and Frontend API contracts remain unchanged.
+The real database schema is `0005_add_deadlines_recurrence_reminders`, with no
+new migration for this patch. Release status is confirmed by Git tags. V0.6 is
+the next planned development version.
 
 ## Current System Endpoint
 
