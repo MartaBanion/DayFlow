@@ -161,6 +161,38 @@ export interface ReminderPayload {
 export interface RuntimeInfo {
   timezone: string
   local_date: string
+  app_version?: string
+  database_schema?: string | null
+}
+
+export interface Backup {
+  backup_version: 1
+  backup_id: string
+  filename: string
+  created_at_utc: string
+  app_version: string
+  alembic_version: string
+  database_sha256: string
+  file_size: number
+  integrity_check: 'ok'
+  foreign_key_errors: 0
+  verified_at_utc: string
+  source_database: string
+  compatible_for_restore: boolean
+}
+
+export interface BackupVerification {
+  backup_id: string
+  verified_at_utc: string
+  status: 'valid' | 'incompatible' | 'corrupted' | 'unreadable' | 'manifest_mismatch'
+  compatible_for_restore: boolean
+  database_sha256: string | null
+  file_size: number | null
+  alembic_version: string | null
+  integrity_check: string | null
+  foreign_key_errors: number | null
+  structure_valid: boolean
+  issues: string[]
 }
 
 export interface ApiErrorBody {

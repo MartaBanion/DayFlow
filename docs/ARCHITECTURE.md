@@ -12,9 +12,10 @@ confirmed by Git tags.
 
 ## Frozen V0.6 — Data Safety & Recovery
 
-Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are implemented in
-the development working tree. Maintenance UI, Restore CLI, maintenance locks,
-Launcher Restore blocking and Reminder poll UI are not yet implemented.
+Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
+Phase 2 Maintenance UI is implemented in the development working tree,
+pending visual Review. Restore CLI, maintenance locks, Launcher Restore
+blocking and Reminder poll visibility are not yet implemented.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
@@ -28,6 +29,15 @@ Metadata, Restore logs, and maintenance state are controlled filesystem data,
 Git ignored, never business tables. No `0006` is created.
 
 ### Backup and Verification
+
+Maintenance UI uses the existing Hash navigation (`#maintenance`), with a
+secondary 数据与备份 entry. It creates, lists and explicitly verifies registered
+backups; no polling, deletion, Restore button or invented CLI command exists.
+Current application/schema status comes from the read-only runtime endpoint,
+not historical Backup metadata. List verification is labeled as a registration
+record; measured verification results remain local to the current view. An
+unverified compatible record says 需要验证, not currently safe to Restore.
+Restore guidance explains offline overwrite risks and deferred Phase 3 work.
 
 Default root is `data/backups/`. Use Python `sqlite3.Connection.backup()` with
 a read-only source connection; include committed WAL data. Copying the active

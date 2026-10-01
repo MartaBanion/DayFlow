@@ -16,9 +16,19 @@ import type {
   RecurrenceUpdatePayload,
   Reminder,
   ReminderPayload,
+  Backup,
+  BackupVerification,
 } from './types'
 
 const API_BASE = '/api/v1'
+
+export const backupApi = {
+  list(): Promise<Backup[]> { return request<Backup[]>('/backups') },
+  create(): Promise<Backup> { return request<Backup>('/backups', { method: 'POST' }) },
+  verify(id: string): Promise<BackupVerification> {
+    return request<BackupVerification>(`/backups/${encodeURIComponent(id)}/verify`, { method: 'POST' })
+  },
+}
 
 export class ApiRequestError extends Error {
   readonly status: number

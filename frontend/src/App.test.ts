@@ -7,7 +7,7 @@ import { nextTick } from 'vue'
 import { version } from '../package.json'
 
 import App from './App.vue'
-import { ApiRequestError, projectApi, taskApi } from './api'
+import { ApiRequestError, backupApi, projectApi, taskApi } from './api'
 import type { Task } from './types'
 
 const today = '2026-09-26'
@@ -121,6 +121,17 @@ describe('application version display', () => {
 })
 
 describe('application navigation', () => {
+  it('opens maintenance through a secondary Hash navigation entry', async () => {
+    window.location.hash = '#maintenance'
+    vi.spyOn(backupApi, 'list').mockResolvedValue([])
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+    const link = wrapper.get('nav[aria-label="维护导航"] a')
+    expect(link.text()).toBe('数据与备份')
+    expect(link.attributes('href')).toBe('#maintenance')
+    expect(link.attributes('aria-current')).toBe('page')
+    expect(wrapper.get('main').text()).toContain('还没有备份')
+  })
   it('uses plain Chinese labels and marks the current Hash destination', async () => {
     vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
     vi.spyOn(taskApi, 'list').mockResolvedValue([])

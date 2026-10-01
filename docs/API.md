@@ -16,9 +16,10 @@ the next planned development version.
 
 ## Frozen V0.6 Backup API / CLI Boundary
 
-Status: Phase 1 Create/List/Verify and Manifest V1 are implemented in the
-development working tree. Maintenance UI, Restore CLI, maintenance locks,
-Launcher Restore blocking and Reminder poll visibility are not implemented.
+Status: Phase 1 Create/List/Verify and Manifest V1 are committed. Phase 2
+Maintenance UI is implemented in the development working tree, pending visual
+Review. Restore CLI, maintenance locks, Launcher Restore blocking and Reminder
+poll visibility are not implemented.
 Stable application is
 `v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
@@ -45,6 +46,13 @@ is `0005_add_deadlines_recurrence_reminders`; no automatic migration or Restore
 for old, unknown, or newer schemas. Existing business responses do not change.
 
 ### Phase 1 Response and Error Contract
+
+Phase 2 adds optional-consumer runtime status: `GET /api/v1/runtime` retains
+`timezone` and `local_date`, and additionally returns `app_version` from Backend
+metadata and nullable `database_schema` read from the active database's
+`alembic_version`. It performs no integrity scan, backup or migration. The
+Maintenance view displays a logical database-adjacent `backups/` location,
+never a server absolute path. Existing Backup API contracts are unchanged.
 
 Create returns HTTP 201 with Manifest V1 fields plus `compatible_for_restore`.
 It accepts no body or query parameters; callers cannot choose source,

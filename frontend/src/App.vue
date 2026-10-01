@@ -9,8 +9,9 @@ import CalendarView from './components/CalendarView.vue'
 import ProjectDetailView from './components/ProjectDetailView.vue'
 import ProjectsView from './components/ProjectsView.vue'
 import ReminderCenter from './components/ReminderCenter.vue'
+import MaintenanceView from './components/MaintenanceView.vue'
 
-type ViewName = 'today' | 'inbox' | 'calendar' | 'search' | 'projects' | 'project-detail'
+type ViewName = 'today' | 'inbox' | 'calendar' | 'search' | 'projects' | 'project-detail' | 'maintenance'
 
 function viewFromHash(): ViewName {
   const hash = window.location.hash
@@ -18,6 +19,7 @@ function viewFromHash(): ViewName {
   if (hash === '#calendar') return 'calendar'
   if (hash === '#search') return 'search'
   if (hash === '#projects') return 'projects'
+  if (hash === '#maintenance') return 'maintenance'
   if (hash.startsWith('#project:')) return 'project-detail'
   return 'today'
 }
@@ -101,6 +103,13 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         </a>
       </nav>
 
+      <nav class="sidebar-maintenance" aria-label="维护导航">
+        <a class="nav-item" href="#maintenance"
+          :class="{ 'is-active': currentView === 'maintenance' }"
+          :aria-current="currentView === 'maintenance' ? 'page' : undefined"
+          @click="currentView = 'maintenance'">数据与备份</a>
+      </nav>
+
       <div class="sidebar-note">
         <p class="eyebrow">专注</p>
         <p>稳定的小步，让每一天更清晰。</p>
@@ -124,6 +133,7 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         <InboxView v-else-if="currentView === 'inbox'" />
         <InboxView v-else-if="currentView === 'search'" search-only />
         <ProjectsView v-else-if="currentView === 'projects'" />
+        <MaintenanceView v-else-if="currentView === 'maintenance'" />
         <ProjectDetailView
           v-else-if="currentView === 'project-detail'"
           :project-id="currentProjectId ?? ''"
