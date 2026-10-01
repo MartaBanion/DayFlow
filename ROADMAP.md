@@ -2,7 +2,7 @@
 
 Current application version: **v0.5.1 — UI/UX refinement**.
 V0.5 Backend and Frontend are complete, and the V0.5.1 presentation-only patch
-is integrated into `main` and in release preparation. The real database schema
+is integrated into `main` and released as the current stable version `v0.5.1`. The real database schema
 remains `0005_add_deadlines_recurrence_reminders`; V0.6 remains the next
 planned feature-development version.
 
@@ -201,8 +201,8 @@ reads the application version from Frontend package metadata.
 
 ### V0.5.1 — UI/UX Consistency
 
-Status: UI/UX implementation complete and integrated into `main`; release
-preparation is in progress. This is a presentation and interaction patch, not
+Status: UI/UX implementation complete, integrated into `main`, and released as
+`v0.5.1`. This is a presentation and interaction patch, not
 a new business-feature release. Release status is confirmed by Git tags. The
 real database remains `0005_add_deadlines_recurrence_reminders`.
 
