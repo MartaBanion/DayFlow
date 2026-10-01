@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, nextTick, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { projectApi, recurrenceApi, taskApi } from '../api'
@@ -32,6 +32,23 @@ const metadataLoaded = ref(false)
 const isEditDialogOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 const runtimeTimezone = ref('')
+const filtersOpen = ref(true)
+const hasConditions = computed(() => Boolean(searchQuery.value.trim() || priorityFilter.value || categoryFilter.value || tagFilter.value || projectFilter.value))
+const filterSummary = computed(() => [
+  priorityFilter.value ? ({ low: '低', normal: '普通', high: '高' }[priorityFilter.value]) : '',
+  categories.value.find(category => category.id === categoryFilter.value)?.name,
+  tags.value.find(tag => tag.id === tagFilter.value)?.name,
+  projects.value.find(project => project.id === projectFilter.value)?.name,
+].filter(Boolean).join(' · ') || '全部优先级、分类、标签与项目')
+
+async function clearFilters(): Promise<void> {
+  searchQuery.value = ''
+  priorityFilter.value = ''
+  categoryFilter.value = ''
+  tagFilter.value = ''
+  projectFilter.value = ''
+  await loadTasks()
+}
 
 function taskListParams(): Parameters<typeof taskApi.list>[0] {
   return {
@@ -55,8 +72,8 @@ function showError(error: unknown): void {
   errorMessage.value = getErrorMessage(error)
 }
 
-async function loadTasks(): Promise<void> {
-  loadState.value = 'loading'
+async function loadTasks(preserveList = false): Promise<void> {
+  if (!preserveList) loadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
   try {
@@ -106,6 +123,7 @@ async function initializeInbox(): Promise<void> {
 }
 
 async function createQuickTask(): Promise<void> {
+  if (isSaving.value) return
   const title = quickTitle.value.trim()
   if (!title) {
     errorMessage.value = '请先填写任务标题。'
@@ -118,17 +136,21 @@ async function createQuickTask(): Promise<void> {
     await taskApi.create({ title, description: quickDescription.value.trim() || null, planned_date: null })
     quickTitle.value = ''
     quickDescription.value = ''
-    await loadTasks()
+    await loadTasks(true)
     ElMessage.success('任务已记录到收件箱')
   } catch (error) {
     showError(error)
   } finally {
     isSaving.value = false
+    await nextTick()
+    quickInput.value?.focus()
   }
 }
 
 const quickTitle = ref('')
 const quickDescription = ref('')
+const quickNotesOpen = ref(false)
+const quickInput = ref<{ focus: () => void } | null>(null)
 
 async function openEditDialog(task: Task): Promise<void> {
   if (!runtimeTimezone.value) {
@@ -274,7 +296,6 @@ onMounted(initializeInbox)
 <template>
   <header class="page-header">
     <div>
-      <p class="eyebrow">{{ props.searchOnly ? '搜索' : '收件箱' }}</p>
       <h2>{{ props.searchOnly ? '搜索任务' : '收件箱' }}</h2>
       <p class="muted">
         {{ props.searchOnly ? '按标题或备注查找任务。' : '暂时还没安排日期的任务，可以先放在这里。' }}
@@ -286,7 +307,7 @@ onMounted(initializeInbox)
         :tags="tags"
         @updated="handleMetadataUpdated"
       />
-      <el-button :loading="isLoading" plain @click="loadTasks">刷新</el-button>
+      <el-button :loading="isLoading" plain @click="loadTasks()">刷新</el-button>
     </div>
   </header>
 
@@ -317,57 +338,69 @@ onMounted(initializeInbox)
     <el-card v-if="!props.searchOnly" shadow="never" class="capture-card">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">快速记录</p>
           <h3>先记下来，稍后安排</h3>
         </div>
         <span class="capture-hint">可以稍后安排日期</span>
       </div>
       <form class="capture-form" @submit.prevent="createQuickTask">
-        <el-input v-model="quickTitle" size="large" placeholder="想先记下什么？" aria-label="新收件箱任务标题" />
-        <el-input v-model="quickDescription" placeholder="备注（可选）" aria-label="新收件箱任务备注" />
+        <el-input ref="quickInput" v-model="quickTitle" size="large" placeholder="想先记下什么？" aria-label="新收件箱任务标题" />
+        <el-button text native-type="button" :aria-expanded="quickNotesOpen" @click="quickNotesOpen = !quickNotesOpen">{{ quickNotesOpen ? '收起备注' : '添加备注' }}</el-button>
         <el-button type="primary" native-type="submit" :loading="isSaving">记录</el-button>
+        <el-input v-show="quickNotesOpen" v-model="quickDescription" class="quick-note" placeholder="备注（可选）" aria-label="新收件箱任务备注" />
       </form>
     </el-card>
 
     <section class="search-panel">
       <form class="search-form" @submit.prevent="applySearch">
-        <el-input v-model="searchQuery" clearable placeholder="搜索标题或备注" aria-label="搜索任务" />
+        <label class="search-label" for="task-search">{{ props.searchOnly ? '搜索任务' : '查找任务' }}</label>
+        <el-input id="task-search" v-model="searchQuery" clearable placeholder="搜索标题或备注" aria-label="搜索任务" />
         <el-button native-type="submit" :loading="isLoading">搜索</el-button>
       </form>
-      <div class="filter-row">
-        <el-select v-model="priorityFilter" clearable placeholder="优先级" @change="loadTasks">
+      <div class="filter-toolbar">
+        <el-button text :aria-expanded="filtersOpen" aria-controls="task-filters" @click="filtersOpen = !filtersOpen">{{ filtersOpen ? '收起筛选' : '展开筛选' }}</el-button>
+        <span class="filter-summary" :title="filterSummary">{{ filterSummary }}</span>
+        <el-button text :disabled="!hasConditions" @click="clearFilters">清除筛选</el-button>
+      </div>
+      <div v-show="filtersOpen" id="task-filters" class="filter-row">
+        <div class="filter-field"><label for="priority-filter">优先级</label>
+        <el-select id="priority-filter" v-model="priorityFilter" clearable placeholder="全部" aria-label="优先级" @change="loadTasks()">
           <el-option label="低" value="low" />
           <el-option label="普通" value="normal" />
           <el-option label="高" value="high" />
         </el-select>
-        <el-select v-model="categoryFilter" clearable placeholder="分类" @change="loadTasks">
+        </div><div class="filter-field"><label for="category-filter">分类</label>
+        <el-select id="category-filter" v-model="categoryFilter" clearable placeholder="全部" aria-label="分类" @change="loadTasks()">
           <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
         </el-select>
-        <el-select v-model="tagFilter" clearable placeholder="标签" @change="loadTasks">
+        </div><div class="filter-field"><label for="tag-filter">标签</label>
+        <el-select id="tag-filter" v-model="tagFilter" clearable placeholder="全部" aria-label="标签" @change="loadTasks()">
           <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
         </el-select>
-        <el-select v-model="projectFilter" clearable placeholder="项目" @change="loadTasks">
+        </div><div class="filter-field"><label for="project-filter">项目</label>
+        <el-select id="project-filter" v-model="projectFilter" clearable placeholder="全部" aria-label="项目" @change="loadTasks()">
           <el-option v-for="project in projects" :key="project.id" :label="project.name" :value="project.id" />
         </el-select>
+        </div>
       </div>
     </section>
 
     <section class="task-section">
       <div class="section-heading task-heading">
         <div>
-          <p class="eyebrow">{{ isSearchMode ? '搜索结果' : '收件箱' }}</p>
-          <h3>{{ isSearchMode ? '匹配的任务' : '待安排任务' }}</h3>
+          <h3>{{ isSearchMode ? '搜索结果' : '待安排任务' }}</h3>
         </div>
         <el-tag type="info" effect="plain">{{ tasks.length }}</el-tag>
       </div>
 
       <el-empty
         v-if="tasks.length === 0"
-        :description="isSearchMode ? '暂无匹配任务' : '收件箱为空'"
+        :description="hasConditions ? '暂无匹配任务' : props.searchOnly ? '还没有可搜索的任务' : '收件箱为空'"
       >
         <template #image>
           <div class="empty-mark">✓</div>
         </template>
+        <p v-if="hasConditions">试试修改搜索词或清除筛选。</p>
+        <el-button v-if="hasConditions" @click="clearFilters">清除筛选</el-button>
       </el-empty>
 
       <div v-else class="task-list">
@@ -375,6 +408,7 @@ onMounted(initializeInbox)
           v-for="task in tasks"
           :key="task.id"
           :task="task"
+          :busy="isSaving"
           @complete="completeTask"
           @restore="restoreTask"
           @edit="openEditDialog"

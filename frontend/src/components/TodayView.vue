@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, nextTick, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { projectApi, recurrenceApi, taskApi } from '../api'
@@ -22,6 +22,8 @@ const isSaving = ref(false)
 const errorMessage = ref('')
 const quickTitle = ref('')
 const quickDescription = ref('')
+const quickNotesOpen = ref(false)
+const quickInput = ref<{ focus: () => void } | null>(null)
 const isEditDialogOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 const categories = ref<Category[]>([])
@@ -44,9 +46,9 @@ function showError(error: unknown): void {
   errorMessage.value = getErrorMessage(error)
 }
 
-async function loadToday(): Promise<void> {
+async function loadToday(preserveList = false): Promise<void> {
   if (!selectedDate.value) return
-  todayLoadState.value = 'loading'
+  if (!preserveList) todayLoadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
   try {
@@ -106,6 +108,7 @@ async function handleMetadataUpdated(snapshot: MetadataSnapshot): Promise<void> 
 }
 
 async function createQuickTask(): Promise<void> {
+  if (isSaving.value) return
   const title = quickTitle.value.trim()
   if (!title) {
     errorMessage.value = '请先填写任务标题。'
@@ -122,12 +125,14 @@ async function createQuickTask(): Promise<void> {
     })
     quickTitle.value = ''
     quickDescription.value = ''
-    await loadToday()
+    await loadToday(true)
     ElMessage.success('任务已创建')
   } catch (error) {
     showError(error)
   } finally {
     isSaving.value = false
+    await nextTick()
+    quickInput.value?.focus()
   }
 }
 
@@ -276,7 +281,6 @@ onMounted(initializeToday)
     <div>
       <p class="eyebrow">今天</p>
       <h2>{{ formattedDate }}</h2>
-      <p class="muted">清晰查看今天最值得关注的事项。</p>
     </div>
     <div class="page-header-actions">
       <MetadataManager
@@ -284,7 +288,7 @@ onMounted(initializeToday)
         :tags="tags"
         @updated="handleMetadataUpdated"
       />
-      <el-button :loading="isLoading" plain @click="loadToday">刷新</el-button>
+      <el-button :loading="isLoading" plain @click="loadToday()">刷新</el-button>
     </div>
   </header>
 
@@ -324,22 +328,21 @@ onMounted(initializeToday)
   <el-card shadow="never" class="capture-card">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">快速记录</p>
         <h3>添加今天要做的事</h3>
       </div>
       <span class="capture-hint">按回车创建</span>
     </div>
     <form class="capture-form" @submit.prevent="createQuickTask">
-      <el-input v-model="quickTitle" size="large" placeholder="有什么需要关注的事？" aria-label="新任务标题" />
-      <el-input v-model="quickDescription" placeholder="备注（可选）" aria-label="新任务备注" />
+      <el-input ref="quickInput" v-model="quickTitle" size="large" placeholder="有什么需要关注的事？" aria-label="新任务标题" />
+      <el-button text native-type="button" :aria-expanded="quickNotesOpen" @click="quickNotesOpen = !quickNotesOpen">{{ quickNotesOpen ? '收起备注' : '添加备注' }}</el-button>
       <el-button type="primary" native-type="submit" :loading="isSaving">添加任务</el-button>
+      <el-input v-show="quickNotesOpen" v-model="quickDescription" class="quick-note" placeholder="备注（可选）" aria-label="新任务备注" />
     </form>
   </el-card>
 
   <section v-if="todayLoadState === 'loaded'" class="task-section">
     <div class="section-heading task-heading">
       <div>
-        <p class="eyebrow">今日计划</p>
         <h3>今日任务</h3>
       </div>
       <el-tag v-if="pendingTasks.length" type="success" effect="plain">
@@ -353,11 +356,14 @@ onMounted(initializeToday)
       </template>
     </el-empty>
 
-    <div v-else class="task-list">
+    <p v-if="tasks.length && !pendingTasks.length" class="all-completed" role="status">今天的任务已全部完成。</p>
+
+    <div v-if="tasks.length" class="task-list">
       <TaskCard
         v-for="task in tasks"
         :key="task.id"
         :task="task"
+        :busy="isSaving"
         :context-date="selectedDate"
         @complete="completeTask"
         @restore="restoreTask"

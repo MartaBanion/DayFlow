@@ -96,7 +96,7 @@ export async function openTaskEditor(page: Page, title: string): Promise<Locator
   await expect(dialog).toBeVisible()
   for (const group of ['项目与分类', '重复与提醒']) {
     const summary = dialog.getByText(group, { exact: true })
-    if (await summary.locator('..').getAttribute('open') === null) await summary.click()
+    if (await summary.locator('xpath=ancestor::details[1]').getAttribute('open') === null) await summary.click()
   }
   return dialog
 }
@@ -145,7 +145,7 @@ export async function chooseTaskProject(
   name: string,
 ): Promise<void> {
   const summary = dialog.getByText('项目与分类', { exact: true })
-  if (await summary.locator('..').getAttribute('open') === null) await summary.click()
+  if (await summary.locator('xpath=ancestor::details[1]').getAttribute('open') === null) await summary.click()
   const item = dialog.locator('.el-form-item').filter({ hasText: '项目' })
   await item.locator('.el-select').click()
   await page.getByRole('option', { name, exact: true }).click()

@@ -86,7 +86,8 @@ test('项目支持创建、关联任务、进度、删除和恢复', async ({ pa
 
   await page.getByRole('link', { name: /项目/ }).click()
   const deleteCard = page.locator('.project-card').filter({ hasText: renamedProject }).first()
-  await deleteCard.getByRole('button', { name: '删除', exact: true }).click()
+  await deleteCard.getByRole('button', { name: '更多项目操作' }).click()
+  await page.getByRole('menuitem', { name: '删除', exact: true }).click()
   const deleteBox = page.locator('.el-message-box').last()
   await expect(deleteBox).toContainText('会保留，但会变为未归属项目')
   await deleteBox.getByRole('button', { name: '删除', exact: true }).click()

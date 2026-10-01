@@ -71,6 +71,19 @@ const projects = [
 ]
 
 describe('TaskEditor organization fields', () => {
+  it('summarizes existing values without requests and reveals invalid collapsed sections', async () => {
+    const wrapper = mount(TaskEditor, { props: { open: true, task, categories, tags }, global: { stubs } })
+    expect(wrapper.get('details[data-group="基础信息"] summary').text()).toContain(task.title)
+    const section = wrapper.get('details[data-group="基础信息"]')
+    section.element.removeAttribute('open')
+    await wrapper.get('input').setValue('')
+    await wrapper.findAll('button').find(b => b.text() === '保存任务')!.trigger('click')
+    await flushPromises()
+    expect(section.attributes('open')).toBeDefined()
+    expect(section.text()).toContain('请先填写任务标题')
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    expect(wrapper.text()).toContain('取消任务编辑不会撤销')
+  })
   afterEach(() => vi.restoreAllMocks())
 
   it('can select category and tags', async () => {
@@ -288,6 +301,7 @@ describe('TaskEditor organization fields', () => {
 
     expect(create).toHaveBeenCalledWith('task-1', expect.objectContaining({ version: 4, frequency: 'daily' }))
     expect(create).toHaveBeenCalledTimes(1)
+    expect(wrapper.get('[role="status"]').text()).toBe('重复规则已保存')
     expect(wrapper.emitted('changed')).toBeTruthy()
   })
 

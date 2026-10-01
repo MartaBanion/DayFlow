@@ -6,6 +6,7 @@ import type { Task } from '../types'
 defineProps<{
   task: Task
   contextDate?: string
+  busy?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,6 +28,7 @@ const emit = defineEmits<{
         v-if="task.status === 'pending'"
         class="task-check"
         type="button"
+        :disabled="busy"
         :aria-label="`完成任务：${task.title}`"
         @click="emit('complete', task)"
       >
@@ -36,13 +38,14 @@ const emit = defineEmits<{
         v-else
         class="task-check is-done"
         type="button"
+        :disabled="busy"
         :aria-label="`恢复任务：${task.title}`"
         @click="emit('restore', task)"
       >
         ✓
       </button>
       <div class="task-copy">
-        <h4>{{ task.title }}</h4>
+        <h4 :title="task.title" tabindex="0">{{ task.title }}</h4>
         <div class="task-badges task-primary-meta">
           <span v-if="taskTimeLabel(task)" class="task-meta">{{ taskTimeLabel(task) }}</span>
           <span v-else-if="task.planned_date !== contextDate" class="task-meta">
@@ -56,15 +59,16 @@ const emit = defineEmits<{
           >
             {{ taskDeadlineLabel(task) }}<span v-if="deadlineStatusLabel(task.deadline_status)"> · {{ task.deadline_status === 'due_today' ? '今天到期' : deadlineStatusLabel(task.deadline_status) }}</span>
           </el-tag>
-          <el-tag :type="task.priority === 'high' ? 'danger' : 'info'" effect="plain" size="small">
+          <el-tag v-if="task.priority === 'high'" type="danger" effect="plain" size="small">
             {{ priorityLabels[task.priority] }}
           </el-tag>
-          <el-tag v-if="task.project" effect="plain" size="small">
+          <el-tag v-if="task.project" class="task-project-badge" type="info" effect="plain" size="small" :title="task.project.name">
             {{ task.project.name }}
           </el-tag>
         </div>
         <p v-if="task.description" class="task-description">{{ task.description }}</p>
         <div class="task-badges task-secondary-meta">
+          <span v-if="task.priority !== 'high'" class="task-priority-caption">{{ priorityLabels[task.priority] }}</span>
           <el-tag v-if="task.category" type="info" effect="plain" size="small">{{ task.category.name }}</el-tag>
           <el-tag v-for="tag in task.tags.slice(0, 2)" :key="tag.id" type="info" effect="plain" size="small">
             {{ tag.name }}
@@ -79,16 +83,16 @@ const emit = defineEmits<{
     </div>
     <div class="task-actions">
       <el-tag v-if="task.status === 'completed'" type="success" effect="plain">已完成</el-tag>
-      <el-button text @click="emit('edit', task)">编辑</el-button>
-      <el-button v-if="task.status === 'completed'" text @click="emit('restore', task)">
+      <el-button text :disabled="busy" @click="emit('edit', task)">编辑</el-button>
+      <el-button v-if="task.status === 'completed'" text :disabled="busy" @click="emit('restore', task)">
         恢复
       </el-button>
       <el-dropdown trigger="click" @command="(command: string) => command === 'delete' ? emit('delete', task) : emit('skip', task)">
-        <el-button text :aria-label="`更多操作：${task.title}`">更多</el-button>
+        <el-button text :disabled="busy" :aria-label="`更多操作：${task.title}`">更多</el-button>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item v-if="task.status === 'pending' && task.recurrence_rule_id" command="skip">跳过本次</el-dropdown-item>
-            <el-dropdown-item command="delete">删除</el-dropdown-item>
+            <el-dropdown-item v-if="task.status === 'pending' && task.recurrence_rule_id" :disabled="busy" command="skip">跳过本次</el-dropdown-item>
+            <el-dropdown-item :disabled="busy" command="delete">删除</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>

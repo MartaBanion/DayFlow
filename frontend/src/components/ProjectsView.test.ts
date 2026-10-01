@@ -27,6 +27,9 @@ const stubs = {
   },
   'el-progress': { props: ['percentage'], template: '<div class="stub-progress">{{ percentage }}%</div>' },
   'el-tag': { template: '<span class="stub-tag"><slot /></span>' },
+  'el-dropdown': { template: '<div><slot /><slot name="dropdown" /></div>' },
+  'el-dropdown-menu': { template: '<div><slot /></div>' },
+  'el-dropdown-item': { template: '<button @click="$emit(\'click\')"><slot /></button>' },
 }
 
 function makeProject(overrides: Partial<Project> = {}): Project {

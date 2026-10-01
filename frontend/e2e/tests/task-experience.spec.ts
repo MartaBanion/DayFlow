@@ -4,7 +4,7 @@ import { createCategory, createProject, createTag, createTask, openTaskEditor, t
 async function showGroup(dialog: Locator, name: string): Promise<void> {
   for (const group of ['基础信息', '日期与时间', '项目与分类', '重复与提醒']) {
     const summary = dialog.getByText(group, { exact: true })
-    const opened = await summary.locator('..').getAttribute('open') !== null
+    const opened = await summary.locator('xpath=ancestor::details[1]').getAttribute('open') !== null
     if (opened !== (group === name)) await summary.click()
   }
 }
@@ -51,9 +51,9 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768
     await showGroup(dialog, '基础信息')
     await expect(dialog.getByRole('textbox', { name: '任务标题', exact: true })).toHaveValue(draft)
     const basicSummary = dialog.getByText('基础信息', { exact: true })
-    await basicSummary.press('Enter')
+    await basicSummary.locator('..').press('Enter')
     await expect(dialog.getByRole('textbox', { name: '任务标题', exact: true })).toBeHidden()
-    await basicSummary.press('Enter')
+    await basicSummary.locator('..').press('Enter')
     await expect(dialog.getByRole('textbox', { name: '任务标题', exact: true })).toHaveValue(draft)
 
     for (const [group, file] of [['基础信息', 'editor-basic'], ['日期与时间', 'editor-date-time'], ['项目与分类', 'editor-organization'], ['重复与提醒', 'editor-repeat-reminder']]) {

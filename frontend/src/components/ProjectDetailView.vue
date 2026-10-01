@@ -279,6 +279,7 @@ onMounted(loadProject)
           v-for="task in tasks"
           :key="task.id"
           :task="task"
+          :busy="isSaving"
           @complete="completeTask"
           @restore="restoreTask"
           @edit="openEditTask"

@@ -16,6 +16,7 @@ test('今天页面支持任务完整生命周期和刷新持久化', async ({ pa
   await expect(page.getByRole('heading', { name: '今日任务', exact: true })).toBeVisible()
 
   await page.getByLabel('新任务标题').fill(originalTitle)
+  await page.getByRole('button', { name: '添加备注', exact: true }).click()
   await page.getByLabel('新任务备注').fill('浏览器验收备注')
   await page.getByRole('button', { name: '添加任务', exact: true }).click()
   await expect(taskCard(page, originalTitle)).toBeVisible()

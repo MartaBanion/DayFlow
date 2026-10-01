@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { recurrenceApi, reminderApi, taskApi } from '../api'
@@ -71,6 +71,48 @@ const reminderTime = ref('')
 const reminderTimezone = ref('')
 const editingReminderId = ref<string | null>(null)
 const editingReminderVersion = ref(1)
+const editorForm = ref<HTMLElement | null>(null)
+const featureSuccess = ref('')
+const errorGroup = ref('基础信息')
+const dateSummary = computed(() => [
+  plannedDate.value || '未安排日期',
+  startTime.value && endTime.value ? `${startTime.value}–${endTime.value}` : '',
+  deadlineDate.value ? `截止 ${deadlineDate.value}${deadlineTime.value ? ` ${deadlineTime.value}` : ''}` : '',
+].filter(Boolean).join(' · '))
+const organizationSummary = computed(() => [
+  props.projects?.find(project => project.id === projectId.value)?.name,
+  props.categories.find(category => category.id === categoryId.value)?.name,
+  tagIds.value?.length ? `${tagIds.value.length} 个标签` : '',
+].filter(Boolean).join(' · ') || '未设置')
+const featureSummary = computed(() => {
+  const rule = recurrenceRule.value
+  const repeat = !rule ? '不重复' : rule.stopped_at_utc ? '重复已停止' : rule.frequency === 'daily' ? '每天' : rule.frequency === 'weekly' ? `每${(rule.weekdays ?? []).map(i => weekdayLabels[i]).join('、')}` : `每月 ${rule.month_day} 日`
+  return `${repeat} · ${reminders.value.length} 个提醒`
+})
+
+async function revealError(group: string): Promise<void> {
+  await nextTick()
+  const section = editorForm.value?.querySelector<HTMLDetailsElement>(`details[data-group="${group}"]`)
+  if (section) {
+    section.open = true
+    section.querySelector<HTMLElement>('[role="alert"]')?.focus()
+  }
+}
+
+watch(formError, value => { if (value) void revealError(errorGroup.value) })
+watch(featureError, value => {
+  if (value) {
+    featureSuccess.value = ''
+    void revealError('重复与提醒')
+  }
+})
+watch(featureSaving, value => { if (value) featureSuccess.value = '' })
+watch(() => props.saveError, async value => {
+  if (value) {
+    await nextTick()
+    editorForm.value?.querySelector<HTMLElement>('.task-save-error')?.focus()
+  }
+})
 
 const weekdayLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
 
@@ -100,6 +142,7 @@ function syncForm(task: Task | null): void {
   deadlineTouched.value = false
   formError.value = ''
   featureError.value = ''
+  featureSuccess.value = ''
   recurrenceRule.value = null
   reminders.value = []
   repeatFrequency.value = 'daily'
@@ -193,12 +236,15 @@ function buildDeadline(): TaskDeadlinePayload | null | undefined {
 }
 
 function submit(): void {
+  if (props.saving || featureSaving.value) return
   const trimmedTitle = title.value.trim()
   formError.value = ''
+  errorGroup.value = '基础信息'
   if (!trimmedTitle) {
     formError.value = '请先填写任务标题。'
     return
   }
+  errorGroup.value = '日期与时间'
   const schedule = buildSchedule()
   if (formError.value) return
   const deadline = buildDeadline()
@@ -240,6 +286,7 @@ function repeatUpdatePayload(): RecurrenceUpdatePayload {
 }
 
 async function saveRepeat(): Promise<void> {
+  if (featureSaving.value || props.saving) return
   if (!props.task || !repeatStartsOn.value) {
     featureError.value = '请先为任务设置计划日期，再保存重复规则。'
     return
@@ -261,6 +308,7 @@ async function saveRepeat(): Promise<void> {
       recurrenceRule.value = await recurrenceApi.create(props.task.id, repeatPayload())
     }
     ElMessage.success('重复规则已保存')
+    featureSuccess.value = '重复规则已保存'
     emit('changed', await taskApi.get(props.task.id))
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '重复规则')
@@ -270,6 +318,7 @@ async function saveRepeat(): Promise<void> {
 }
 
 async function stopRepeat(): Promise<void> {
+  if (featureSaving.value || props.saving) return
   if (!recurrenceRule.value) return
   try {
     await ElMessageBox.confirm(
@@ -285,6 +334,7 @@ async function stopRepeat(): Promise<void> {
   try {
     recurrenceRule.value = await recurrenceApi.stop(recurrenceRule.value.id, recurrenceRule.value.version)
     ElMessage.success('重复规则已停止')
+    featureSuccess.value = '重复规则已停止'
     emit('changed', await taskApi.get(props.task!.id))
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '重复规则')
@@ -294,12 +344,14 @@ async function stopRepeat(): Promise<void> {
 }
 
 async function materializeRepeat(): Promise<void> {
+  if (featureSaving.value || props.saving) return
   if (!recurrenceRule.value) return
   featureSaving.value = true
   featureError.value = ''
   try {
     await recurrenceApi.materialize(recurrenceRule.value.id)
     ElMessage.success('下一次任务已准备好')
+    featureSuccess.value = '下一次任务已准备好'
     emit('changed', await taskApi.get(props.task!.id))
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '下一次任务')
@@ -309,6 +361,7 @@ async function materializeRepeat(): Promise<void> {
 }
 
 async function skipCurrentOccurrence(): Promise<void> {
+  if (featureSaving.value || props.saving) return
   if (!props.task?.recurrence_rule_id) return
   const task = props.task
   const draftChanged = title.value !== task.title || description.value !== (task.description ?? '')
@@ -375,6 +428,7 @@ function reminderPayload(): ReminderPayload | null {
 }
 
 async function saveReminder(): Promise<void> {
+  if (featureSaving.value || props.saving) return
   if (!props.task) return
   const payload = reminderPayload()
   if (!payload) return
@@ -389,6 +443,7 @@ async function saveReminder(): Promise<void> {
     reminders.value = await reminderApi.list(props.task.id)
     resetReminderForm()
     ElMessage.success('提醒已保存')
+    featureSuccess.value = '提醒已保存'
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '提醒')
   } finally {
@@ -397,6 +452,7 @@ async function saveReminder(): Promise<void> {
 }
 
 async function deleteReminder(reminder: Reminder): Promise<void> {
+  if (featureSaving.value || props.saving) return
   try {
     await ElMessageBox.confirm('确定删除这条提醒吗？', '删除提醒', {
       confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning',
@@ -408,6 +464,7 @@ async function deleteReminder(reminder: Reminder): Promise<void> {
   featureError.value = ''
   try {
     await reminderApi.remove(reminder.id, reminder.version)
+    featureSuccess.value = '提醒已删除'
     reminders.value = await reminderApi.list(props.task?.id ?? '')
     if (editingReminderId.value === reminder.id) resetReminderForm()
   } catch (error) {
@@ -418,6 +475,7 @@ async function deleteReminder(reminder: Reminder): Promise<void> {
 }
 
 async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'dismiss'): Promise<void> {
+  if (featureSaving.value || props.saving) return
   featureSaving.value = true
   featureError.value = ''
   try {
@@ -425,6 +483,7 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
       ? await reminderApi.acknowledge(reminder.id, reminder.version)
       : await reminderApi.dismiss(reminder.id, reminder.version)
     reminders.value = reminders.value.map((item) => item.id === updated.id ? updated : item)
+    featureSuccess.value = action === 'acknowledge' ? '提醒已确认' : '提醒已关闭'
   } catch (error) {
     featureError.value = getFeatureErrorMessage(error, '提醒')
   } finally {
@@ -441,9 +500,12 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
     class="task-editor-dialog"
     @update:model-value="emit('update:open', $event)"
   >
+    <div ref="editorForm">
+    <p v-if="saveError" class="form-error task-save-error" role="alert" tabindex="-1">{{ saveError }} 请检查修改或重试。</p>
     <el-form label-position="top" @submit.prevent="submit">
-      <details class="editor-group" open>
-        <summary>基础信息</summary>
+      <details class="editor-group" data-group="基础信息" open>
+        <summary><span>基础信息</span><small :title="title">{{ title || '标题、备注与优先级' }}</small></summary>
+        <p v-if="formError && errorGroup === '基础信息'" class="form-error" role="alert" tabindex="-1">{{ formError }}</p>
       <el-form-item label="任务标题" required>
         <el-input v-model="title" placeholder="请输入任务标题" aria-label="任务标题" autofocus />
       </el-form-item>
@@ -460,9 +522,10 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
         </el-form-item>
       </div>
       </details>
-      <details class="editor-group" open>
-        <summary>日期与时间</summary>
-        <p class="schedule-hint">计划日期决定何时做；截止日期表示最晚何时完成。</p>
+      <details class="editor-group" data-group="日期与时间" open>
+        <summary><span>日期与时间</span><small :title="dateSummary">{{ dateSummary }}</small></summary>
+        <p v-if="formError && errorGroup === '日期与时间'" class="form-error" role="alert" tabindex="-1">{{ formError }}</p>
+        <p class="schedule-hint">计划日期：何时做 · 截止日期：最晚何时完成</p>
         <el-form-item label="计划日期">
           <el-date-picker
             v-model="plannedDate"
@@ -534,10 +597,9 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
           @input="deadlineTouched = true"
         />
       </el-form-item>
-      <p v-if="deadlineDate" class="schedule-hint">截止日期独立于计划日期和具体时间安排。</p>
       </details>
-      <details class="editor-group">
-        <summary>项目与分类</summary>
+      <details class="editor-group" data-group="项目与分类">
+        <summary><span>项目与分类</span><small :title="organizationSummary">{{ organizationSummary }}</small></summary>
       <el-form-item label="分类">
         <el-select v-model="categoryId" clearable placeholder="未分类" style="width: 100%">
           <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id" />
@@ -565,9 +627,11 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
         </el-select>
       </el-form-item>
       </details>
-      <details class="editor-group">
-        <summary>重复与提醒</summary>
-        <p class="schedule-hint">独立管理，操作立即生效，不随“保存任务”一起提交。</p>
+      <details class="editor-group" data-group="重复与提醒">
+        <summary><span>重复与提醒</span><small>{{ task ? featureSummary : '保存任务后设置' }}</small></summary>
+        <p class="schedule-hint">独立保存，立即生效。取消任务编辑不会撤销已保存的规则或提醒。</p>
+        <p v-if="featureSuccess" class="feature-success" role="status">{{ featureSuccess }}</p>
+        <p v-if="featureError" class="form-error" role="alert" tabindex="-1">{{ featureError }}</p>
         <p v-if="!task" class="schedule-hint">保存任务后可设置重复规则和提醒。</p>
       <section v-if="task" class="feature-panel" aria-label="重复任务">
         <div class="feature-panel-heading">
@@ -650,12 +714,11 @@ async function transitionReminder(reminder: Reminder, action: 'acknowledge' | 'd
         </div>
       </section>
       <p v-if="featureLoading" class="schedule-hint">正在读取重复规则和提醒…</p>
-      <p v-if="featureError" class="form-error" role="alert">{{ featureError }}</p>
       <el-button v-if="featureError" native-type="button" :loading="featureLoading" @click="loadFeatures">重新加载重复规则与提醒</el-button>
       </details>
     </el-form>
+    </div>
     <template #footer>
-      <p v-if="formError || saveError" class="form-error" role="alert">{{ formError || saveError }}</p>
       <div class="dialog-actions">
         <el-button @click="emit('update:open', false)">取消</el-button>
         <el-button type="primary" :loading="saving" :disabled="featureSaving || featureLoading" @click="submit">

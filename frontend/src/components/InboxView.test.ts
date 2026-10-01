@@ -84,6 +84,21 @@ describe('Inbox project filter', () => {
     })
   })
 
+  it('retains selected filters while collapsed and clears them explicitly', async () => {
+    wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('还没有可搜索的任务')
+    await wrapper.findAll('select')[3].setValue(project.id)
+    await flushPromises()
+    expect(wrapper.text()).toContain('暂无匹配任务')
+    await wrapper.findAll('button').find(b => b.text() === '收起筛选')!.trigger('click')
+    expect(wrapper.get('.filter-summary').text()).toContain(project.name)
+    expect(wrapper.get('#task-filters').isVisible()).toBe(false)
+    await wrapper.findAll('button').find(b => b.text() === '清除筛选')!.trigger('click')
+    await flushPromises()
+    expect(taskApi.list).toHaveBeenLastCalledWith({ inbox: false, query: undefined, priority: undefined, categoryId: undefined, tagId: undefined })
+  })
+
   it('uses search-specific loading and error copy and keeps Retry accessible', async () => {
     vi.mocked(taskApi.list).mockRejectedValue(new Error('offline'))
     wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })

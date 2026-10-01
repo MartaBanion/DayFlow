@@ -71,6 +71,7 @@ function toggleDeletedProjects(): void {
 }
 
 async function saveProject(): Promise<void> {
+  if (isSaving.value) return
   const name = projectName.value.trim()
   if (!name) {
     formError.value = '请填写项目名称。'
@@ -103,6 +104,7 @@ async function saveProject(): Promise<void> {
 }
 
 async function completeProject(project: Project): Promise<void> {
+  if (isSaving.value) return
   if (project.task_count > project.completed_task_count) {
     try {
       await ElMessageBox.confirm(
@@ -129,6 +131,7 @@ async function completeProject(project: Project): Promise<void> {
 }
 
 async function reopenProject(project: Project): Promise<void> {
+  if (isSaving.value) return
   isSaving.value = true
   errorMessage.value = ''
   try {
@@ -143,6 +146,7 @@ async function reopenProject(project: Project): Promise<void> {
 }
 
 async function deleteProject(project: Project): Promise<void> {
+  if (isSaving.value) return
   try {
     await ElMessageBox.confirm(
       `确定删除项目“${project.name}”吗？关联任务会保留，但会变为未归属项目。`,
@@ -168,6 +172,7 @@ async function deleteProject(project: Project): Promise<void> {
 }
 
 async function restoreProject(project: Project): Promise<void> {
+  if (isSaving.value) return
   isSaving.value = true
   errorMessage.value = ''
   try {
@@ -187,7 +192,6 @@ onMounted(loadProjects)
 <template>
   <header class="page-header">
     <div>
-      <p class="eyebrow">项目</p>
       <h2>项目</h2>
       <p class="muted">把相关任务放在一起，持续看见项目进展。</p>
     </div>
@@ -242,7 +246,7 @@ onMounted(loadProjects)
         >
           <button class="project-card-main" type="button" @click="openProject(project)">
             <div class="project-card-heading">
-              <h4>{{ project.name }}</h4>
+              <h4 :title="project.name">{{ project.name }}</h4>
               <el-tag :type="project.status === 'completed' ? 'success' : 'info'" effect="plain" size="small">
                 {{ projectStatusLabel(project) }}
               </el-tag>
@@ -261,7 +265,14 @@ onMounted(loadProjects)
             <el-button text @click="openEditDialog(project)">编辑</el-button>
             <el-button v-if="project.status === 'active'" text @click="completeProject(project)">完成项目</el-button>
             <el-button v-else text @click="reopenProject(project)">重新打开</el-button>
-            <el-button type="danger" text @click="deleteProject(project)">删除</el-button>
+            <el-dropdown trigger="click">
+              <el-button text :disabled="isSaving" aria-label="更多项目操作">更多</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item :disabled="isSaving" @click="deleteProject(project)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </article>
       </div>

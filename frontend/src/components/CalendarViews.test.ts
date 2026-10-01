@@ -5,6 +5,7 @@ import ElementPlus from 'element-plus'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { taskApi } from '../api'
+import { calendarTimeBlocks } from '../calendar'
 import type { Task } from '../types'
 import CalendarDayView from './CalendarDayView.vue'
 import CalendarMonthView from './CalendarMonthView.vue'
@@ -34,6 +35,25 @@ const task = (overrides: Partial<Task> = {}): Task => ({
 afterEach(() => vi.restoreAllMocks())
 
 describe('calendar views', () => {
+  it('separates overlapping display lanes without inflating short durations or changing data', () => {
+    const scheduled = (id: string, end: string) => task({ id, start_at_utc: '2026-09-26T06:00:00Z', end_at_utc: end, schedule_timezone: 'Asia/Shanghai' })
+    const tasks = [scheduled('short', '2026-09-26T06:15:00Z'), scheduled('long', '2026-09-26T07:00:00Z')]
+    const original = JSON.stringify(tasks)
+    const blocks = calendarTimeBlocks(tasks)
+    expect(blocks.short!.style.height).toBe(`${15 / 1440 * 100}%`)
+    expect(blocks.short!.short).toBe(true)
+    expect(blocks.short!.style.left).not.toBe(blocks.long!.style.left)
+    expect(blocks.short!.style.width).toBe('calc(50% - 6px)')
+    expect(JSON.stringify(tasks)).toBe(original)
+  })
+
+  it('retains completed short blocks and full accessible title/time in the scrollable Day view', () => {
+    const wrapper = mount(CalendarDayView, { props: { date: '2026-09-26', tasks: [task({ status: 'completed', start_at_utc: '2026-09-26T06:00:00Z', end_at_utc: '2026-09-26T06:15:00Z', schedule_timezone: 'Asia/Shanghai' })] } })
+    expect(wrapper.find('.calendar-task-timed').attributes('aria-label')).toContain('14:00–14:15')
+    expect(wrapper.find('.calendar-task-timed').classes()).toContain('is-completed')
+    expect(wrapper.find('.calendar-time-scroll').attributes('tabindex')).toBe('0')
+    expect(wrapper.findAll('.timeline-hours span')).toHaveLength(24)
+  })
   it('renders date-only tasks in the Day View 未安排时间 section', () => {
     const wrapper = mount(CalendarDayView, {
       props: { date: '2026-09-26', tasks: [task()] },

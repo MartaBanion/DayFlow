@@ -142,6 +142,41 @@ export function taskTimeLabel(task: Task): string {
   return `${formatTaskTime(task.start_at_utc, task.schedule_timezone)}–${formatTaskTime(task.end_at_utc, task.schedule_timezone)}`
 }
 
+/** Display lanes only: never changes UTC instants or conflict policy. */
+export function calendarTimeBlocks(tasks: Task[]): Record<string, { style: Record<string, string>; short: boolean }> {
+  const blocks = tasks.flatMap((task) => {
+    if (!task.start_at_utc || !task.end_at_utc || !task.schedule_timezone) return []
+    return [{ id: task.id, start: taskLocalClockMinutes(task.start_at_utc, task.schedule_timezone), end: taskLocalClockMinutes(task.end_at_utc, task.schedule_timezone), lane: 0 }]
+  }).sort((a, b) => a.start - b.start || b.end - a.end || a.id.localeCompare(b.id))
+  const result: ReturnType<typeof calendarTimeBlocks> = {}
+  let group: typeof blocks = []
+  let groupEnd = -1
+  const flush = () => {
+    const laneEnds: number[] = []
+    for (const block of group) {
+      const available = laneEnds.findIndex((end) => end <= block.start)
+      block.lane = available === -1 ? laneEnds.length : available
+      laneEnds[block.lane] = block.end
+    }
+    for (const block of group) result[block.id] = {
+      short: block.end - block.start <= 45,
+      style: {
+        top: `${block.start / 1440 * 100}%`,
+        height: `${(block.end - block.start) / 1440 * 100}%`,
+        left: `calc(${block.lane / laneEnds.length * 100}% + 3px)`,
+        width: `calc(${100 / laneEnds.length}% - 6px)`,
+      },
+    }
+  }
+  for (const block of blocks) {
+    if (block.start >= groupEnd) { flush(); group = []; groupEnd = -1 }
+    group.push(block)
+    groupEnd = Math.max(groupEnd, block.end)
+  }
+  flush()
+  return result
+}
+
 export function taskDeadlineLabel(task: Task): string {
   if (!task.deadline_date) return ''
   if (task.deadline_at_utc && task.deadline_timezone) {
