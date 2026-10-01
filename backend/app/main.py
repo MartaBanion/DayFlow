@@ -9,6 +9,7 @@ from app.api.routes.projects import router as project_router
 from app.api.routes.recurrence import router as recurrence_router
 from app.api.routes.reminders import router as reminder_router
 from app.api.routes.runtime import router as runtime_router
+from app.api.routes.backups import router as backup_router
 from app.core.config import get_settings
 from app.core.errors import (
     AppError,
@@ -40,6 +41,7 @@ app.include_router(project_router)
 app.include_router(recurrence_router)
 app.include_router(reminder_router)
 app.include_router(runtime_router)
+app.include_router(backup_router)
 
 
 @app.get("/healthz", tags=["system"])

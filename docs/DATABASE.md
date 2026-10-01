@@ -329,11 +329,12 @@ test database.
 
 ## Backup
 
-Current v0.5.1 has manual verified maintenance backups, not an application
-Backup Service or Restore UI. Use SQLite Online Backup API for consistency,
+Stable v0.5.1 has manual verified maintenance backups. V0.6 Phase 1 development
+implements Backup Core/Create/List/Verify; no Restore UI or CLI is implemented.
+Use SQLite Online Backup API for consistency,
 including committed WAL data; never assume copying an active main file is safe.
 
-### Frozen V0.6 Filesystem Model (Not Yet Implemented)
+### V0.6 Filesystem Model (Phase 1 Implemented; Restore Planned)
 
 NO DATABASE MIGRATION REQUIRED. Keep `0005_add_deadlines_recurrence_reminders`;
 do not create `0006`, modify historic migrations, or add Backup business tables.
@@ -368,6 +369,21 @@ Missing Manifest permits read-only verification and explicit registration.
 Compute hash/size/schema again, but do not invent unknown creation time or
 application version. Filesystem mtime may be shown as auxiliary information.
 Verification does not automatically rewrite Metadata or Backup bytes.
+
+Phase 1 Manifest verification time records creation-time validation only.
+Explicit Verify returns a new time without editing Manifest. Root is derived
+from configured source DB parent / `backups`, not API input. UUID4 IDs are
+independent of generated timestamp/random filenames. List ignores malformed
+registrations, incomplete artifacts and orphan DBs; no automatic registration.
+Source opens with `mode=ro`. Online Backup includes committed WAL transactions
+and excludes uncommitted writes. Published snapshots are standalone; Verify
+rejects sidecars, checks current columns/PK/FK/CHECK/index structure, and
+compares actual SHA/size/schema with Manifest.
+On Linux/WSL, hash and SQLite inspection share a held file descriptor;
+exclusive temporary targets and no-overwrite publication retain inode identity.
+Required PK order and partial-index predicates are checked against current
+models, including the `alembic_version.version_num` PK. Unsupported descriptor
+or hard-link facilities fail closed rather than using unsafe path fallbacks.
 
 Only exact `0005_add_deadlines_recurrence_reminders` is Restore-compatible.
 Validate readability, hash, size, integrity, FK, Alembic, required tables and

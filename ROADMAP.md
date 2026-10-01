@@ -256,7 +256,10 @@ to V0.6 by default:
 
 ### V0.6 — Data Safety & Recovery
 
-Status: Product scope and architecture frozen; implementation has not started.
+Status: Product scope and architecture frozen. Phase 1 Backup Core,
+Create/List/Verify API and Manifest V1 are implemented in the development
+working tree, pending Review. Maintenance UI, Restore CLI, maintenance locks,
+Launcher Restore blocking and Reminder polling feedback are not implemented.
 The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 

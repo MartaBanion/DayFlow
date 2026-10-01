@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     )
 
     @property
+    def resolved_database_path(self) -> Path:
+        path = self.database_path
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    @property
+    def backup_root(self) -> Path:
+        return self.resolved_database_path.parent / "backups"
+
+    @property
     def database_url(self) -> str:
         database_path = self.database_path
         if not database_path.is_absolute():

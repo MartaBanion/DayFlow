@@ -16,11 +16,14 @@ the next planned development version.
 
 ## Frozen V0.6 Backup API / CLI Boundary
 
-Status: approved design, not implemented endpoints. Stable application is
+Status: Phase 1 Create/List/Verify and Manifest V1 are implemented in the
+development working tree. Maintenance UI, Restore CLI, maintenance locks,
+Launcher Restore blocking and Reminder poll visibility are not implemented.
+Stable application is
 `v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
 
-Candidate endpoints frozen by responsibility:
+Phase 1 endpoints:
 
 | Method / path | Responsibility |
 | --- | --- |
@@ -36,10 +39,76 @@ system files as restorable Backups or run full integrity scans implicitly.
 Verify checks readability, hash, size, integrity, foreign keys, Alembic,
 required tables, and critical structure. Distinguish valid-compatible,
 valid-incompatible, corrupted, missing/unreadable, Manifest mismatch. These
-are semantic categories, not finalized API enum values. Exact supported schema
+are represented in Phase 1 by `status`: `valid`, `incompatible`, `corrupted`,
+`unreadable`, `manifest_mismatch`. Exact supported schema
 is `0005_add_deadlines_recurrence_reminders`; no automatic migration or Restore
-for old, unknown, or newer schemas. Response schemas/error codes are finalized
-in Phase 1 before implementation; existing business responses do not change.
+for old, unknown, or newer schemas. Existing business responses do not change.
+
+### Phase 1 Response and Error Contract
+
+Create returns HTTP 201 with Manifest V1 fields plus `compatible_for_restore`.
+It accepts no body or query parameters; callers cannot choose source,
+destination, filename, or root. Root derives from configured database parent
+plus `backups`, so isolated databases use isolated Backup directories.
+No real Backup smoke occurs during Phase 1.
+
+List returns an array of the same Metadata shape, newest creation time first,
+with descending Backup ID as stable tie-breaker. Compatibility reflects recorded
+metadata, not a fresh integrity check. Invalid, oversized, missing, duplicate-ID
+or unsafe registrations are skipped with a diagnostic warning. Unknown files,
+symlinks, non-regular/hard-linked files, temporary files and orphan DBs are not
+listed. Missing root returns `[]` without creating it.
+
+Verify returns HTTP 200 for inspected registered files, including corrupted,
+missing/unreadable data files, incompatibility and mismatch:
+
+```json
+{
+  "backup_id": "canonical-uuid4",
+  "verified_at_utc": "2026-10-01T00:00:00.000000Z",
+  "status": "valid",
+  "compatible_for_restore": true,
+  "database_sha256": "64-lowercase-hex-characters",
+  "file_size": 123456,
+  "alembic_version": "0005_add_deadlines_recurrence_reminders",
+  "integrity_check": "ok",
+  "foreign_key_errors": 0,
+  "structure_valid": true,
+  "issues": []
+}
+```
+
+Unavailable measured fields are `null`; `structure_valid` is false until checked.
+Compatibility requires exact schema, required model columns/PKs/FKs/CHECKs/
+indexes, clean integrity/FK checks, and matching Manifest SHA/size/schema.
+Standalone published files with WAL/SHM/journal sidecars fail validation.
+Older/unknown/newer readable schemas return `incompatible`; claimed current
+schema with missing structure returns `corrupted`. No migration is attempted.
+
+Manifest `verified_at_utc` is the immutable creation-time validation record.
+Each Verify returns a new timestamp without updating either DB or Manifest.
+Missing/bad Manifest is not silently registered; an unregistered ID returns 404.
+Explicit historical Backup registration is deferred.
+
+Errors use the existing envelope without internal paths or stack traces:
+
+| Code | HTTP | Meaning |
+| --- | --- | --- |
+| `backup_id_invalid`, `backup_request_invalid` | 422 | Invalid ID or Create input |
+| `backup_path_unsafe`, `backup_manifest_invalid` | 422 | Unsafe root/path or ambiguous registration |
+| `backup_not_found` | 404 | No valid registration or required file unavailable |
+| `backup_origin_rejected`, `backup_permission_denied` | 403 | Origin/file permission rejected |
+| `backup_file_conflict` | 409 | Publication would overwrite a file |
+| `backup_timeout` | 503 | Source busy or operation timed out |
+| `backup_platform_unsupported` | 503 | Required Linux/WSL descriptor or hard-link support unavailable |
+| `backup_schema_incompatible` | 422 | Source schema unsupported for Create |
+| `backup_creation_failed`, `backup_io_failed` | 500 | Snapshot/SQLite/filesystem failure |
+| `backup_registration_failed` | 500 | Data file may exist, but registration failed |
+
+Create/Verify check Origin when present: allow configured Frontend Origin and
+HTTP localhost/127.0.0.1 aliases at that configured port only. No-Origin local
+tool requests are allowed. Foreign, `null`, or different-port Origins are rejected.
+No Authentication system is introduced.
 
 Root is controlled `data/backups/`. Reject traversal, absolute path input,
 symlinks, outside-root resolution, non-regular files, and unexpected overwrite.

@@ -12,8 +12,10 @@ confirmed by Git tags.
 
 ## Frozen V0.6 — Data Safety & Recovery
 
-Status: approved architecture only; Backup/Maintenance functionality is not
-yet implemented. Stable release is `v0.5.1`. This version is not Statistics,
+Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are implemented in
+the development working tree. Maintenance UI, Restore CLI, maintenance locks,
+Launcher Restore blocking and Reminder poll UI are not yet implemented.
+Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
 ### Product and Storage Boundaries
@@ -38,11 +40,39 @@ SHA-256 → publish database without overwrite → publish Manifest V1.
 Incomplete artifacts are not recoverable entries. Published Backup databases
 are immutable. No automatic Backup cleanup is included in V0.6.
 
+Phase 1 uses atomic same-filesystem hard-link publication followed by removal
+of the temporary link: existing final files cannot be overwritten. Files and
+directory are fsynced before success. Backup ID is independent of filename.
+Root derives from configured database parent / `backups`, never API input.
+Descriptor walking with NOFOLLOW guards root components and regular-file opens.
+Linux/WSL is the supported platform: SQLite inspection and temporary-target
+writes use `/proc/self/fd` references to the held file, and publication links
+that same inode rather than reopening a replaceable pathname. Unsupported
+descriptor/hard-link facilities fail closed; there is no pathname fallback.
+Published input files must have one link. Publication briefly adds a second
+link only to the verified temporary inode, then removes the temporary name.
+Verification rechecks identity, timestamps and SHA after inspection. These
+guards do not provide authenticity against a user who controls the same OS
+account and can rewrite both Backup and Manifest.
+Online Backup is bounded (10-second limit, short SQLite busy timeout), with
+no Maintenance lock. Concurrent creators use independent UUIDs and exclusive
+temporary files. Manifest publication failure retains the DB as an unlisted
+orphan and returns registration failure, never success.
+
 Verify is explicit and read-only; it checks readability, SQLite format, hash,
 size, integrity, foreign keys, Alembic version, required DayFlow tables, and
 critical structure. Manifest is metadata, not truth. List displays last known
 verification and timestamp; it does not silently perform full verification.
+Structural checks derive required columns, PKs, FKs, CHECK expressions and
+indexes from current models, plus the Alembic version table PK. They are a
+compatibility screen, not a second Migration engine or proof of arbitrary SQL
+semantic equivalence; no Backup is migrated or repaired during verification.
 Recovery of missing Metadata requires separate explicit registration.
+
+Create stores first verification time in Manifest. Subsequent Verify returns
+its own timestamp and never edits published artifacts. Phase 1 skips invalid
+registrations (logged); registration/rebuilding remains deferred explicit
+maintenance. See `docs/API.md` for implemented result/error contracts.
 
 Only exact schema `0005_add_deadlines_recurrence_reminders` is restorable.
 Old, unknown, and newer versions may be inspected but cannot be restored.
