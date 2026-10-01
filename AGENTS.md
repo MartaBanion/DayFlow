@@ -39,7 +39,7 @@ Only the version currently being implemented may be changed. Do not start later 
 - Use typed Python and TypeScript interfaces for API data.
 - Do not silently swallow exceptions.
 - Validate input at the API boundary and enforce business rules in services.
-- Do not introduce future-version fields or abstractions without a current V0.5
+- Do not introduce future-version fields or abstractions without a current approved-version
   need.
 - DayFlow's default user language is Simplified Chinese. User-visible UI copy should use Simplified Chinese; code, APIs, database schema, and internal enum values remain in English. Do not introduce a full internationalization system at this stage.
 
@@ -74,6 +74,28 @@ Only the version currently being implemented may be changed. Do not start later 
   currently approved real-data migration is `0005_add_deadlines_recurrence_reminders`.
 - Database writes go through services and transactions.
 - Do not use `Base.metadata.create_all()` in application runtime.
+
+## V0.6 Development Safety
+
+- V0.6 is frozen design for Data Safety & Recovery, not implemented functionality.
+- NO DATABASE MIGRATION REQUIRED: keep schema `0005_add_deadlines_recurrence_reminders`;
+  do not create `0006` or change Task/Project/Deadline/Recurrence/Reminder semantics.
+- Use SQLite Online Backup API, including committed WAL data; never assume copying
+  an active database's main file produces a consistent backup.
+- Restore is offline Maintenance CLI only. The running Backend must not replace
+  its active database through an HTTP endpoint.
+- Destructive tests and all development Restore operations use isolated temporary
+  databases. Real Restore requires separate explicit approval. Compare the real
+  database SHA-256 before and after automated tests.
+- Maintenance CLI, start script, and Backend startup must coordinate database
+  usage/maintenance locks and refuse startup after an incomplete Restore.
+- Restore failures must preserve original DB/WAL/SHM material, safety and target
+  backups, candidate, and operation log. No automatic rollback or downgrade.
+- Keep Backup Metadata, Restore logs, and maintenance state in controlled,
+  Git-ignored filesystem locations. Never log personal Task contents or secrets.
+- Only Reminder poll failure visibility/Retry is permitted as ancillary work.
+  Statistics, AI, task organization, notification services, and unrelated
+  refactoring are outside V0.6.
 
 ## Migration Rules
 

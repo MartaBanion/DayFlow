@@ -254,7 +254,51 @@ to V0.6 by default:
 
 ## Later
 
-- V0.6: AI Provider abstraction and Mock Provider.
+### V0.6 — Data Safety & Recovery
+
+Status: Product scope and architecture frozen; implementation has not started.
+The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
+the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
+
+MVP: consistent Create Backup, List Backups, Verify Backup, Restore Dry Run,
+Pre-Restore Safety Backup, offline Restore CLI, post-Restore verification,
+and a lightweight `#maintenance` (数据与备份) view. Backup metadata, logs,
+and maintenance state live in controlled, Git-ignored filesystem locations.
+Restore never runs as an active-database replacement HTTP request. The only
+ancillary maintenance is visible Reminder polling failure, Retry, and recovery
+feedback, preserving the 45-second polling and ack/dismiss semantics.
+
+Implementation sequence (each phase has independent Review, Tests, and Commit):
+
+1. Pre-Development Maintenance: V0.5.1 documentation release-status sync.
+2. Phase 0: Architecture Freeze.
+3. Phase 1: Backup Core and Create/List/Verify API.
+4. Phase 2: Maintenance UI and CLI Restore guidance.
+5. Phase 3: Restore CLI, maintenance locks, Launcher coordination, crash safety.
+6. Phase 4: Reminder Poll Failure Visibility; remove it if scope expands.
+7. Phase 5: Full Acceptance, approved real Backup smoke, Restore on disposable
+   copies only.
+8. Release Gate: version/documentation sync and release verification.
+
+Phase 3 must validate isolated prototypes for SQLite connection/process usage
+and maintenance-lock coordination, and DB/WAL/SHM switching at different crash
+points with artifact preservation, startup blocking, and recovery inspection.
+These are not Phase 1 blockers; real Restore is prohibited until they pass and
+separate explicit approval is given. No real Restore during development.
+
+Test gates include WAL/concurrent committed writes, Metadata, path boundaries,
+read-only verification, safety-backup failure, isolated Restore, interrupted
+switching, startup blocking, precise stop, and full Backend/Vitest/Playwright/
+type-check/build regression. Detailed contracts are in the core docs.
+
+Excluded: Review/Statistics, Saved Views, Manual Ordering, Kanban, AI, Cloud
+Sync, Multi User, Mobile App, External Calendar, Project Hierarchy, Reminder
+Background Service, Repeat Time Block, unrelated bundle/Starlette warnings,
+large TaskEditor extraction, global CSS or API Client refactoring.
+
+### Later Candidates
+
+AI Provider abstraction and Mock Provider are deferred candidates, not V0.6 scope.
 - V0.7: Natural-language Task creation.
 - V0.8: AI Task decomposition.
 - V0.9: AI Scheduling and Schedule Sandbox.

@@ -14,7 +14,67 @@ The real database schema is `0005_add_deadlines_recurrence_reminders`, with no
 new migration for this patch. Release status is confirmed by Git tags. V0.6 is
 the next planned development version.
 
-## Current System Endpoint
+## Frozen V0.6 Backup API / CLI Boundary
+
+Status: approved design, not implemented endpoints. Stable application is
+`v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
+REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
+
+Candidate endpoints frozen by responsibility:
+
+| Method / path | Responsibility |
+| --- | --- |
+| `GET /api/v1/backups` | Read-only list of registered DayFlow Backups and last known verification Metadata |
+| `POST /api/v1/backups` | Create consistent SQLite Online Backup and Manifest V1 |
+| `POST /api/v1/backups/{backup_id}/verify` | Explicit read-only Backup verification; no automatic Manifest rebuild |
+
+Accept Backup IDs, not arbitrary source/Restore absolute paths. List includes
+time, filename, bytes, schema, integrity, and SHA summary, identifying unknown
+creation time and stale verification honestly. Do not enumerate arbitrary
+system files as restorable Backups or run full integrity scans implicitly.
+
+Verify checks readability, hash, size, integrity, foreign keys, Alembic,
+required tables, and critical structure. Distinguish valid-compatible,
+valid-incompatible, corrupted, missing/unreadable, Manifest mismatch. These
+are semantic categories, not finalized API enum values. Exact supported schema
+is `0005_add_deadlines_recurrence_reminders`; no automatic migration or Restore
+for old, unknown, or newer schemas. Response schemas/error codes are finalized
+in Phase 1 before implementation; existing business responses do not change.
+
+Root is controlled `data/backups/`. Reject traversal, absolute path input,
+symlinks, outside-root resolution, non-regular files, and unexpected overwrite.
+Manifest filenames are not trusted. Recoverable files require DayFlow naming
+and verified registration. Revalidate identity/content before use; validate
+browser request origin for filesystem-mutating local API operations.
+
+There is no HTTP Restore-active-database endpoint. Maintenance CLI only:
+
+- `restore --dry-run`: verify target and report plan/preconditions, never switch
+  databases or stop services as a side effect.
+- `restore`: explicit confirmation, maintenance lock, safe managed-service stop,
+  database usage checks, verified Pre-Restore Backup, target revalidation,
+  candidate validation, controlled switch, final validation, result log.
+
+Unknown process identity or database usage fails closed. No automatic rollback,
+downgrade, migration, or service restart. Preserve original DB/WAL/SHM, Safety
+Backup, target, candidate and logs. Incomplete Restore blocks both Launcher
+and Backend startup. Lock implementation is validated in Phase 3 prototypes.
+
+Frontend `#maintenance` (数据与备份) provides database status, Create/List/Verify,
+destructive Restore summary and prepared CLI guidance. Incompatible entries
+show reasons and no executable Restore instruction; no ordinary HTTP button
+replaces the live database. No shutdown worker is included.
+
+The only Reminder maintenance is visible polling failure, Retry, and clearing
+the error on recovery, retaining 45-second polling and ack/dismiss. No new
+Reminder endpoint, history, Snooze, OS notification, daemon, or Schema.
+
+API acceptance covers WAL consistency, missing/corrupt/mismatched Metadata,
+path attacks, read-only Verify and List, failed backup publication, stable
+ordering, UI Loading/Empty/Error/Retry, and existing business regressions.
+Restore tests are isolated; real Restore always needs separate approval.
+
+## Existing System Endpoint
 
 ```http
 GET /healthz

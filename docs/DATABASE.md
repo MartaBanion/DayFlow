@@ -329,9 +329,63 @@ test database.
 
 ## Backup
 
-Stop the Backend before copying `data/dayflow.sqlite3`. Verified maintenance
-backups can use SQLite's Online Backup API; DayFlow still does not provide an
-automatic Backup Service or Restore UI.
+Current v0.5.1 has manual verified maintenance backups, not an application
+Backup Service or Restore UI. Use SQLite Online Backup API for consistency,
+including committed WAL data; never assume copying an active main file is safe.
+
+### Frozen V0.6 Filesystem Model (Not Yet Implemented)
+
+NO DATABASE MIGRATION REQUIRED. Keep `0005_add_deadlines_recurrence_reminders`;
+do not create `0006`, modify historic migrations, or add Backup business tables.
+Default controlled root: `data/backups/`. Backup DBs, JSON Metadata, temporary
+Restore candidates, original DB/WAL/SHM material, maintenance state and logs
+must be in controlled Git-ignored locations. No automatic retention cleanup.
+
+Use `sqlite3.Connection.backup()`; stage uniquely named files, close the target,
+verify integrity/FK/schema/structure, compute hash and size, publish database
+without overwrite, then publish Manifest. Unfinished files cannot be Restore
+candidates. Published Backup databases must never be modified.
+
+Each Backup has Manifest V1 (`*.json`):
+
+| Field | Meaning |
+| --- | --- |
+| `backup_version` | Manifest format version `1` |
+| `backup_id` | Unique API/CLI file identity |
+| `filename` | Backup basename, validated rather than trusted |
+| `created_at_utc` | Backup creation UTC time |
+| `app_version` | Application version at creation |
+| `alembic_version` | Verified database version |
+| `database_sha256` | Closed Backup file SHA-256 |
+| `file_size` | Bytes |
+| `integrity_check` | Recorded verification result |
+| `foreign_key_errors` | Recorded error count |
+| `verified_at_utc` | Recorded verification UTC time |
+| `source_database` | Logical source identity, e.g. `dayflow.sqlite3` |
+
+Manifest is not database truth; no Task contents, Token, Password, or Secret.
+Missing Manifest permits read-only verification and explicit registration.
+Compute hash/size/schema again, but do not invent unknown creation time or
+application version. Filesystem mtime may be shown as auxiliary information.
+Verification does not automatically rewrite Metadata or Backup bytes.
+
+Only exact `0005_add_deadlines_recurrence_reminders` is Restore-compatible.
+Validate readability, hash, size, integrity, FK, Alembic, required tables and
+critical structure; schema label alone is insufficient. Old/unknown/newer
+schemas may be inspected but cannot Restore. Restore never runs migrations.
+
+Offline Restore must first create and verify a Pre-Restore Safety Backup.
+Revalidate target, create independent candidate, verify it, close connections,
+and perform controlled switching with original DB/WAL/SHM retained. Never mix
+old WAL with restored DB. Validate final integrity/FK/schema/structure/data;
+record result and leave service stopped. Retain original, Safety Backup,
+target, candidate, and operation log until explicit human disposition.
+
+Failures stop; no automatic rollback/downgrade/guessed recovery. Before-switch
+failure cannot replace current DB; during/after-switch failure or interruption
+leaves startup blocked. Phase 3 must prototype locking and crash-safe DB/WAL/SHM
+switching on isolated databases. No real Restore during development; future
+real Restore needs separate explicit approval after those prototypes pass.
 
 ## Test Isolation
 

@@ -10,7 +10,152 @@ database schema remains `0005_add_deadlines_recurrence_reminders`; V0.6
 remains the next planned feature-development version. Release status is
 confirmed by Git tags.
 
-## Architecture
+## Frozen V0.6 — Data Safety & Recovery
+
+Status: approved architecture only; Backup/Maintenance functionality is not
+yet implemented. Stable release is `v0.5.1`. This version is not Statistics,
+Review, AI, Task Organization, or a Notification Service.
+
+### Product and Storage Boundaries
+
+MVP includes Create/List/Verify Backup, Restore Dry Run, Pre-Restore Safety
+Backup, offline Restore CLI, automatic post-Restore verification, and a
+lightweight Maintenance view. NO DATABASE MIGRATION REQUIRED. Existing
+`0005_add_deadlines_recurrence_reminders` and all business semantics stay intact.
+Metadata, Restore logs, and maintenance state are controlled filesystem data,
+Git ignored, never business tables. No `0006` is created.
+
+### Backup and Verification
+
+Default root is `data/backups/`. Use Python `sqlite3.Connection.backup()` with
+a read-only source connection; include committed WAL data. Copying the active
+main file is not a consistent backup mechanism. Backup captures an internally
+consistent committed snapshot, not every write made before it finishes.
+
+Publication order: unique temporary file → Online Backup → close target →
+integrity check → foreign key check → schema/critical-structure check →
+SHA-256 → publish database without overwrite → publish Manifest V1.
+Incomplete artifacts are not recoverable entries. Published Backup databases
+are immutable. No automatic Backup cleanup is included in V0.6.
+
+Verify is explicit and read-only; it checks readability, SQLite format, hash,
+size, integrity, foreign keys, Alembic version, required DayFlow tables, and
+critical structure. Manifest is metadata, not truth. List displays last known
+verification and timestamp; it does not silently perform full verification.
+Recovery of missing Metadata requires separate explicit registration.
+
+Only exact schema `0005_add_deadlines_recurrence_reminders` is restorable.
+Old, unknown, and newer versions may be inspected but cannot be restored.
+Restore never migrates. Verification distinguishes valid-compatible,
+valid-incompatible, corrupted, missing/unreadable, and Manifest mismatch as
+semantic categories; these strings are not frozen API enums.
+
+### Offline Restore Workflow
+
+1. Verify target and show summary (identity, schema, hash, counts, overwrite impact).
+2. Obtain explicit confirmation and maintenance lock.
+3. Stop only identity-validated, managed DayFlow services.
+4. Confirm database usage state; unknown processes or uncertainty fail closed.
+5. Create and verify current database Pre-Restore Safety Backup.
+6. Verify target again; build an independent Restore candidate and verify it.
+7. Close all connections, persist candidate/operation state, perform controlled switch.
+8. Verify final integrity, foreign keys, Alembic version, structure, and data.
+9. Record result; clear blocking state only on success and leave services stopped.
+
+Running Backend cannot replace its active database. Restore is Maintenance CLI
+only; HTTP UI offers summary/explanation and prepared CLI guidance, not an
+active-database replacement button or automatic shutdown worker.
+
+Original DB/WAL/SHM material must be preserved in a controlled recovery
+location before switching. Old WAL must never attach to the restored database.
+Preserve original material, target, Pre-Restore Backup, candidate, and log until
+a human decides retention. Source Backup is never consumed or modified.
+Any failure stops further steps; never automatically rollback, downgrade, guess
+recovery, or start services. No automatic service startup after success either.
+
+### Maintenance and Startup Boundary
+
+Maintenance CLI, start script, and Backend startup must coordinate database
+usage locks, maintenance lock, and durable incomplete-Restore marker. Port
+checks alone are insufficient. The existing startup operation lock is not a
+database lifetime/maintenance protocol and must be extended in Phase 3.
+Both script-mediated and direct Backend startup must refuse normal operation
+while maintenance is active or a Restore is incomplete. Lock design must permit
+managed shutdown without deadlocking the stop script.
+
+File switching is not a SQLite transaction: durable phase records, disk flushes,
+and startup blocking must cover process interruption and partial switching.
+Specific locking/switching mechanics are deferred to isolated Phase 3 prototypes:
+(1) SQLite connection/process usage/maintenance coordination; (2) DB/WAL/SHM
+crash points, retained artifacts, startup blocking, and recovery inspection.
+These do not block Phase 1; they block any real Restore pending tests and
+separate explicit user approval. Development Restore is isolated only.
+
+### Maintenance UI and Ancillary Reminder Work
+
+Continue Hash navigation with `#maintenance`, Chinese entry 数据与备份.
+Show current database status, Create, List, Verify, Restore summary and CLI
+guidance. Restore uses destructive-action styling and explicit confirmation;
+incompatible entries show reasons and no executable Restore command.
+No Router or unrelated UI redesign.
+
+Reminder maintenance is limited to visible but restrained polling failure,
+Retry, and clearing the error after recovery. Preserve 45-second polling,
+session deduplication, ack/dismiss, and existing persistence. No Snooze,
+History, OS Notification, Background Service, or schema changes. Remove this
+item from V0.6 if implementation would expand scope.
+
+### Failures, Paths, and Logging
+
+Fail closed for Backup/Verify/Pre-Restore Backup failure, unknown database
+usage, Manifest failure, disk full, permissions, timeout, candidate/final
+verification failure, and interrupted Restore. Preconditions failing must
+never replace current DB. Failures during/after switching leave a durable
+startup-blocking marker. Logs contain stages, file identifiers, hashes,
+verification results, and errors, never personal Task contents or secrets.
+
+API accepts Backup IDs, never arbitrary paths. Root is controlled; reject
+absolute input paths, `..`, traversal, symlinks, outside-root resolved paths,
+non-regular files, and unexpected overwrite. Manifest filename is untrusted.
+Only DayFlow-named, verified/registered files become Restore candidates.
+Prevent target replacement between validation/use and match candidate content
+to verified source. Mutating local API operations validate browser request
+origin; Single User does not justify unrestricted filesystem access.
+
+### Implementation and Acceptance Gates
+
+Each phase has independent Review, Tests, Commit: documentation maintenance;
+Phase 0 architecture; Phase 1 Backup Core/API; Phase 2 Maintenance UI;
+Phase 3 Restore CLI/locks/Launcher/crash safety; Phase 4 small Reminder item;
+Phase 5 full acceptance; Release Gate. Planned functionality must remain
+distinguished from implemented functionality in release documentation.
+
+All destructive tests use isolated temporary databases. Compare real database
+SHA-256 before/after automation; it remains at `0005`. Full matrix:
+
+| Area | Required coverage |
+| --- | --- |
+| Create | normal, active WAL, committed concurrent writes, timeout, permission failure, simulated disk failure |
+| Metadata | SHA, size, Manifest, missing/damaged Manifest, mismatch |
+| List | valid, incomplete, unknown files, stable ordering |
+| Verify | valid, corrupted, incompatible, missing, unreadable, no Backup mutation |
+| Path | traversal, absolute input, symlink, outside root, overwrite conflict |
+| Preparation | dry-run, incompatible schema, unknown process, failed Safety Backup |
+| Restore | isolated success, WAL isolation, preserve original/target/Safety Backup |
+| Failure | before/during/after switch, interrupted process, startup-blocking marker |
+| Launcher | normal start, incomplete Restore blocks start, precise stop |
+| Reminder | poll failure, Retry, recovery, no implicit Reminder mutation |
+| Regression | Backend, Vitest, existing 28 Playwright scenarios, type-check, build |
+
+Acceptance includes approved real Backup smoke (no Restore) and disposable-copy
+Restore. Real Restore always requires separate explicit approval.
+
+Excluded: Review/Statistics, Saved Views, Manual Ordering, Kanban, AI, Cloud
+Sync, Multi User, Mobile App, External Calendar, Project Hierarchy, Reminder
+Background Service, Repeat Time Block, unrelated bundle/Starlette warnings,
+large TaskEditor extraction, global CSS/API Client refactoring.
+
+## Existing Application Architecture
 
 DayFlow is a local-first, single-user modular monolith:
 
