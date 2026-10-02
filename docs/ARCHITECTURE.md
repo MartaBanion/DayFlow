@@ -15,8 +15,9 @@ confirmed by Git tags.
 Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
 Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
-prototypes are implemented in the development working tree, pending Review.
-Restore CLI, Dry Run, database replacement, actual recovery and Reminder poll
+prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
+generation are implemented in the development working tree, pending Review.
+Actual Restore CLI, database replacement, actual recovery and Reminder poll
 visibility are not yet implemented.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
@@ -123,8 +124,8 @@ recovery, or start services. No automatic service startup after success either.
 configured database's sibling `maintenance/` directory (default
 `data/maintenance/`, Git ignored). It never opens SQLite, creates Backup data,
 copies a Restore source, switches DB/WAL/SHM, stops a process or runs migrations.
-There is no HTTP maintenance mutation or Restore CLI. The only command entry
-is `python -m app.core.maintenance --check`, a read-only Launcher preflight.
+There is no HTTP maintenance mutation or actual Restore CLI. The read-only
+Launcher preflight remains `python -m app.core.maintenance --check`.
 
 Two independent protections are required:
 
@@ -178,6 +179,22 @@ DB/WAL/SHM preservation and switching/crash durability tests remain future
 Phase 3 gates. Phase 3A authorizes no real Restore and no production unlock.
 
 #### Remaining Phase 3 requirements
+
+#### Phase 3B implemented prototype (Dry Run only)
+
+`python -m app.maintenance_cli restore --dry-run <backup_id>` reads the
+current database and invokes the existing read-only Backup Verify service. It
+returns a `RestorePlan` containing current/target metadata, exact Schema
+compatibility, the future Restore steps, and explicit refusal reasons. The
+human-readable output includes `No changes performed.`; `--json` returns the
+same plan as JSON.
+
+This prototype never acquires `maintenance.lock`, writes `restore-state.json`,
+creates a Backup, copies or replaces a database/WAL/SHM file, runs a migration,
+stops a service, or changes a Manifest. It fails closed for an unreadable or
+incompatible current database or target Backup. A non-zero exit means no
+Restore action was performed. Actual Restore integration, candidate switching,
+and recovery execution remain out of scope.
 
 Maintenance CLI, start script, and Backend startup must coordinate database
 usage locks, maintenance lock, and durable incomplete-Restore marker. Port

@@ -18,9 +18,12 @@ the next planned development version.
 
 Status: Phase 1 Create/List/Verify and Manifest V1 are committed. Phase 2
 Maintenance UI is committed. Phase 3A adds state-only maintenance/startup
-safety prototypes, with no new HTTP endpoints. Restore CLI, Dry Run, database
-replacement and Reminder poll visibility are not implemented. See Architecture
-for prototype limits; no real recovery is possible through these prototypes.
+safety prototypes, and Phase 3B adds a read-only Restore Dry Run CLI. The Dry
+Run creates a RestorePlan only; it does not create a lock, write restore state,
+copy or replace SQLite files, migrate, or stop services. Actual Restore CLI,
+database replacement and Reminder poll visibility are not implemented. See
+Architecture for prototype limits; no real recovery is possible through these
+prototypes.
 Stable application is
 `v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
@@ -137,6 +140,15 @@ Unknown process identity or database usage fails closed. No automatic rollback,
 downgrade, migration, or service restart. Preserve original DB/WAL/SHM, Safety
 Backup, target, candidate and logs. Incomplete Restore blocks both Launcher
 and Backend startup. Lock implementation is validated in Phase 3 prototypes.
+
+Phase 3B Dry Run is invoked with
+`python -m app.maintenance_cli restore --dry-run <backup_id>` (add `--json`
+for a machine-readable `RestorePlan`). It reads the current database and calls
+the existing read-only Backup Verify service for the target. The output
+includes current and target metadata, Schema compatibility, future execution
+steps, and the exact `No changes performed.` marker. Invalid, missing,
+incompatible, corrupted, or mismatched targets return a non-zero result and do
+not create maintenance state or modify any database artifact.
 
 Frontend `#maintenance` (数据与备份) provides database status, Create/List/Verify,
 destructive Restore summary and prepared CLI guidance. Incompatible entries
