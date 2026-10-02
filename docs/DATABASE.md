@@ -330,11 +330,12 @@ test database.
 ## Backup
 
 Stable v0.5.1 has manual verified maintenance backups. V0.6 Phase 1 development
-implements Backup Core/Create/List/Verify; no Restore UI or CLI is implemented.
+implements Backup Core/Create/List/Verify. Phase 2 Maintenance UI and Phase 3B
+read-only Dry Run are committed; actual Restore execution is not implemented.
 Use SQLite Online Backup API for consistency,
 including committed WAL data; never assume copying an active main file is safe.
 
-### V0.6 Filesystem Model (Phase 1 Implemented; Restore Planned)
+### V0.6 Filesystem Model (Backup Implemented; Restore Execution Design Frozen)
 
 NO DATABASE MIGRATION REQUIRED. Keep `0005_add_deadlines_recurrence_reminders`;
 do not create `0006`, modify historic migrations, or add Backup business tables.
@@ -402,6 +403,79 @@ failure cannot replace current DB; during/after-switch failure or interruption
 leaves startup blocked. Phase 3 must prototype locking and crash-safe DB/WAL/SHM
 switching on isolated databases. No real Restore during development; future
 real Restore needs separate explicit approval after those prototypes pass.
+
+### Phase 3C Restore Artifact and Identity Contract (Design Only)
+
+The complete execution/state/crash protocol is frozen in
+`docs/ARCHITECTURE.md`, **not implemented**. No real Restore is authorized.
+NO DATABASE MIGRATION REQUIRED; only exact `0005` remains compatible. Do not
+change migrations, business fields, IDs, versions, relationships or time semantics.
+
+Default operation storage:
+
+```text
+data/maintenance/coordination.lock          permanent cooperative flock inode
+data/maintenance/maintenance.lock          durable operation acquisition marker
+data/maintenance/restore-state.json        durable stage, not a business table
+data/backups/restore-operations/<UUID4>/
+  operation.json / events.jsonl / verification receipts
+  current-evidence/                         raw quiescent forensic material
+  current-working/                          private SQLite inspection source
+  pre-restore-safety/                       Online Backup + Manifest V1
+  original/                                original DB / WAL / SHM archive
+  candidate.sqlite3                        independent retained target-byte copy
+  install.sqlite3.partial                  independently verified installation copy
+```
+
+Paths derive from configured database parent, never user input. Existing
+`data/backups/` and `data/maintenance/` ignores cover them. Backup List stays
+nonrecursive and does not register operation directories, evidence or candidates.
+Operations are UUID-owned, no-reuse, no-overwrite, private (0700/0600), no symlinks
+or abnormal hard links. Manifest filenames never authorize a path. Safety purpose
+is identified by `pre-restore-safety/` and the operation record, preserving the
+existing standard Backup filename pattern and Manifest V1 without a new schema.
+
+Require Backend stopped, exclusive lifetime cooperative usage lease, observable
+quiescent process environment and no unknown users. Current raw DB/WAL/SHM is
+captured as evidence, with source identities/hashes checked before/after; it is
+not a consistent Backup product. SQLite logical inspection and Online Backup
+run on a private working copy of the captured set so original SHM bookkeeping
+is preserved. Never use immutable SQLite reads to ignore current committed WAL.
+Only a separately verified Online Backup can be the Pre-Restore Safety Backup.
+No checkpoint, journal-mode change, migration or repair of original files.
+
+Target is already verified immutable standalone SQLite without sidecars. Exact
+descriptor copying into independent candidate/install inodes is safe only in
+that restricted case, not for an active database. Target, Manifest and candidate
+master survive installation. Require target SHA/size = candidate SHA/size =
+installation SHA/size = final live SHA/size. Final read-only standalone inspection
+also verifies integrity/FK/exact schema/critical structure and target core counts.
+Counts alone never prove logical identity. Online Backup of a WAL-bearing current
+source may change physical layout/SHA; validate its committed logical contents,
+not equality with the original main-file SHA.
+
+Persist/fsync switch intent and `switching` before changing any live name.
+Same-filesystem no-replace rename archives WAL, then SHM, then main DB; fsync
+each source/destination directory and record each action. Require all live names
+absent before installing the independent install file. Never attach old WAL/SHM
+to the restored DB. Original files remain individually preserved, even if a crash
+leaves them split between live/archive directories. No automatic reassembly.
+Candidate master and initial evidence remain independent. Unexpected journal,
+sidecar or changed identity blocks the operation.
+
+Support only tested Linux/WSL ext4 storage with descriptor/NOFOLLOW, flock,
+directory fsync and `renameat2(RENAME_NOREPLACE)` capabilities. Reject cross-mount,
+DrvFS/network/unvalidated storage; no overwrite/copy-delete fallback. All readers
+are closed before switching. Unknown usage is fail-closed; a best-effort process
+scan does not exclude a later noncooperative opener. Require operator-controlled
+quiescence, never promise universal exclusivity against arbitrary OS processes.
+
+`completed` means final identity/verification and result receipts are durable,
+not merely that installation returned success. Keep maintenance marker until
+explicit verified completion acknowledgement; never auto-start services or
+clear failed/unknown/partial state. Preserve original DB/WAL/SHM, evidence,
+Safety Backup, target, candidate and logs after success or failure. Future manual
+cleanup/recovery is separate approval; no automatic rollback or retention policy.
 
 ## Test Isolation
 

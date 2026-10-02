@@ -16,7 +16,8 @@ Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
 Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
-generation are implemented in the development working tree, pending Review.
+generation are committed. Phase 3C execution protocol is design-frozen only;
+no execution implementation or crash-durability acceptance is implied.
 Actual Restore CLI, database replacement, actual recovery and Reminder poll
 visibility are not yet implemented.
 Stable release is `v0.5.1`. This version is not Statistics,
@@ -103,7 +104,8 @@ semantic categories; these strings are not frozen API enums.
 6. Verify target again; build an independent Restore candidate and verify it.
 7. Close all connections, persist candidate/operation state, perform controlled switch.
 8. Verify final integrity, foreign keys, Alembic version, structure, and data.
-9. Record result; clear blocking state only on success and leave services stopped.
+9. Record result; leave services stopped and blocking marker retained until
+   explicit, verified completion acknowledgement. Success alone does not unlock.
 
 Running Backend cannot replace its active database. Restore is Maintenance CLI
 only; HTTP UI offers summary/explanation and prepared CLI guidance, not an
@@ -212,6 +214,296 @@ Specific locking/switching mechanics are deferred to isolated Phase 3 prototypes
 crash points, retained artifacts, startup blocking, and recovery inspection.
 These do not block Phase 1; they block any real Restore pending tests and
 separate explicit user approval. Development Restore is isolated only.
+
+### Phase 3C Frozen Restore Execution Protocol (Not Implemented)
+
+This is an offline Linux/WSL design, not authorization or an executable Restore.
+Phase 3B remains Dry Run only. Dry Run is neither an authorization token nor a
+substitute for fresh checks. No new business API, Schema, dependency or state
+stage is required. Real Restore remains prohibited during development.
+
+#### Preconditions and Lock Ownership
+
+Before admission: require canonical UUID4, registered target, fresh
+`BackupService.verify()` result `valid`, matching Manifest and exact compatible
+`0005_add_deadlines_recurrence_reminders`; explicit operator confirmation;
+supported filesystem and process visibility; no unresolved previous operation.
+The operator must first stop DayFlow using the existing protected stop workflow.
+An active Backend is a refusal, not an invitation to terminate it automatically.
+The workflow's managed-service-stop step is an idempotent check that shutdown
+has completed; any remaining managed service or ambiguous identity rejects it.
+This preserves the existing prototype's refusal to acquire while Backend runs.
+No unknown process is terminated, and no port/PID check is authoritative.
+
+Freeze the existing database-parent `maintenance/coordination.lock` as the
+permanent cooperative lock inode. Same owner, mode 0600, regular single-link
+file, safe directory descriptors/NOFOLLOW, no unlink/replacement or insecure
+fallback. Backend takes nonblocking shared `flock` before any SQLite access;
+it keeps the lease until request/session draining, pooled connection disposal
+and shutdown are complete. Every cooperating database tool must use this gate.
+Restore takes nonblocking exclusive `flock` and retains its descriptor for the
+**whole operation**, including final verification and completion recording.
+An occupied gate fails without acquiring a persistent maintenance marker.
+PID/start time are diagnostic only. OS lease release after death does not clear
+the durable marker. Current per-method prototype leases must be extended to a
+single operation context; nested independent exclusive acquisitions are forbidden.
+
+Phase 3D must also retain a shared gate across the Launcher's SQLite preflight
+through Backend handoff, closing today's preflight-read race. If the existing
+start/stop serialization lock is needed, acquire it before the coordination
+gate in both paths; never invoke the stop script while holding that same lock.
+No new process may inherit a maintenance descriptor. Freeze execution records
+as format version 2, operation `restore`, retaining the current UUID `lock_id`
+as operation/workspace identity and the existing timestamp/app-version/stage
+fields. Detailed receipts live in the operation workspace. Readers explicitly
+recognize prototype V1 and execution V2; all other format/operation combinations
+block. Prototype `completed` is not proof of real verification.
+
+Under the exclusive lease, reject a marker, malformed/unknown/partial state or
+unacknowledged previous operation. Atomically publish a UUID-owned acquisition
+record and `prepare` state, fsync both and their directory before preparation.
+If only the acquisition record persists, startup still blocks. C0 means durable
+marker admission, not merely acquiring the ephemeral OS lease. A crash before
+any admission artifact exists has changed no database and admitted no operation;
+it cannot leave an OS lock after process death. No preparation or switch is
+allowed in that gap. Before switching,
+also require current readable/compatible structure, integrity `ok`, FK errors 0,
+verified Safety Backup and candidate, and no unresolved usage uncertainty.
+
+#### External SQLite Users and Supported Environment
+
+`flock` is authoritative only for cooperative DayFlow processes. Inspect Linux
+`/proc` descriptors and file mappings for the current DB/WAL/SHM device/inode
+identities and their resolved names, including deleted/renamed references.
+Exclude only this operation's explicitly owned descriptors; `lsof`/`fuser`/ports
+are optional diagnostics, never substitutes. Rescan after preparation and just
+before the first move. Process disappearance may be retried with a bounded
+deadline; inaccessible relevant processes, hidden namespaces, permission errors,
+ambiguous references, or a detected user fail closed. No warning-and-continue
+override. Read/write users and IDE viewers are treated alike.
+
+A scan cannot prevent a noncooperative process from opening a file immediately
+afterward. Supported operation therefore additionally requires a quiescent local
+environment and operator confirmation that external tools are closed and remain
+closed. Same-account malicious actors and unobservable external namespaces are
+not covered by an authenticity guarantee. An environment where visibility cannot
+be established is unsupported, even if this makes Restore unavailable. Never
+claim that flock or a clean scan proves universal SQLite exclusivity.
+
+#### Workspace, Current Evidence and Safety Backup
+
+Use database-parent `backups/restore-operations/<operation-UUID4>/`, created once
+with exclusive semantics, directories 0700/files 0600. Never reuse/overwrite an
+operation. It is already Git ignored; top-level Backup List ignores directories.
+Keep `maintenance/`'s strict entry allowlist unchanged. Internal paths are
+descriptor-derived; no API/CLI user pathname or Manifest filename is trusted.
+
+Workspace contains `operation.json`, `events.jsonl`, verification receipts,
+`current-evidence/`, private `current-working/`, `pre-restore-safety/`, `original/`, immutable
+`candidate.sqlite3`, and independent `install.sqlite3.partial`. The maintenance
+record UUID identifies the workspace; logs contain controlled relative names.
+Admission creates and fsyncs the blocking marker before these artifacts.
+
+After usage checks, inventory DB/WAL/SHM existence, inode, size and hash. Preserve
+a quiescent raw evidence copy before any SQLite inspection. This is **not** a
+backup: it is forensic input, never registered/listed/restorable on its own.
+Copy each held regular single-link descriptor into private `current-evidence/`
+under its original basename; check source identities/hashes again after capture.
+Any drift fails closed. An unexpected rollback journal is a refusal, not an
+invitation to recover/erase it. Record explicit absence of each sidecar.
+
+SQLite read-only WAL access can use/update shared-memory bookkeeping. Therefore
+perform logical current checks and Online Backup against a private working copy
+of the captured evidence set, not the live names or immutable evidence master.
+Do not use `immutable=1` to inspect a WAL-bearing current database: it would
+ignore the live transaction context. Do not checkpoint, VACUUM, ANALYZE, change
+journal mode, migrate or repair the original. Recheck live DB/WAL/SHM identity and
+bytes before switching; preserve initial evidence even if private SQLite working
+sidecars change. Unknown/recovery-needed source conditions reject preparation.
+
+Create Safety Backup with the Phase 1 Online Backup/verification/publication
+core from that quiescent current working set, including committed WAL and
+excluding uncommitted data. Raw evidence copying never substitutes for this
+step. Its controlled directory `pre-restore-safety/` distinguishes purpose while
+retaining existing `dayflow-backup-...sqlite3` naming and Manifest V1. Record
+purpose and Safety Backup ID in operation metadata, not a new business table.
+Require published DB plus Manifest, clean integrity/FK/current structure, SHA,
+size and matching logical current contents. Compare all persisted core columns
+using type-preserving deterministic streams ordered by primary key, including
+soft-deleted rows and association tables, plus counts. Only digests/counts may
+enter verification receipts, never row contents; isolated tests also compare
+actual values. Counts alone are insufficient. Any failure prohibits switching.
+
+#### Target and Candidate Identity
+
+Reverify the registered target after Safety Backup. Reuse Backup Verify and its
+structural screen; bind the selected Manifest and held NOFOLLOW database
+descriptor to UUID, inode, size and SHA. Reject sidecars, replacement or metadata
+drift. Copy **only this verified standalone immutable target**, using bounded
+descriptor reads and O_EXCL destinations, into an independent candidate inode.
+Close/fsync it, then perform fresh read-only integrity/FK/schema/structure checks
+and hash/size comparison. Preserve target and Manifest unchanged permanently.
+
+Online Backup is mandatory for a WAL-bearing current source. For the already
+standalone target, exact safe byte copying is chosen over Online Backup: it
+preserves physical SHA identity and avoids page-layout changes. Never use a
+hard link as a candidate; otherwise later live writes could mutate the retained
+source. Prepare a second independent install file from candidate, verify it and
+fsync it. Candidate master remains available even after installation consumes
+the install name. Record target = candidate = install SHA and size.
+
+Logical equivalence means the same schema and all persisted table values,
+including IDs, versions, deleted records and relationships, not merely equal
+counts. Exact bytes establish this for the chosen target-copy method; counts
+are supplementary diagnostics. Safety Backup produced by Online Backup may
+have a different physical SHA from the current main DB while preserving the
+committed logical snapshot. Never compare it to main-file SHA as a validity test.
+
+#### Controlled Switch and Durability
+
+Initially support a tested local Linux/WSL ext4 filesystem. Live directory,
+workspace and install file must be on the same mounted filesystem; reject
+DrvFS (`/mnt/c`), network/FUSE/unvalidated filesystems and cross-mount switching.
+Before any move, require tested directory fsync and Linux
+`renameat2(RENAME_NOREPLACE)` support. No check-then-overwriting `os.rename`,
+copy/unlink cross-device fallback, or live-database `os.replace` is allowed.
+State JSON alone uses exclusive temporary write → file fsync → atomic replace
+→ directory fsync. Phase 3 implementation must centrally encapsulate and test
+the no-replace syscall; unsupported capability refuses execution.
+
+1. Close every SQLite connection and preparation descriptor not needed for
+   identity checks; repeat usage/content checks. Verify Safety Backup, candidate,
+   independent install file, original inventory and operation receipt are durable.
+2. Persist `verified`; write switch intent (source/destination identities and
+   sidecar inventory). Persist `switching` and fsync before the first live move.
+3. Archive existing WAL, then SHM, then main DB into `original/`, keeping exact
+   basenames. Before each move fsync the held original file and persist intent;
+   use no-replace rename by directory descriptor, then fsync **both** source and
+   destination directories and persist the completion receipt. An absent sidecar
+   is a recorded skip; an unexpected new file/identity is failure.
+4. Confirm all three live names are absent. Rename independent install file to
+   the live main filename with NOREPLACE; fsync installed file and both affected
+   directories, then persist installation receipt. Do not create old sidecars
+   or change SQLite journal mode. Candidate master remains in the workspace.
+5. Persist `verifying`; re-open the installed, standalone main file read-only,
+   immutable, bound to its held descriptor. Run final verification and rehash;
+   any unexpected sidecar or inode/content change rejects completion.
+6. Close connections, fsync final verification receipt/result log and live file/
+   directories. Persist `completed` only after all guarantees pass. Leave
+   services stopped and acquisition marker retained. Release OS leases on exit.
+
+The three original names do not move atomically as a group. Sidecars-first keeps
+the main filename absent before installation but briefly leaves the old main
+without its WAL: the durable blocker makes this **not runnable**. A mixed archive
+after interruption is evidence, not permission to open either DB normally.
+Every action has a durable intent before and receipt after. If the receipt is
+missing, inspect both names/inodes/hashes manually; never infer success from a
+stage string or auto-resume. An fsync failure is an uncertain result even if a
+rename returned success. No filesystem protocol promises immunity to faulty
+hardware or storage that dishonors flushes.
+
+#### State Guarantees and Crash Matrix
+
+No new stages: implicit `idle` means no active marker; `prepare` guarantees the
+admission marker is durable; `verified` guarantees safety/candidate/preconditions;
+`switching` guarantees durable switch intent before any move; `verifying`
+guarantees installed file and archive receipts are durable; `completed` guarantees
+final verified result and receipts. `failed` means a known error; `blocked` means
+usage/durability/artifact uncertainty. Both retain the marker. Failed state
+publication leaves the last durable state/marker/partial in place; never erase
+it or fabricate completed. Match operation ID and expected previous stage.
+
+In the matrix, T is unchanged registered target, S is verified Safety Backup,
+C is retained candidate master, I is the separate install file. Original evidence
+is additionally retained once captured. Partial artifacts are retained too.
+
+| Crash | Live main | Original DB / WAL / SHM | Candidate / install | T / S | Durable state; startup |
+| --- | --- | --- | --- | --- | --- |
+| C0 admission marker acquired | old | live, unchanged | absent | T / absent | prepare, or marker-only; blocked |
+| C1 safety published | old | live + evidence copy | absent | T / S | prepare; blocked |
+| C2 target reverified | old | live + evidence copy | absent/partial | T / S | prepare; blocked |
+| C3 candidates verified | old | live + evidence copy | C + I | T / S | prepare/verified; blocked |
+| C4 switch state persisted | old | live; individual moves may next start | C + I | T / S | switching; blocked |
+| C5 originals moved, before install | absent | original/; earlier subcrashes split live/archive | C + I | T / S | switching; blocked |
+| C6 installed before verifying | new (or install rename not durable) | original/ | C; I consumed or location uncertain | T / S | switching; blocked |
+| C7 verifying | new | original/ | C; I consumed | T / S | verifying; blocked |
+| C8 final verified before completed | new | original/ | C; I consumed | T / S | verifying; blocked |
+| C9 completed durable | new, verified | original/ | C; I consumed | T / S | completed + marker; blocked until explicit acknowledgement |
+
+C0-C8 never auto-start, rollback, resume or delete artifacts. C9 also does not
+auto-start/auto-clean; a separate explicit completion acknowledgement rechecks
+identity, final receipts and final DB under exclusive lease, then removes only
+the matching acquisition marker with directory fsync. Completed state remains.
+Existing prototype cleanup must not accept real execution solely on `completed`.
+
+#### Final Verification, Logs and Failure Policy
+
+Final verification requires SQLite readable, full integrity `ok`, FK errors 0,
+single exact Alembic version, required tables/columns/PK/FK/CHECK/index screen,
+all core table counts equal to target, and physical SHA/size equal to candidate
+and target before/after inspection. No migration/repair or business mutation.
+Log `operation_id`, UTC timestamps, Backup/Safety IDs, controlled artifact names,
+current main and WAL hashes, target/candidate/final hashes, stages, verification
+results and safe failure codes in JSON/JSONL. No row values, titles, descriptions,
+Project contents, token, secret, traceback or arbitrary absolute paths. DB
+artifacts themselves remain private personal data. State/receipts are durable
+authority for recovery inspection; a partial JSONL tail never authorizes startup.
+
+| Failure | Live replacement | Startup / retained evidence |
+| --- | --- | --- |
+| invalid target/confirmation, busy cooperative lock | none | no new marker; pre-existing blockers untouched |
+| external user/uncertainty before admission | none | refuse; no permission to proceed |
+| usage uncertainty after admission; safety failure | none | blocked/failed marker; current and any partial safety/evidence/log retained |
+| target reverify, candidate creation/verification failure | none | failed marker; T/S/partial C/evidence/log retained |
+| original move failure | absent/partial archive possible | blocked marker; every remaining live and archived artifact retained |
+| install failure | old absent; new may be installed if durability uncertain | blocked marker; archive/C/I/T/S/receipts retained |
+| final verification failure | new installed | failed/blocked marker; all artifacts retained |
+| state write/fsync/disk-full/permission error | depends on last action | stop immediately; last durable marker/state and partials retained |
+
+After admission, failures never permit normal startup even when the old DB
+remains intact. No automatic rollback, retry, fallback or cleanup. Manual
+inspection must reconcile intent/receipts and artifacts before any new operation;
+never rerun an operation UUID or overwrite an unresolved state. Real recovery
+or clearing failed blockers requires separate explicit approval and a validated
+recovery procedure, not a force flag in the execution prototype.
+
+#### Confirmation, Cleanup and Implementation Gates
+
+Future `python -m app.maintenance_cli restore <backup_id>` defaults to TTY-only
+confirmation after a fresh summary of current/target identities, counts and
+overwrite impact. Require typing `RESTORE <canonical-backup-id>`; cancellation,
+EOF and non-TTY execution refuse before admission. V0.6 first implementation
+has no `--yes`/`--force` bypass; any future noninteractive authorization requires
+a separately frozen exact-ID/expected-hash contract. JSON output is not consent.
+Current parser still requires `--dry-run`; this document adds no executable flag.
+
+All marker presence, prepare/verified/switching/verifying/failed/blocked, unknown
+format/state, partial records and gate contention block Launcher and direct
+Backend startup. Completed is not automatically ignored while its marker exists.
+After explicit verified acknowledgement, startup may proceed with completed
+state retained. No service restarts automatically. Original archive, sidecars,
+evidence, T/S/C, logs and receipts have no V0.6 automatic cleanup; future manual
+retention must not remove unresolved operations or the coordination inode.
+
+Phase 3C execution tests must use disposable DBs/directories and subprocesses:
+success; shared lease held; duplicate maintenance; unknown/inaccessible external
+user; safety/target-reverify/candidate failures; candidate corruption; committed
+WAL and existing SHM; no stale sidecar attachment; source evidence unchanged;
+crashes C0-C9 and between each artifact move/intent/receipt/fsync; final verify,
+state write, fsync, disk-full, permission and no-replace conflict failures;
+unsupported filesystem; target/S/C/original preservation; unknown state; explicit
+completed acknowledgement; no automatic restart/rollback; startup refusal.
+Phase 3D validates Launcher lease handoff, orderly Backend connection disposal,
+precise stop and the full DB/WAL/SHM crash protocol. Tests must establish both
+logical WAL recovery and physical target/candidate/final identity. Process-kill
+tests are not proof of power-loss durability: filesystem capability/durability
+assumptions must be documented and validated before any real Restore approval.
+
+Technical references: [Linux flock](https://man7.org/linux/man-pages/man2/flock.2.html),
+[rename / NOREPLACE](https://man7.org/linux/man-pages/man2/rename.2.html),
+[file and directory fsync](https://man7.org/linux/man-pages/man2/fsync.2.html),
+[SQLite WAL file lifecycle](https://www.sqlite.org/walformat.html), and
+[SQLite URI / immutable behavior](https://www.sqlite.org/uri.html).
 
 ### Maintenance UI and Ancillary Reminder Work
 
