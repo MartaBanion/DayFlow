@@ -56,6 +56,13 @@ if [[ "$database_path" != "$real_database" && "${DAYFLOW_ALLOW_NONREAL_DATABASE:
   die "默认启动只允许真实数据库；如需隔离测试，请显式设置 DAYFLOW_ALLOW_NONREAL_DATABASE=1。"
 fi
 
+# Check before opening SQLite, inspecting/reusing services, or starting either
+# process. Backend repeats this check under its lifetime usage lock.
+(
+  cd "$backend_root"
+  DAYFLOW_DATABASE_PATH="$database_path" "$backend_python" -m app.core.maintenance --check
+) || die '维护状态阻止启动。请先完成恢复安全检查；不会自动清理维护记录。'
+
 application_version="$("$backend_python" - "$backend_root/pyproject.toml" "$frontend_root/package.json" <<'PY'
 import json
 import sys

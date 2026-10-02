@@ -13,9 +13,11 @@ confirmed by Git tags.
 ## Frozen V0.6 — Data Safety & Recovery
 
 Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
-Phase 2 Maintenance UI is implemented in the development working tree,
-pending visual Review. Restore CLI, maintenance locks, Launcher Restore
-blocking and Reminder poll visibility are not yet implemented.
+Phase 2 Maintenance UI is committed with rough manual visual acceptance.
+Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
+prototypes are implemented in the development working tree, pending Review.
+Restore CLI, Dry Run, database replacement, actual recovery and Reminder poll
+visibility are not yet implemented.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
@@ -115,10 +117,73 @@ recovery, or start services. No automatic service startup after success either.
 
 ### Maintenance and Startup Boundary
 
+#### Phase 3A implemented prototype (not Restore)
+
+`app.core.maintenance` operates only on controlled filesystem state in the
+configured database's sibling `maintenance/` directory (default
+`data/maintenance/`, Git ignored). It never opens SQLite, creates Backup data,
+copies a Restore source, switches DB/WAL/SHM, stops a process or runs migrations.
+There is no HTTP maintenance mutation or Restore CLI. The only command entry
+is `python -m app.core.maintenance --check`, a read-only Launcher preflight.
+
+Two independent protections are required:
+
+- A persistent `maintenance.lock` acquisition record contains UUID4 `lock_id`,
+  UTC `created_at_utc`, `operation=restore-safety-prototype`, acquisition stage
+  `prepare`, format version and application version. `restore-state.json`
+  carries the matching identity and current stage. PID is not authority.
+- A permanent `coordination.lock` inode uses nonblocking Linux/WSL `flock`.
+  Backend ASGI lifespan checks state while holding a shared lease, retained
+  for its lifetime. Prototype begin/transition/cleanup require an exclusive
+  lease. Thus begin refuses while a cooperating Backend is running, without
+  trying to stop it; Backend refuses to start after begin. The Launcher checks
+  before its first SQLite open or process handling; Backend checks again to
+  close the preflight/start race. The stop script is unchanged.
+
+The coordination inode is never removed/replaced. State publication uses an
+exclusive temporary file, file fsync, no-overwrite hard-link publication for
+the acquisition record, atomic state-file replacement, and directory fsync.
+Directory-descriptor walking and NOFOLLOW reject symlinks; nonregular files,
+hard-linked records, foreign ownership, unsafe write permissions, unknown
+files/partials, unknown formats/stages and parse failures block startup.
+No insecure platform fallback is provided. State checks never silently remove
+or repair artifacts. Empty/missing state is implicit `idle` (no write).
+
+Normal simulated transitions are:
+
+`idle → prepare → verified → switching → verifying → completed`
+
+Each active stage may instead enter terminal `failed` or `blocked`. Updates
+require the matching lock ID and expected previous stage; skipped/backward or
+stale transitions fail without mutation. Recording `completed` needs explicit
+confirmation; it proves only completion of the state simulation, **not** actual
+database verification. Startup remains blocked until a second explicit,
+identity-checked cleanup removes the completed acquisition marker. Completed
+state and coordination inode remain. Failed/blocked/corrupt/incomplete records
+cannot be cleared by this prototype; no reset/unlock/recovery CLI is exposed.
+A persisted `idle` record is not an escape hatch and is rejected at startup.
+
+Tests use isolated directories and actual child-process abnormal exits at
+prepare/switching/verifying. The next Launcher/Backend check must reject them
+without automatic continuation, rollback or record deletion. Tests also cover
+concurrent acquisition, cross-process usage leases, corrupt/missing records,
+publication/flush failure, explicit cleanup and absence of DB creation.
+
+Limits: this is a cooperative Linux/WSL protocol, not a detector for arbitrary
+SQLite connections or pre-existing Backend versions. Bypassing ASGI lifespan
+is unsupported. Same-account actors able to rewrite controlled files are not
+an authenticity boundary. Databases sharing a parent conservatively share the
+maintenance root. Actual DB connection draining, unknown-process inspection,
+DB/WAL/SHM preservation and switching/crash durability tests remain future
+Phase 3 gates. Phase 3A authorizes no real Restore and no production unlock.
+
+#### Remaining Phase 3 requirements
+
 Maintenance CLI, start script, and Backend startup must coordinate database
 usage locks, maintenance lock, and durable incomplete-Restore marker. Port
 checks alone are insufficient. The existing startup operation lock is not a
-database lifetime/maintenance protocol and must be extended in Phase 3.
+database lifetime/maintenance protocol; Phase 3A adds cooperative safety state,
+while actual database-use verification remains deferred.
 Both script-mediated and direct Backend startup must refuse normal operation
 while maintenance is active or a Restore is incomplete. Lock design must permit
 managed shutdown without deadlocking the stop script.

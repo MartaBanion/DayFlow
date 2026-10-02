@@ -25,6 +25,7 @@ data/*.sqlite
 data/*.sqlite3
 data/*.sqlite3-*
 data/backups/
+data/maintenance/
 data/test/
 *.log
 

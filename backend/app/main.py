@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,11 +21,19 @@ from app.core.errors import (
     validation_error_handler,
 )
 from app.core.logging import configure_logging
+from app.core.maintenance import MaintenanceSafety
 
 settings = get_settings()
 configure_logging(settings.log_level)
 
-app = FastAPI(title=settings.app_name, version=settings.app_version)
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    runtime_settings = get_settings()
+    with MaintenanceSafety(runtime_settings.maintenance_root, runtime_settings.app_version).backend_usage():
+        yield
+
+
+app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_origin],

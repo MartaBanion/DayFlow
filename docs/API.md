@@ -17,9 +17,10 @@ the next planned development version.
 ## Frozen V0.6 Backup API / CLI Boundary
 
 Status: Phase 1 Create/List/Verify and Manifest V1 are committed. Phase 2
-Maintenance UI is implemented in the development working tree, pending visual
-Review. Restore CLI, maintenance locks, Launcher Restore blocking and Reminder
-poll visibility are not implemented.
+Maintenance UI is committed. Phase 3A adds state-only maintenance/startup
+safety prototypes, with no new HTTP endpoints. Restore CLI, Dry Run, database
+replacement and Reminder poll visibility are not implemented. See Architecture
+for prototype limits; no real recovery is possible through these prototypes.
 Stable application is
 `v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.

@@ -38,6 +38,10 @@ class Settings(BaseSettings):
         return self.resolved_database_path.parent / "backups"
 
     @property
+    def maintenance_root(self) -> Path:
+        return self.resolved_database_path.parent / "maintenance"
+
+    @property
     def database_url(self) -> str:
         database_path = self.database_path
         if not database_path.is_absolute():

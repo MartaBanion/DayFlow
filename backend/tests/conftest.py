@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.deps import db_session
 from app.main import app
+from app.core.config import get_settings
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
@@ -51,7 +52,13 @@ def session_factory(database_engine: Engine) -> sessionmaker[Session]:
 @pytest.fixture()
 def client(
     session_factory: sessionmaker[Session],
+    database_engine: Engine,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[TestClient, None, None]:
+    # Lifespan safety checks must use the same isolated location as the DB
+    # dependency override, never the real data/maintenance directory.
+    isolated_settings = get_settings().model_copy(update={"database_path": Path(database_engine.url.database)})
+    monkeypatch.setattr("app.main.get_settings", lambda: isolated_settings)
     def override_db() -> Generator[Session, None, None]:
         with session_factory() as session:
             yield session

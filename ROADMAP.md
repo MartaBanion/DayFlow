@@ -258,9 +258,11 @@ to V0.6 by default:
 
 Status: Product scope and architecture frozen. Phase 1 Backup Core,
 Create/List/Verify API and Manifest V1 are committed. Phase 2 Maintenance UI
-is implemented in the development working tree, pending visual Review.
-Restore CLI, maintenance locks, Launcher Restore blocking and Reminder polling
-feedback are not implemented.
+is committed and has passed rough manual visual acceptance. Phase 3A state-only
+maintenance lock, state tracking and Launcher/Backend startup blocking prototypes
+are implemented in the development working tree, pending Review. Restore CLI,
+Dry Run, database replacement, actual recovery and Reminder polling feedback
+are not implemented.
 The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
@@ -278,7 +280,9 @@ Implementation sequence (each phase has independent Review, Tests, and Commit):
 2. Phase 0: Architecture Freeze.
 3. Phase 1: Backup Core and Create/List/Verify API.
 4. Phase 2: Maintenance UI and CLI Restore guidance.
-5. Phase 3: Restore CLI, maintenance locks, Launcher coordination, crash safety.
+5. Phase 3: first review Phase 3A state-only safety prototypes; later separately
+   implement Restore Dry Run/CLI, database-usage inspection and crash-safe file
+   switching. Phase 3A never copies, replaces or restores a database.
 6. Phase 4: Reminder Poll Failure Visibility; remove it if scope expands.
 7. Phase 5: Full Acceptance, approved real Backup smoke, Restore on disposable
    copies only.
