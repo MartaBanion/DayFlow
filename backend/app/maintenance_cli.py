@@ -1,24 +1,28 @@
 """DayFlow offline maintenance CLI.
 
-Only ``restore --dry-run`` is implemented here. It never obtains a maintenance
-lock and never replaces, copies, migrates, or writes a database.
+Dry Run remains read-only. Execution is TTY-confirmed and isolated-only.
 """
 from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 
 from app.core.config import get_settings
 from app.services.backup_service import BackupService
 from app.services.restore_dry_run_service import RestoreDryRunError, RestoreDryRunService
+from app.services.restore_service import RestoreService, RestoreFailed
+from app.core.restore_io import RestoreRefused
+from app.core.errors import AppError
+from app.core.maintenance import MaintenanceBlocked
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dayflow-maintenance")
     commands = parser.add_subparsers(dest="command", required=True)
     restore = commands.add_parser("restore", help="Restore planning commands")
-    restore.add_argument("--dry-run", action="store_true", required=True, help="only create a read-only RestorePlan")
+    restore.add_argument("--dry-run", action="store_true", help="only create a read-only RestorePlan")
     restore.add_argument("backup_id", help="registered Backup UUID4")
     restore.add_argument("--json", action="store_true", help="emit the plan as JSON")
     return parser
@@ -79,6 +83,30 @@ def _human(plan) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if not args.dry_run:
+        if args.json or not sys.stdin.isatty() or not sys.stdout.isatty():
+            print("Restore 已拒绝：实际执行仅支持 TTY 交互确认，不支持 JSON 自动执行。", file=sys.stderr)
+            return 2
+        settings = get_settings()
+        service = RestoreService(BackupService(settings.resolved_database_path, settings.backup_root, settings.app_version))
+        try:
+            summary = service.preview(args.backup_id)
+            target_snapshot = summary.pop("_target_snapshot")
+            print(json.dumps(summary, ensure_ascii=False, indent=2))
+            print("恢复将覆盖当前隔离数据库。请先停止 DayFlow 并关闭外部数据库工具。")
+            confirmation = input(f"请输入 RESTORE {args.backup_id}：")
+            result = service.execute(args.backup_id, confirmation, expected_target_sha=summary["target_sha256"],
+                                     expected_target_snapshot=target_snapshot)
+            print(f"Restore completed: operation_id={result.operation_id}; backup_id={result.backup_id}; safety_backup_id={result.safety_backup_id}")
+            print("Final verification: PASS\nDayFlow remains stopped.\nMaintenance confirmation is still required before restart.")
+            return 0
+        except (EOFError, KeyboardInterrupt):
+            print("Restore 已取消。", file=sys.stderr)
+        except RestoreFailed as exc:
+            print(f"Restore failed: operation_id={exc.operation_id}; stage={exc.stage}; {exc}", file=sys.stderr)
+        except (RestoreRefused, MaintenanceBlocked, AppError, OSError, ValueError, sqlite3.Error):
+            print("Restore blocked：准入或安全检查未通过；不会自动恢复或启动服务。", file=sys.stderr)
+        return 2
     try:
         plan = _service().build_plan(args.backup_id)
     except RestoreDryRunError as exc:

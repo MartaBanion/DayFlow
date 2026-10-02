@@ -261,9 +261,10 @@ Create/List/Verify API and Manifest V1 are committed. Phase 2 Maintenance UI
 is committed and has passed rough manual visual acceptance. Phase 3A state-only
 maintenance lock, state tracking and Launcher/Backend startup blocking prototypes
 are committed. Phase 3B read-only Restore Dry Run and RestorePlan generation are
-committed. Phase 3C Restore Execution protocol is design-frozen only. Actual
-Restore CLI, database replacement, actual recovery and Reminder polling feedback
-are not implemented; design freeze is not execution or crash-safety acceptance.
+committed. Phase 3C Restore Execution protocol is frozen and an isolated-only
+execution prototype is implemented in the working tree, pending security Review.
+Real Restore, Phase 3D Launcher coordination and Reminder polling feedback remain
+unimplemented. Process-abort tests are not power-loss durability acceptance.
 The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
@@ -302,7 +303,8 @@ candidate and original DB/WAL/SHM. Current evidence is not a Backup substitute.
 Only tested local Linux/WSL ext4, no-replace rename and file/directory fsync are
 supported. All C0-C8 crashes block startup; completed also keeps the marker until
 explicit verified acknowledgement. No auto-rollback, cleanup, restart, force
-flag, Migration or actual Restore implementation is included in this freeze.
+flag or Migration is authorized. The execution prototype rejects real/project
+data and permits only independent databases in the system temporary directory.
 
 Phase 3 must validate isolated prototypes for SQLite connection/process usage
 and maintenance-lock coordination, and DB/WAL/SHM switching at different crash

@@ -14,7 +14,7 @@ import sys
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, UUID4, field_validator
+from pydantic import BaseModel, ConfigDict, Field, UUID4, field_validator, model_validator
 
 try:
     import fcntl
@@ -38,12 +38,18 @@ MESSAGE = "DayFlow 无法启动：维护或恢复流程未完成，或安全状�
 
 class MaintenanceRecord(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    format_version: Literal[1] = 1
+    format_version: Literal[1, 2] = 1
     lock_id: UUID4
     created_at_utc: str
-    operation: Literal["restore-safety-prototype"] = "restore-safety-prototype"
+    operation: Literal["restore-safety-prototype", "restore"] = "restore-safety-prototype"
     stage: Stage
     app_version: str = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def valid_format_operation(self) -> "MaintenanceRecord":
+        if (self.format_version, self.operation) not in {(1, "restore-safety-prototype"), (2, "restore")}:
+            raise ValueError("Unknown maintenance format/operation")
+        return self
 
     @field_validator("created_at_utc")
     @classmethod
@@ -161,7 +167,7 @@ class MaintenanceSafety:
             # Includes maintenance.lock, partials, and unexpected files.
             raise MaintenanceBlocked(MESSAGE)
         record = self._read(directory, self.STATE)
-        if record is not None and record.stage != "completed":
+        if record is not None and (record.stage != "completed" or record.format_version == 2):
             raise MaintenanceBlocked(MESSAGE)
 
     def check_startup(self) -> None:
@@ -193,6 +199,31 @@ class MaintenanceSafety:
                 self._publish(directory, self.LOCK, record, replace=False)
                 self._publish(directory, self.STATE, record, replace=True)
                 return record
+
+    @contextmanager
+    def execution_lease(self) -> Iterator[int]:
+        """Exclusive lifetime lease. Admission is explicit and occurs afterwards."""
+        with self._directory(create=True) as directory:
+            with self._gate(directory, exclusive=True, create=True):
+                self._check(directory)
+                yield directory
+
+    def admit_execution(self, directory: int, operation_id: str) -> MaintenanceRecord:
+        self._check(directory)
+        record = MaintenanceRecord(
+            format_version=2, operation="restore", lock_id=operation_id,
+            created_at_utc=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            app_version=self.app_version, stage="prepare",
+        )
+        self._publish(directory, self.LOCK, record, replace=False)
+        self._publish(directory, self.STATE, record, replace=True)
+        return record
+
+    def execution_stage(self, directory: int, operation_id: str, expected: Stage, target: Stage) -> None:
+        record = self._owned(directory, operation_id)
+        if record.operation != "restore" or record.stage != expected or target not in NEXT.get(expected, set()):
+            raise MaintenanceBlocked("恢复状态转换无效。")
+        self._publish(directory, self.STATE, record.model_copy(update={"stage": target}), replace=True)
 
     def _owned(self, directory: int, lock_id: str) -> MaintenanceRecord:
         if set(os.listdir(directory)) != {self.GATE, self.LOCK, self.STATE}:
@@ -226,6 +257,8 @@ class MaintenanceSafety:
                 raise MaintenanceBlocked(MESSAGE)
             with self._gate(directory, exclusive=True, create=False):
                 state = self._owned(directory, lock_id)
+                if state.operation != "restore-safety-prototype":
+                    raise MaintenanceBlocked("原型状态命令不能修改真实执行记录。")
                 if state.stage != expected or target not in NEXT.get(expected, set()):
                     raise MaintenanceBlocked("维护状态转换无效或记录已改变。")
                 if target == "completed" and not confirmed:
@@ -243,7 +276,7 @@ class MaintenanceSafety:
                 raise MaintenanceBlocked(MESSAGE)
             with self._gate(directory, exclusive=True, create=False):
                 state = self._owned(directory, lock_id)
-                if state.stage != "completed":
+                if state.stage != "completed" or state.operation != "restore-safety-prototype":
                     raise MaintenanceBlocked(MESSAGE)
                 os.unlink(self.LOCK, dir_fd=directory)
                 os.fsync(directory)

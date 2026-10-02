@@ -16,10 +16,10 @@ Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
 Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
-generation are committed. Phase 3C execution protocol is design-frozen only;
-no execution implementation or crash-durability acceptance is implied.
-Actual Restore CLI, database replacement, actual recovery and Reminder poll
-visibility are not yet implemented.
+generation are committed. Phase 3C has an uncommitted isolated-only execution
+prototype implementing the frozen protocol below. Production/real-database
+Restore, Phase 3D Launcher finalization and Reminder poll visibility remain
+unimplemented. Isolated process-abort tests do not prove power-loss durability.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
@@ -215,9 +215,44 @@ crash points, retained artifacts, startup blocking, and recovery inspection.
 These do not block Phase 1; they block any real Restore pending tests and
 separate explicit user approval. Development Restore is isolated only.
 
-### Phase 3C Frozen Restore Execution Protocol (Not Implemented)
+### Phase 3C Frozen Restore Execution Protocol (Isolated Prototype Implemented)
 
-This is an offline Linux/WSL design, not authorization or an executable Restore.
+`app.services.restore_service` executes only against canonical independent
+databases beneath the system temporary directory, never the project's `data/`
+tree. The temporary root must resolve to `/tmp` or `/var/tmp`; an environment
+override cannot expand that boundary. Protected DB and directory inode aliases
+are rejected in addition to canonical paths and single-link/NOFOLLOW checks.
+Roots derive from the source parent; no destination/path/force flag exists.
+`python -m app.maintenance_cli restore <backup_id>` requires stdin/stdout TTY and
+exact `RESTORE <UUID4>` confirmation. Actual execution rejects `--json`; Dry Run
+and its JSON contract remain unchanged. Execution never starts/stops services.
+The offline operator must stop them first. No cleanup/acknowledgement command
+for execution V2 is exposed; even completed execution remains startup-blocked.
+
+The implementation adds a lifetime exclusive coordination lease and explicit
+V2 `restore` records without changing business APIs or migrations. Current DB
+checks use private admission copies; after admission, durable evidence/master
+and working copies are retained. Safety Backup uses existing Online Backup
+core against the captured quiescent current working set. Raw copies are evidence,
+not registered backups. Candidate and install copy are separate verified inodes.
+Final verification includes exact bytes and typed, PK-ordered logical hashes of
+all core persisted columns, never plaintext row contents in logs.
+The confirmation summary binds both target and Manifest inode/hash receipts,
+not just the target SHA. Standalone logical inspection uses held descriptors;
+archive receipts recheck the moved inode/bytes before any install. V2 completed
+state itself remains blocking even if its acquisition marker is removed.
+
+Internal optional test hooks cover C0-C9 and C5a/C5b/C5c; there is no API/env crash
+switch. Tests use a controlled fully visible process view plus real child file/
+SQLite holders and explicit permission/unavailable-proc refusal tests. Production
+always inspects `/proc`; inaccessible host processes cause refusal, not fallback.
+Same-account racing/noncooperative actors and hidden namespaces remain outside
+the cooperative guarantee. Phase 3D must validate actual process visibility,
+Launcher preflight-to-Backend lease handoff, connection disposal and real storage
+durability before any separate real Restore approval. No real Backup/Restore
+smoke was performed in Phase 3C.
+
+This is an offline Linux/WSL design, not real Restore authorization.
 Phase 3B remains Dry Run only. Dry Run is neither an authorization token nor a
 substitute for fresh checks. No new business API, Schema, dependency or state
 stage is required. Real Restore remains prohibited during development.
@@ -475,7 +510,8 @@ overwrite impact. Require typing `RESTORE <canonical-backup-id>`; cancellation,
 EOF and non-TTY execution refuse before admission. V0.6 first implementation
 has no `--yes`/`--force` bypass; any future noninteractive authorization requires
 a separately frozen exact-ID/expected-hash contract. JSON output is not consent.
-Current parser still requires `--dry-run`; this document adds no executable flag.
+Execution prototype now accepts the confirmed isolated form without `--dry-run`;
+the Dry Run parser and output contract remain available.
 
 All marker presence, prepare/verified/switching/verifying/failed/blocked, unknown
 format/state, partial records and gate contention block Launcher and direct

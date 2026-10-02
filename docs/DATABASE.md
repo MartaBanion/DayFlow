@@ -331,7 +331,8 @@ test database.
 
 Stable v0.5.1 has manual verified maintenance backups. V0.6 Phase 1 development
 implements Backup Core/Create/List/Verify. Phase 2 Maintenance UI and Phase 3B
-read-only Dry Run are committed; actual Restore execution is not implemented.
+read-only Dry Run are committed; Phase 3C isolated execution is implemented in
+the working tree. Real database Restore is prohibited and unverified.
 Use SQLite Online Backup API for consistency,
 including committed WAL data; never assume copying an active main file is safe.
 
@@ -404,10 +405,12 @@ leaves startup blocked. Phase 3 must prototype locking and crash-safe DB/WAL/SHM
 switching on isolated databases. No real Restore during development; future
 real Restore needs separate explicit approval after those prototypes pass.
 
-### Phase 3C Restore Artifact and Identity Contract (Design Only)
+### Phase 3C Restore Artifact and Identity Contract (Isolated Prototype)
 
 The complete execution/state/crash protocol is frozen in
-`docs/ARCHITECTURE.md`, **not implemented**. No real Restore is authorized.
+`docs/ARCHITECTURE.md`, with isolated-only execution now implemented. No real
+Restore is authorized or verified. Execution rejects the project data tree and
+anything outside the system temporary directory; no real artifacts were created.
 NO DATABASE MIGRATION REQUIRED; only exact `0005` remains compatible. Do not
 change migrations, business fields, IDs, versions, relationships or time semantics.
 

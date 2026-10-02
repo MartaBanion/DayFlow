@@ -20,10 +20,20 @@ Status: Phase 1 Create/List/Verify and Manifest V1 are committed. Phase 2
 Maintenance UI is committed. Phase 3A adds state-only maintenance/startup
 safety prototypes, and Phase 3B adds a read-only Restore Dry Run CLI. The Dry
 Run creates a RestorePlan only; it does not create a lock, write restore state,
-copy or replace SQLite files, migrate, or stop services. Actual Restore CLI,
-database replacement and Reminder poll visibility are not implemented. See
+copy or replace SQLite files, migrate, or stop services. Phase 3C implements
+TTY-confirmed execution only for independent databases in the system temporary
+directory; project real data is rejected. Production Restore, Phase 3D Launcher
+finalization and Reminder poll visibility are not implemented. See
 Architecture for prototype limits; no real recovery is possible through these
 prototypes.
+
+Phase 3C isolated execution uses `python -m app.maintenance_cli restore <backup_id>`.
+Both input/output must be TTY and confirmation must exactly match
+`RESTORE <canonical-backup-id>`. Non-TTY, wrong/EOF confirmation, execution JSON
+and unsupported force flags refuse. CLI prints operation/backup/safety IDs and
+verification result, explicitly leaving DayFlow stopped and maintenance
+confirmation required. Success never clears the V2 maintenance marker. Dry Run
+`--json` is unchanged. No HTTP Restore endpoint or real Restore permission exists.
 Stable application is
 `v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
