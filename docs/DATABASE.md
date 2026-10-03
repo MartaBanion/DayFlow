@@ -331,8 +331,9 @@ test database.
 
 Stable v0.5.1 has manual verified maintenance backups. V0.6 Phase 1 development
 implements Backup Core/Create/List/Verify. Phase 2 Maintenance UI and Phase 3B
-read-only Dry Run are committed; Phase 3C isolated execution is implemented in
-the working tree. Real database Restore is prohibited and unverified.
+read-only Dry Run and Phase 3C isolated execution are committed. Phase 3D
+recovery coordination is implemented in the working tree pending Review.
+Real database Restore is prohibited and unverified.
 Use SQLite Online Backup API for consistency,
 including committed WAL data; never assume copying an active main file is safe.
 
@@ -481,6 +482,31 @@ Safety Backup, target, candidate and logs after success or failure. Future manua
 cleanup/recovery is separate approval; no automatic rollback or retention policy.
 
 ## Test Isolation
+
+Phase 3D completed acknowledgement re-verifies the installed database read-only
+under exclusive coordination lock: physical SHA/size, 0005, integrity/FK,
+required structure, full logical fingerprint and matching final receipts.
+Only V2 completed isolated operations qualify. Before any active blocker is
+removed, a no-overwrite `startup-clearance.json` is fsynced in the operation
+workspace and as a byte-identical maintenance-directory mirror, then fully
+re-validated. It contains the archived active state identities, live DB
+SHA/size/schema/logical fingerprint, final-verification and exact-confirmation
+identities, and the immutable operation-log digest. That receipt is the durable
+acknowledgement commit point. Blocker removal is post-commit housekeeping; a
+remaining/reappearing blocker blocks, while blocker absence requires full
+receipt/evidence/live-DB validation by Launcher and Backend. Receipt damage or
+mismatch blocks. No compensation guard is required after cleanup failure.
+All original DB/WAL/SHM, candidate, Target/Safety Backups, receipts and operation
+logs remain. No automatic evidence retention cleanup or restart. The permanent
+coordination inode and durable clearance receipt are never removed or replaced.
+
+Storage qualification inspects actual mount identity/type, not path prefixes.
+Only tested ext4 with same-mount no-replace rename, fsync and flock is qualified.
+Probes use disposable system-temp files, not the real data directory. This is
+mechanism qualification, not power-loss certification or real Restore approval.
+Backend closes/drains tracked Sessions and disposes pooled connections before
+releasing its lifespan shared lease. All destructive tests remain temporary;
+NO DATABASE MIGRATION REQUIRED; REAL DATABASE RESTORE NOT APPROVED.
 
 Tests create isolated temporary SQLite files, run Alembic against those files,
 and override the FastAPI database dependency. Browser E2E uses a unique

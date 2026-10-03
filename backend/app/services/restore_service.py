@@ -19,6 +19,7 @@ from app.core.restore_io import (
 )
 from app.db.base import Base
 from app.services.backup_service import BackupService, SCHEMA, timestamp
+from app.services.storage_service import qualify_storage
 
 
 class RestoreFailed(RestoreRefused):
@@ -124,6 +125,9 @@ class RestoreService:
                     with directory(path) as other:
                         if not same_mount(parent, other):
                             raise RestoreRefused("受控根目录不在同一挂载文件系统。")
+        operations = self.backup.root / "restore-operations"
+        qualify_storage(self.source.parent, self.backup.root if self.backup.root.exists() else None,
+                        operations if operations.exists() else None)
 
     def inventory(self, parent: int):
         data = {}

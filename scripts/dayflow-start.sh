@@ -78,15 +78,26 @@ PY
 )"
 printf 'Application version: %s\n' "$application_version"
 
-"$backend_python" - "$database_path" <<'PY'
+PYTHONPATH="$backend_root" "$backend_python" - "$database_path" "$application_version" <<'PY'
+from contextlib import closing
+from pathlib import Path
 import sqlite3
 import sys
+from app.services.backup_service import BackupService
+from app.services.recovery_service import RecoveryService
+from app.services.restore_service import RestoreService
 
 path = sys.argv[1]
-with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
-    version = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
-    integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
-    foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
+source = Path(path)
+recovery = RecoveryService(RestoreService(BackupService(
+    source, source.parent / "backups", sys.argv[2]
+)))
+with recovery.backend_usage():
+    with closing(sqlite3.connect(Path(path).as_uri() + "?mode=ro", uri=True)) as connection:
+        connection.execute("PRAGMA query_only=ON")
+        version = connection.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+        integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
+        foreign_keys = connection.execute("PRAGMA foreign_key_check").fetchall()
 if version != "0005_add_deadlines_recurrence_reminders":
     raise SystemExit(f"数据库版本不是 0005_add_deadlines_recurrence_reminders：{version}")
 if integrity != "ok":

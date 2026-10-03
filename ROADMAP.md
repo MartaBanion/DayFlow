@@ -262,8 +262,11 @@ is committed and has passed rough manual visual acceptance. Phase 3A state-only
 maintenance lock, state tracking and Launcher/Backend startup blocking prototypes
 are committed. Phase 3B read-only Restore Dry Run and RestorePlan generation are
 committed. Phase 3C Restore Execution protocol is frozen and an isolated-only
-execution prototype is implemented in the working tree, pending security Review.
-Real Restore, Phase 3D Launcher coordination and Reminder polling feedback remain
+execution prototype is committed. Phase 3D recovery coordination, storage
+capability probes and explicit completed acknowledgement are implemented in the
+working tree; the acknowledge fail-open review finding is closed by a durable
+two-phase startup-clearance receipt and is pending security re-review. Real
+Restore and Reminder polling feedback remain
 unimplemented. Process-abort tests are not power-loss durability acceptance.
 The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.

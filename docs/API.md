@@ -22,8 +22,9 @@ safety prototypes, and Phase 3B adds a read-only Restore Dry Run CLI. The Dry
 Run creates a RestorePlan only; it does not create a lock, write restore state,
 copy or replace SQLite files, migrate, or stop services. Phase 3C implements
 TTY-confirmed execution only for independent databases in the system temporary
-directory; project real data is rejected. Production Restore, Phase 3D Launcher
-finalization and Reminder poll visibility are not implemented. See
+directory; project real data is rejected. Phase 3D recovery coordination and
+explicit completed acknowledgement are implemented pending Review. Production
+Restore and Reminder poll visibility are not implemented. See
 Architecture for prototype limits; no real recovery is possible through these
 prototypes.
 
@@ -37,6 +38,30 @@ confirmation required. Success never clears the V2 maintenance marker. Dry Run
 Stable application is
 `v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
+
+Phase 3D offline commands (no HTTP contract changes):
+
+```text
+python -m app.maintenance_cli status --json
+python -m app.maintenance_cli storage-check --json
+python -m app.maintenance_cli acknowledge <operation-id>
+```
+
+Status is read-only metadata inspection. Storage check creates only disposable
+system-temp probes, never database or restore artifacts. Acknowledgement requires
+stdin/stdout TTY and exact `ACKNOWLEDGE <canonical-operation-id>`; no force/yes
+flags. It takes the exclusive gate, fully re-verifies a matching V2 completed
+isolated Restore, commits a durable mirrored startup-clearance receipt before
+touching active blockers, then removes only active blocking records as
+post-commit housekeeping. All recovery evidence remains. Incomplete/V1/corrupt/
+mismatched state refuses. A cleanup failure reports `acknowledge_committed`,
+`cleanup_complete`, and `startup_allowed` separately: remaining blockers still
+block; blocker absence is usable only when both receipt copies, completed
+evidence and the current live DB fully re-verify. Retained Restore workspaces
+without a matching durable receipt also block; absence of active markers alone
+is never clearance. Neither
+acknowledgement nor storage qualification authorizes real Restore or starts
+services. Dry Run JSON remains unchanged.
 
 Phase 1 endpoints:
 

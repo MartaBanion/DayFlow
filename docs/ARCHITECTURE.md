@@ -16,10 +16,10 @@ Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
 Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
-generation are committed. Phase 3C has an uncommitted isolated-only execution
-prototype implementing the frozen protocol below. Production/real-database
-Restore, Phase 3D Launcher finalization and Reminder poll visibility remain
-unimplemented. Isolated process-abort tests do not prove power-loss durability.
+generation are committed. Phase 3C isolated-only execution is committed.
+Phase 3D coordination and completed acknowledgement are implemented in the
+working tree, pending Review. Production/real-database Restore and Reminder poll
+visibility remain unimplemented. Isolated tests do not prove power-loss durability.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
@@ -226,8 +226,8 @@ Roots derive from the source parent; no destination/path/force flag exists.
 `python -m app.maintenance_cli restore <backup_id>` requires stdin/stdout TTY and
 exact `RESTORE <UUID4>` confirmation. Actual execution rejects `--json`; Dry Run
 and its JSON contract remain unchanged. Execution never starts/stops services.
-The offline operator must stop them first. No cleanup/acknowledgement command
-for execution V2 is exposed; even completed execution remains startup-blocked.
+The offline operator must stop them first. Completed execution remains blocked
+until the Phase 3D explicit, reverified acknowledgement described below.
 
 The implementation adds a lifetime exclusive coordination lease and explicit
 V2 `restore` records without changing business APIs or migrations. Current DB
@@ -283,8 +283,13 @@ PID/start time are diagnostic only. OS lease release after death does not clear
 the durable marker. Current per-method prototype leases must be extended to a
 single operation context; nested independent exclusive acquisitions are forbidden.
 
-Phase 3D must also retain a shared gate across the Launcher's SQLite preflight
-through Backend handoff, closing today's preflight-read race. If the existing
+Phase 3D holds a shared gate throughout the Launcher's SQLite preflight.
+The Backend independently checks state, acquires its shared gate, rechecks
+state and only then initializes its database lifetime. No descriptor inheritance
+is needed: an exclusive Restore acquired in the handoff gap refuses Backend
+startup before DB access; completed/failed operations keep durable blockers.
+This finalizes handoff safety without treating Launcher as the authoritative
+barrier. If the existing
 start/stop serialization lock is needed, acquire it before the coordination
 gate in both paths; never invoke the stop script while holding that same lock.
 No new process may inherit a maintenance descriptor. Freeze execution records
@@ -468,7 +473,8 @@ is additionally retained once captured. Partial artifacts are retained too.
 C0-C8 never auto-start, rollback, resume or delete artifacts. C9 also does not
 auto-start/auto-clean; a separate explicit completion acknowledgement rechecks
 identity, final receipts and final DB under exclusive lease, then removes only
-the matching acquisition marker with directory fsync. Completed state remains.
+the matching acquisition marker and active state with directory fsync, after
+archiving their contents in the retained operation workspace.
 Existing prototype cleanup must not accept real execution solely on `completed`.
 
 #### Final Verification, Logs and Failure Policy
@@ -516,10 +522,67 @@ the Dry Run parser and output contract remain available.
 All marker presence, prepare/verified/switching/verifying/failed/blocked, unknown
 format/state, partial records and gate contention block Launcher and direct
 Backend startup. Completed is not automatically ignored while its marker exists.
-After explicit verified acknowledgement, startup may proceed with completed
-state retained. No service restarts automatically. Original archive, sidecars,
+After explicit verified acknowledgement, startup may proceed; completed state
+is archived rather than retained as an active blocker. No service restarts
+automatically. Original archive, sidecars,
 evidence, T/S/C, logs and receipts have no V0.6 automatic cleanup; future manual
 retention must not remove unresolved operations or the coordination inode.
+
+#### Phase 3D Recovery Coordination (Implemented, Pending Review)
+
+Backend owns the shared coordination lease for its whole ASGI lifespan.
+Uvicorn drains requests before lifespan shutdown; tracked application Sessions
+are closed and the SQLAlchemy pool is disposed before releasing the lease.
+New Sessions are refused once shutdown begins. A resource-shutdown failure
+publishes a blocking `shutdown.failed` record; no automatic cleanup is allowed.
+Launcher protects its SQLite preflight with a separate shared lease and Backend
+repeats all admission checks. Ordinary startup does not require Restore storage
+qualification. Stop remains precise and unchanged.
+
+`python -m app.maintenance_cli acknowledge <operation-id>` accepts only exact
+canonical UUID4, dual TTY, and `ACKNOWLEDGE <operation-id>` confirmation.
+Only matching V2 completed Restore records qualify. Under a lifetime exclusive
+gate, re-read operation/result/final receipts, verify live SHA/size, exact 0005,
+integrity/FK/critical structure, typed logical fingerprint, retained candidate,
+absence of sidecars, and external-use visibility. V1, incomplete, corrupt or
+unknown records cannot be acknowledged. Real project data remains rejected.
+
+Acknowledgement uses a two-phase commit protocol. Phase A appends and fsyncs the
+verified decision, writes an immutable `startup-clearance.json` into the operation
+workspace, publishes a byte-identical no-overwrite mirror in the maintenance
+directory, fsyncs both files/directories, and re-validates the complete receipt
+while the active acquisition/completed blockers still exist. The receipt binds
+the operation/Backup IDs, archived active records, live SHA/size/schema/logical
+fingerprint, final-verification identity, exact confirmation identity and the
+immutable operation-log digest. This durable, validated receipt is the sole
+acknowledgement commit point.
+
+Only after that commit may Phase B remove the active acquisition marker and
+restore state, with a directory fsync after each removal. Cleanup is post-commit
+housekeeping: a remaining or reappearing blocker still blocks startup. If all
+blockers are absent, Launcher and Backend may start only after independently
+validating both receipt copies, operation/final evidence and the current live DB.
+Missing, malformed, mismatched or unreadable clearance evidence fails closed.
+Retained Restore workspaces without a matching durable receipt also fail closed;
+absence of active markers alone is never startup clearance.
+No compensation/recreated guard is used as a safety prerequisite; a final
+cleanup-fsync error cannot erase the already durable startup authority.
+Interrupted pre-commit acknowledgements retain active blockers for manual
+inspection, not automatic resume.
+No Target/Safety Backup, candidate, original DB/WAL/SHM, workspace or log is
+removed. No service is started. Catastrophic storage failure that prevents even
+writing the clearance commit retains the pre-existing blockers; syscall probes cannot prove
+power-loss durability or repair failed hardware.
+
+`status --json` inspects metadata without creating directories or authorizing
+cleanup. `storage-check --json` inspects opened directory mount identities and
+ext4 support, then probes no-replace rename/collision, file/directory fsync and
+flock exclusion in disposable system-temp files on that same mount. It never
+creates probes inside requested data/backup directories. Unknown/DrvFS/other
+unqualified mounts, cross-mount probes or unavailable mechanisms fail closed.
+Qualification reports `real_restore_approved=false`: it is not a real Restore
+authorization or storage power-loss certification. Execution/acknowledgement
+remain restricted to independent system-temp databases.
 
 Phase 3C execution tests must use disposable DBs/directories and subprocesses:
 success; shared lease held; duplicate maintenance; unknown/inaccessible external

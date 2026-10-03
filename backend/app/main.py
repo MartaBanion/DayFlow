@@ -22,6 +22,10 @@ from app.core.errors import (
 )
 from app.core.logging import configure_logging
 from app.core.maintenance import MaintenanceSafety
+from app.db.session import database_lifetime
+from app.services.backup_service import BackupService
+from app.services.recovery_service import RecoveryService
+from app.services.restore_service import RestoreService
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -29,8 +33,20 @@ configure_logging(settings.log_level)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     runtime_settings = get_settings()
-    with MaintenanceSafety(runtime_settings.maintenance_root, runtime_settings.app_version).backend_usage():
-        yield
+    safety = MaintenanceSafety(runtime_settings.maintenance_root, runtime_settings.app_version)
+    recovery = RecoveryService(RestoreService(BackupService(
+        runtime_settings.resolved_database_path,
+        runtime_settings.backup_root,
+        runtime_settings.app_version,
+    )))
+    with recovery.backend_usage():
+        try:
+            with database_lifetime(runtime_settings.database_url):
+                yield
+        except Exception:
+            # Failure to drain/dispose must not silently admit a Restore.
+            safety.block_shutdown()
+            raise
 
 
 app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)

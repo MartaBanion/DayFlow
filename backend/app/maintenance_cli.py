@@ -16,6 +16,8 @@ from app.services.restore_service import RestoreService, RestoreFailed
 from app.core.restore_io import RestoreRefused
 from app.core.errors import AppError
 from app.core.maintenance import MaintenanceBlocked
+from app.services.recovery_service import RecoveryService
+from app.services.storage_service import qualify_storage
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -25,6 +27,11 @@ def _parser() -> argparse.ArgumentParser:
     restore.add_argument("--dry-run", action="store_true", help="only create a read-only RestorePlan")
     restore.add_argument("backup_id", help="registered Backup UUID4")
     restore.add_argument("--json", action="store_true", help="emit the plan as JSON")
+    acknowledge = commands.add_parser("acknowledge", help="reverify completed isolated Restore and clear startup markers")
+    acknowledge.add_argument("operation_id")
+    for name in ("status", "storage-check"):
+        command = commands.add_parser(name)
+        command.add_argument("--json", action="store_true")
     return parser
 
 
@@ -83,6 +90,32 @@ def _human(plan) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command != "restore":
+        settings = get_settings()
+        service = RestoreService(BackupService(settings.resolved_database_path, settings.backup_root, settings.app_version))
+        recovery = RecoveryService(service)
+        try:
+            if args.command == "status":
+                result = recovery.status()
+            elif args.command == "storage-check":
+                result = qualify_storage(settings.resolved_database_path.parent,
+                                         settings.backup_root if settings.backup_root.exists() else None)
+            else:
+                if not sys.stdin.isatty() or not sys.stdout.isatty():
+                    raise RestoreRefused("确认仅支持双 TTY 交互。")
+                print(json.dumps(recovery.summary(args.operation_id), ensure_ascii=False))
+                confirmation = input(f"请输入 ACKNOWLEDGE {args.operation_id}：")
+                result = recovery.acknowledge(args.operation_id, confirmation)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
+        except (EOFError, KeyboardInterrupt):
+            print("维护确认已取消。", file=sys.stderr)
+        except (RestoreRefused, MaintenanceBlocked, AppError, OSError, ValueError, KeyError, TypeError, sqlite3.Error):
+            if getattr(args, "json", False):
+                print(json.dumps({"status": "rejected", "reason": "维护安全检查未通过。", "real_restore_approved": False}, ensure_ascii=False))
+            else:
+                print("维护安全检查未通过；不启动服务、不自动清理恢复证据。", file=sys.stderr)
+        return 2
     if not args.dry_run:
         if args.json or not sys.stdin.isatty() or not sys.stdout.isatty():
             print("Restore 已拒绝：实际执行仅支持 TTY 交互确认，不支持 JSON 自动执行。", file=sys.stderr)

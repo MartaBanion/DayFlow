@@ -4,7 +4,7 @@ The durable marker survives process death; flock only serializes cooperating
 processes. The coordination inode is never removed or replaced by this module.
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import os
@@ -63,6 +63,7 @@ class MaintenanceSafety:
     LOCK = "maintenance.lock"
     STATE = "restore-state.json"
     GATE = "coordination.lock"
+    CLEARANCE = "startup-clearance.json"
 
     def __init__(self, root: Path, app_version: str):
         self.root = root.absolute()
@@ -161,32 +162,81 @@ class MaintenanceSafety:
             os.unlink(temporary, dir_fd=directory)
         os.fsync(directory)
 
-    def _check(self, directory: int) -> None:
+    def publish_clearance(self, directory: int, payload: bytes) -> None:
+        """Publish immutable startup authority before any active blocker removal."""
+        if not payload or len(payload) > 1024 * 1024:
+            raise MaintenanceBlocked(MESSAGE)
+        temporary = f"clearance-{uuid4().hex}.partial"
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                     0o600, dir_fd=directory)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, self.CLEARANCE, src_dir_fd=directory,
+                dst_dir_fd=directory, follow_symlinks=False)
+        os.unlink(temporary, dir_fd=directory)
+        os.fsync(directory)
+
+    def _check(self, directory: int, clearance_validator: Callable[[int], None] | None = None,
+               *, defer_clearance: bool = False) -> bool:
         entries = set(os.listdir(directory))
-        if entries - {self.GATE, self.STATE}:
+        if entries - {self.GATE, self.STATE, self.CLEARANCE}:
             # Includes maintenance.lock, partials, and unexpected files.
             raise MaintenanceBlocked(MESSAGE)
         record = self._read(directory, self.STATE)
         if record is not None and (record.stage != "completed" or record.format_version == 2):
             raise MaintenanceBlocked(MESSAGE)
+        clearance = self.CLEARANCE in entries
+        if clearance:
+            if entries != {self.GATE, self.CLEARANCE} or record is not None:
+                raise MaintenanceBlocked(MESSAGE)
+            if clearance_validator is None:
+                if not defer_clearance:
+                    raise MaintenanceBlocked(MESSAGE)
+            else:
+                clearance_validator(directory)
+        return clearance
 
-    def check_startup(self) -> None:
+    def check_startup(self, clearance_validator: Callable[[int], None] | None = None) -> bool:
         """Read-only preflight; no directory, file or database is created."""
         with self._directory(create=False) as directory:
             if directory is None:
-                return  # Missing state is idle.
+                return False  # Missing state is idle.
             if not os.listdir(directory):
-                return
+                return False
             with self._gate(directory, exclusive=False, create=False):
-                self._check(directory)
+                return self._check(directory, clearance_validator)
 
     @contextmanager
-    def backend_usage(self) -> Iterator[None]:
+    def backend_usage(self, clearance_validator: Callable[[int], None] | None = None) -> Iterator[bool]:
         """Hold shared usage lease throughout ASGI lifespan, before DB access."""
         with self._directory(create=True) as directory:
+            self._check(directory, defer_clearance=True)  # Early state check only.
             with self._gate(directory, exclusive=False, create=True):
-                self._check(directory)
-                yield
+                clearance = self._check(directory, clearance_validator)
+                yield clearance
+
+    @contextmanager
+    def recovery_lease(self, operation_id: str) -> Iterator[tuple[int, MaintenanceRecord]]:
+        """No creation and no auto-cleanup. Reverify under lifetime EX lease."""
+        with self._directory(create=False) as directory:
+            if directory is None:
+                raise MaintenanceBlocked(MESSAGE)
+            with self._gate(directory, exclusive=True, create=False):
+                record = self._owned(directory, operation_id)
+                if record.format_version != 2 or record.operation != "restore" or record.stage != "completed":
+                    raise MaintenanceBlocked("仅已完成的 V2 Restore 可以确认。")
+                yield directory, record
+
+    def block_shutdown(self) -> None:
+        """Called under a shared lease if database-resource shutdown fails."""
+        with self._directory(create=False) as directory:
+            if directory is None:
+                raise MaintenanceBlocked(MESSAGE)
+            record = MaintenanceRecord(lock_id=uuid4(), created_at_utc=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                                       app_version=self.app_version, stage="blocked")
+            self._publish(directory, "shutdown.failed", record, replace=False)
 
     def begin(self) -> MaintenanceRecord:
         with self._directory(create=True) as directory:
@@ -286,13 +336,20 @@ class MaintenanceSafety:
 def main() -> int:
     """Launcher-only read check, deliberately no mutation/Restore commands."""
     from app.core.config import get_settings
+    from app.services.backup_service import BackupService
+    from app.services.recovery_service import RecoveryService
+    from app.services.restore_service import RestoreService
 
     if sys.argv[1:] != ["--check"]:
         print("用法：python -m app.core.maintenance --check", file=sys.stderr)
         return 2
     settings = get_settings()
     try:
-        MaintenanceSafety(settings.maintenance_root, settings.app_version).check_startup()
+        recovery = RecoveryService(RestoreService(BackupService(
+            settings.resolved_database_path, settings.backup_root,
+            settings.app_version,
+        )))
+        recovery.check_startup()
     except MaintenanceBlocked as exc:
         print(str(exc), file=sys.stderr)
         return 1
