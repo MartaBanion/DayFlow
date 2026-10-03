@@ -1,19 +1,26 @@
 # Changelog
 
-## [Unreleased] — V0.6 Data Safety & Recovery
+## [Unreleased] — V0.6.0 Data Safety & Recovery
 
-V0.6 feature development and Full Acceptance are complete and accepted for
-release preparation, but V0.6 is not formally released. Real project-database
-Restore remains prohibited; current Real Restore Storage Qualification is
-`NOT QUALIFIED`.
+V0.6.0 Release Preparation is complete and Full Acceptance is PASS. The
+annotated `v0.6.0` tag and formal release have not been created; the last
+published stable tag remains `v0.5.1`. Real project-database Restore remains
+prohibited; current Real Restore Storage Qualification is `NOT QUALIFIED`.
 
 ### Added
 
 - Backup Core with consistent SQLite backups, Manifest V1, list, verify, and
   controlled path/origin safety.
-- Maintenance UI, Restore Dry Run, isolated Restore execution, recovery
-  coordination, completed acknowledgement, and Reminder poll failure
-  visibility with Retry and automatic recovery.
+- Maintenance UI with database status, Backup Create/List/Verify, and Restore
+  guidance.
+- Restore Dry Run and isolated Restore execution with pre-Restore Safety
+  Backup, candidate validation, WAL/SHM/DB archiving, controlled switching,
+  final verification, and crash-safety evidence.
+- Recovery coordination with Backend usage locks, Launcher handoff, startup
+  blocking, completed acknowledgement, durable clearance receipts, and status
+  inspection.
+- Reminder poll failure visibility with Retry, automatic recovery, and existing
+  Reminder data preservation.
 
 ### Compatibility
 

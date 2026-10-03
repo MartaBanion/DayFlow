@@ -6,13 +6,11 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Current application version: `v0.5.1` — UI/UX refinement.
-V0.5 Backend and Frontend functionality is complete. V0.5.1 is a
-presentation-only patch integrated into `main` and released as `v0.5.1`, the
-current stable version; the real database schema remains
-`0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
-tags. V0.6 feature development is complete and accepted for release
-preparation, but V0.6 is not formally released.
+Current application version: `v0.6.0` — Data Safety & Recovery (Release
+Preparation). V0.5.1 remains the last published stable tag. V0.6 feature
+development and Full Acceptance are complete; the `v0.6.0` tag and formal
+release do not exist yet. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -78,8 +76,8 @@ Only the version currently being implemented may be changed. Do not start later 
 
 ## V0.6 Development Safety
 
-- V0.6 Data Safety & Recovery implementation Phases 1–4 are complete, reviewed,
-  and accepted for release preparation; V0.6 is not formally released.
+- V0.6.0 Data Safety & Recovery implementation Phases 1–5 are complete and
+  accepted for release preparation; the release Commit and Tag are not created.
 - NO DATABASE MIGRATION REQUIRED: keep schema `0005_add_deadlines_recurrence_reminders`;
   do not create `0006` or change Task/Project/Deadline/Recurrence/Reminder semantics.
 - Use SQLite Online Backup API, including committed WAL data; never assume copying

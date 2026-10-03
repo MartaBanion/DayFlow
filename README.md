@@ -4,13 +4,25 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**Current application version: v0.5.1.** V0.5.1 is a UI/UX-only refinement
-patch on top of the completed Deadline, Repeat, and Reminder functionality.
-The UI work is integrated into `main` and released as the current stable version `v0.5.1`; Backend
-API and database schema are unchanged. The real database schema is
-`0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
-tags. V0.6 feature development is complete and accepted for release
-preparation, but V0.6 is not formally released.
+**Current application version: v0.6.0 — Data Safety & Recovery (Release
+Preparation).** V0.6 feature development and Full Acceptance are complete.
+The last published stable tag remains `v0.5.1`; the `v0.6.0` tag has not been
+created. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`, with no new migration.
+
+V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
+Restore Dry Run, isolated Restore safety and recovery coordination, and visible
+Reminder polling failure with Retry and automatic recovery. Real DayFlow
+database Restore remains disabled; only isolated temporary-database Restore has
+been verified.
+
+## V0.6 Data Safety & Recovery
+
+- Maintenance view for Backup status, Create, List, and Verify.
+- Read-only Restore planning and isolated Restore safety workflows.
+- Reminder poll failure visibility, Retry, and automatic recovery.
+- No real project-database Restore authorization; storage qualification remains
+  `NOT QUALIFIED`.
 
 ## V0.1 Features
 
@@ -81,12 +93,11 @@ The real database is stored at:
 data/dayflow.sqlite3
 ```
 
-It is excluded from Git. V0.1 does not provide an automated Backup Service or Restore UI.
-
-For a manual backup, stop the Backend first, then create a timestamped backup
-with SQLite's Online Backup API or copy `data/dayflow.sqlite3` to a location
-outside the repository. Do not copy the database while the Backend is writing
-to it. DayFlow still has no automatic Backup Service or Restore UI.
+It is excluded from Git. The V0.1 implementation did not provide an automated
+Backup Service or Restore UI; V0.6 provides the controlled maintenance view.
+Use 数据与备份 for Backup Create/List/Verify. Backup creation uses SQLite's
+Online Backup API and handles committed WAL data; do not directly copy an
+active database file. Real project-database Restore remains disabled.
 
 ## Development Setup
 

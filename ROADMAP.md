@@ -1,11 +1,10 @@
 # DayFlow Personal Roadmap
 
-Current application version: **v0.5.1 — UI/UX refinement**.
-V0.5 Backend and Frontend are complete, and the V0.5.1 presentation-only patch
-is integrated into `main` and released as the current stable version `v0.5.1`. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`. V0.6 feature development is
-complete and accepted for release preparation, but V0.6 is not formally
-released.
+Current application version: **v0.6.0 — Data Safety & Recovery (Release
+Preparation)**. V0.5 Backend and Frontend are complete, and `v0.5.1` remains
+the last published stable tag. V0.6 feature development and Full Acceptance
+are complete; the `v0.6.0` tag has not been created. The real database schema
+remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -257,7 +256,8 @@ to V0.6 by default:
 
 ### V0.6 — Data Safety & Recovery
 
-Status: Product scope and architecture frozen. Phase 1 Backup Core,
+Status: Completed / Release Preparation. Product scope and architecture are
+frozen. Phase 1 Backup Core,
 Create/List/Verify API and Manifest V1 are committed. Phase 2 Maintenance UI
 is committed and has passed rough manual visual acceptance. Phase 3A state-only
 maintenance lock, state tracking and Launcher/Backend startup blocking prototypes
@@ -270,13 +270,13 @@ a durable two-phase startup-clearance receipt. Phase 4 Reminder Poll Failure
 Visibility, Retry, and automatic recovery are implemented, reviewed, and
 committed. Phase 5 Full Acceptance passed the Functional, Regression, Data
 Safety, Migration, Launcher, Restore Boundary, and Repository Hygiene gates;
-the Documentation Gate is synchronized by this maintenance. V0.6 is accepted
-for release preparation but is not formally released. Isolated Restore
+the Documentation Gate is synchronized. V0.6.0 Full Acceptance is PASS. The
+release Commit and Tag have not been created. Isolated Restore
 execution is implemented and verified; real project-database Restore remains
 prohibited. Real Restore Storage Qualification is currently `NOT QUALIFIED`
 because the real data mount differs from the system-temporary qualification
 mount. Process-abort tests are not power-loss durability acceptance.
-The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
+The last published stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
 MVP: consistent Create Backup, List Backups, Verify Backup, Restore Dry Run,

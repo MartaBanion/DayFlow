@@ -8,12 +8,11 @@
 
 ## Current Version
 
-Current application version: `v0.5.1`. V0.5.1 is a UI/UX-only patch; Deadline,
-Recurrence, and Reminder Backend and Frontend API contracts remain unchanged.
-The real database schema is `0005_add_deadlines_recurrence_reminders`, with no
-new migration for this patch. Release status is confirmed by Git tags. V0.6
-feature development is complete and accepted for release preparation, but V0.6
-is not formally released.
+Current application version: `v0.6.0` (Release Preparation). V0.5.1 is the
+last published stable tag; V0.6.0 has not been tagged. Deadline, Recurrence,
+Reminder, Backup, and Recovery API contracts use the completed V0.6 behavior.
+The real database schema remains `0005_add_deadlines_recurrence_reminders`, with
+no new migration.
 
 ## Frozen V0.6 Backup API / CLI Boundary
 
@@ -38,8 +37,8 @@ and unsupported force flags refuse. CLI prints operation/backup/safety IDs and
 verification result, explicitly leaving DayFlow stopped and maintenance
 confirmation required. Success never clears the V2 maintenance marker. Dry Run
 `--json` is unchanged. No HTTP Restore endpoint or real Restore permission exists.
-Stable application is
-`v0.5.1`; business API and schema remain unchanged. NO DATABASE MIGRATION
+Release-preparation application version is `v0.6.0`; the last stable tag is
+`v0.5.1`. Business API and schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
 
 Phase 3D offline commands (no HTTP contract changes):

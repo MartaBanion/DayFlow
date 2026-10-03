@@ -20,7 +20,7 @@ from app.services.backup_service import BackupService, SCHEMA
 
 @pytest.fixture
 def backups(database_engine: Engine, tmp_path: Path) -> BackupService:
-    return BackupService(Path(database_engine.url.database), tmp_path / "backups", "0.5.1")
+    return BackupService(Path(database_engine.url.database), tmp_path / "backups", "0.6.0")
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def test_create_metadata_and_read_only_verify(backups: BackupService):
     assert item.backup_version == 1
     assert item.database_sha256 == sha(db)
     assert item.file_size == db.stat().st_size
-    assert item.app_version == "0.5.1"
+    assert item.app_version == "0.6.0"
     assert item.source_database == backups.source.name
     assert item.alembic_version == SCHEMA
     assert item.integrity_check == "ok" and item.foreign_key_errors == 0
@@ -192,7 +192,7 @@ def test_root_symlink_and_canonical_boundary(backups: BackupService, tmp_path):
         backups.create()
     assert not list(outside.iterdir())
     with pytest.raises(AppError):
-        BackupService(backups.source, tmp_path / "outside" / ".." / "escape", "0.5.1").create()
+        BackupService(backups.source, tmp_path / "outside" / ".." / "escape", "0.6.0").create()
 
 
 def test_manifest_publication_failure_preserves_orphan(backups: BackupService, monkeypatch):

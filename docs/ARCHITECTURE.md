@@ -2,17 +2,15 @@
 
 ## Current Version
 
-Current application version: **v0.5.1** — UI/UX refinement.
-V0.5 Backend and Frontend are complete; the V0.5.1 presentation-only patch is
-implemented, integrated into `main`, and released as the current stable version
-`v0.5.1`. The real
-database schema remains `0005_add_deadlines_recurrence_reminders`. V0.6 feature
-development is complete and accepted for release preparation, but V0.6 is not
-formally released. Release status is confirmed by Git tags.
+Current application version: **v0.6.0 — Data Safety & Recovery (Release
+Preparation)**. V0.5 Backend and Frontend are complete; `v0.5.1` remains the
+last published stable tag. V0.6 feature development and Full Acceptance are
+complete, but the `v0.6.0` tag and formal release do not exist yet. The real
+database schema remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.6 — Data Safety & Recovery
 
-Status: Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
+Status: Completed / Release Preparation. Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
 Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
@@ -21,12 +19,12 @@ Phase 3D coordination and completed acknowledgement are committed and reviewed.
 Phase 4 Reminder poll failure visibility, Retry, and automatic recovery are
 committed and reviewed. Phase 5 Full Acceptance passed the Functional,
 Regression, Data Safety, Migration, Launcher, Restore Boundary, and Repository
-Hygiene gates. V0.6 is accepted for release preparation but is not formally
-released. Isolated Restore execution is implemented and verified only for
+Hygiene gates. V0.6.0 Full Acceptance is PASS; the release Commit and Tag have
+not been created. Isolated Restore execution is implemented and verified only for
 independent system-temporary databases; real project-database Restore remains
 prohibited, and Real Restore Storage Qualification is currently `NOT QUALIFIED`.
 Isolated tests do not prove power-loss durability.
-Stable release is `v0.5.1`. This version is not Statistics,
+The last published stable tag is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
 ### Product and Storage Boundaries
