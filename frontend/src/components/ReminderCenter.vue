@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 
 import { reminderApi, taskApi } from '../api'
@@ -8,6 +8,24 @@ import type { Reminder } from '../types'
 const POLL_INTERVAL_MS = 45_000
 const SESSION_KEY_PREFIX = 'dayflow.reminder-shown.'
 let pollTimer: number | undefined
+let pollInFlight = false
+
+const dueReminders = ref<Reminder[]>([])
+const pollError = ref('')
+const lastPollFailedAt = ref<string | null>(null)
+const isPolling = ref(false)
+const isRetrying = ref(false)
+
+const failureTimeLabel = computed(() => {
+  if (!lastPollFailedAt.value) return ''
+  const parsed = new Date(lastPollFailedAt.value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(parsed)
+})
 
 function wasShown(reminder: Reminder): boolean {
   try {
@@ -31,6 +49,10 @@ function allowRetry(reminder: Reminder): void {
   } catch {
     // Ignore storage errors; the next poll can still retry in memory.
   }
+}
+
+function removeDueReminder(reminderId: string): void {
+  dueReminders.value = dueReminders.value.filter((reminder) => reminder.id !== reminderId)
 }
 
 async function showReminder(reminder: Reminder): Promise<void> {
@@ -59,6 +81,7 @@ async function showReminder(reminder: Reminder): Promise<void> {
   if (confirmed) {
     try {
       await reminderApi.acknowledge(reminder.id, reminder.version)
+      removeDueReminder(reminder.id)
     } catch {
       allowRetry(reminder)
     }
@@ -67,17 +90,38 @@ async function showReminder(reminder: Reminder): Promise<void> {
 
   try {
     await reminderApi.dismiss(reminder.id, reminder.version)
+    removeDueReminder(reminder.id)
   } catch {
     allowRetry(reminder)
   }
 }
 
 async function checkDue(): Promise<void> {
+  if (pollInFlight) return
+  pollInFlight = true
+  isPolling.value = true
   try {
     const reminders = await reminderApi.due()
+    dueReminders.value = reminders
+    pollError.value = ''
+    lastPollFailedAt.value = null
     for (const reminder of reminders) await showReminder(reminder)
   } catch {
-    // Polling is best-effort; the Task Editor still exposes pending reminders.
+    if (!pollError.value) lastPollFailedAt.value = new Date().toISOString()
+    pollError.value = '提醒查询失败'
+  } finally {
+    pollInFlight = false
+    isPolling.value = false
+  }
+}
+
+async function retryPoll(): Promise<void> {
+  if (isRetrying.value || pollInFlight) return
+  isRetrying.value = true
+  try {
+    await checkDue()
+  } finally {
+    isRetrying.value = false
   }
 }
 
@@ -92,5 +136,26 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <span class="reminder-center" aria-live="polite" aria-hidden="true" />
+  <div v-if="pollError || dueReminders.length" class="reminder-center">
+    <section v-if="pollError" class="reminder-poll-error" role="alert">
+      <div class="reminder-poll-copy">
+        <strong>提醒查询失败</strong>
+        <p>部分提醒可能暂时无法更新。<time v-if="failureTimeLabel" :datetime="lastPollFailedAt ?? undefined">最近失败：{{ failureTimeLabel }}</time></p>
+      </div>
+      <button
+        class="reminder-poll-retry"
+        type="button"
+        :disabled="isPolling || isRetrying"
+        :aria-label="isRetrying ? '正在重试提醒查询' : '重试提醒查询'"
+        @click="retryPoll"
+      >
+        {{ isRetrying ? '重试中…' : '重试' }}
+      </button>
+    </section>
+
+    <section v-if="dueReminders.length" class="reminder-poll-summary" aria-label="待处理提醒">
+      <span>待处理提醒</span>
+      <strong>{{ dueReminders.length }} 条</strong>
+    </section>
+  </div>
 </template>

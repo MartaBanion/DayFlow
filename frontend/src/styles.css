@@ -247,6 +247,89 @@ textarea {
   --content-max-width: var(--page-width-project);
 }
 
+.reminder-center {
+  width: 100%;
+  max-width: var(--content-max-width);
+  min-width: 0;
+  margin: 0 auto var(--space-4);
+}
+
+.reminder-poll-error,
+.reminder-poll-summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+
+.reminder-poll-error {
+  border-color: #e8c5c1;
+  background: var(--color-danger-soft);
+}
+
+.reminder-poll-copy {
+  min-width: 0;
+}
+
+.reminder-poll-copy strong {
+  display: block;
+  color: var(--color-danger);
+  font-size: var(--font-size-body);
+}
+
+.reminder-poll-copy p {
+  margin: 3px 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+}
+
+.reminder-poll-copy time {
+  margin-left: var(--space-2);
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.reminder-poll-retry {
+  min-width: 64px;
+  min-height: var(--control-height);
+  flex: 0 0 auto;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-control);
+  color: var(--color-danger);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-weight: 700;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.reminder-poll-retry:hover:not(:disabled) {
+  color: #fff;
+  background: var(--color-danger);
+}
+
+.reminder-poll-retry:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.reminder-poll-summary {
+  justify-content: flex-start;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-caption);
+}
+
+.reminder-poll-summary strong {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 .page-header,
 .section-heading,
 .task-heading,
@@ -1557,6 +1640,17 @@ textarea {
 
   .project-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .reminder-poll-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reminder-poll-retry {
+    align-self: flex-start;
   }
 }
 

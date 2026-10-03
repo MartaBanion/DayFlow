@@ -264,10 +264,11 @@ are committed. Phase 3B read-only Restore Dry Run and RestorePlan generation are
 committed. Phase 3C Restore Execution protocol is frozen and an isolated-only
 execution prototype is committed. Phase 3D recovery coordination, storage
 capability probes and explicit completed acknowledgement are implemented in the
-working tree; the acknowledge fail-open review finding is closed by a durable
-two-phase startup-clearance receipt and is pending security re-review. Real
-Restore and Reminder polling feedback remain
-unimplemented. Process-abort tests are not power-loss durability acceptance.
+working tree and committed. The acknowledge fail-open review finding is closed
+by a durable two-phase startup-clearance receipt. Phase 4 Reminder Poll Failure
+Visibility, Retry, and automatic recovery are implemented in the working tree
+pending Review. Real Restore remains unimplemented. Process-abort tests are not
+power-loss durability acceptance.
 The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
@@ -292,7 +293,8 @@ Implementation sequence (each phase has independent Review, Tests, and Commit):
    Backup, independent candidate, no-overwrite switch and crash evidence.
 8. Phase 3D: Launcher/Backend lease handoff and connection shutdown coordination,
    DB/WAL/SHM switching/crash-safety finalization. No real Restore is authorized.
-9. Phase 4: Reminder Poll Failure Visibility; remove it if scope expands.
+9. Phase 4: Reminder Poll Failure Visibility, Retry, and automatic recovery;
+   remove it from V0.6 if scope expands.
 10. Phase 5: Full Acceptance, approved real Backup smoke, Restore on disposable
    copies only.
 11. Release Gate: version/documentation sync and release verification.

@@ -128,6 +128,7 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         'workspace-projects': currentView === 'projects' || currentView === 'project-detail',
       }"
     >
+      <ReminderCenter />
       <div class="workspace-content">
         <TodayView v-if="currentView === 'today'" />
         <InboxView v-else-if="currentView === 'inbox'" />
@@ -141,6 +142,5 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         <CalendarView v-else />
       </div>
     </main>
-    <ReminderCenter />
   </div>
 </template>

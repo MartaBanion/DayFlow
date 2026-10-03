@@ -17,9 +17,10 @@ Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
 generation are committed. Phase 3C isolated-only execution is committed.
-Phase 3D coordination and completed acknowledgement are implemented in the
-working tree, pending Review. Production/real-database Restore and Reminder poll
-visibility remain unimplemented. Isolated tests do not prove power-loss durability.
+Phase 3D coordination and completed acknowledgement are committed. Phase 4
+Reminder poll failure visibility, Retry, and automatic recovery are implemented
+in the working tree, pending Review. Production/real-database Restore remains
+unimplemented. Isolated tests do not prove power-loss durability.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
@@ -613,10 +614,12 @@ incompatible entries show reasons and no executable Restore command.
 No Router or unrelated UI redesign.
 
 Reminder maintenance is limited to visible but restrained polling failure,
-Retry, and clearing the error after recovery. Preserve 45-second polling,
-session deduplication, ack/dismiss, and existing persistence. No Snooze,
-History, OS Notification, Background Service, or schema changes. Remove this
-item from V0.6 if implementation would expand scope.
+Retry, and clearing the error after recovery. The ReminderCenter keeps the last
+successful due-reminder count visible while a later poll fails, and the next
+successful manual or automatic poll clears the error. Preserve 45-second
+polling, session deduplication, ack/dismiss, and existing persistence. No
+Snooze, History, OS Notification, Background Service, or schema changes. Remove
+this item from V0.6 if implementation would expand scope.
 
 ### Failures, Paths, and Logging
 
