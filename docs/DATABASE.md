@@ -20,7 +20,8 @@ The real database is currently at:
 Current application version: `v0.5.1`. V0.5.1 is a UI/UX-only patch: Backend
 and Frontend business semantics are unchanged, and no schema migration is
 included. The real schema remains `0005_add_deadlines_recurrence_reminders`.
-Release status is confirmed by Git tags; V0.6 is the next planned version.
+Release status is confirmed by Git tags. V0.6 feature development is complete
+and accepted for release preparation, but V0.6 is not formally released.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -331,9 +332,14 @@ test database.
 
 Stable v0.5.1 has manual verified maintenance backups. V0.6 Phase 1 development
 implements Backup Core/Create/List/Verify. Phase 2 Maintenance UI and Phase 3B
-read-only Dry Run and Phase 3C isolated execution are committed. Phase 3D
-recovery coordination is implemented in the working tree pending Review.
-Real database Restore is prohibited and unverified.
+read-only Dry Run and Phase 3C isolated execution are committed and reviewed.
+Phase 3D recovery coordination and Phase 4 Reminder poll failure visibility are
+committed and reviewed. Phase 5 Full Acceptance passed all functional,
+regression, data-safety, migration, launcher, restore-boundary, and repository
+hygiene gates; V0.6 is accepted for release preparation but not formally
+released. Isolated Restore execution is verified only for independent
+system-temporary databases. Real project-database Restore remains prohibited,
+and Real Restore Storage Qualification is currently `NOT QUALIFIED`.
 Use SQLite Online Backup API for consistency,
 including committed WAL data; never assume copying an active main file is safe.
 

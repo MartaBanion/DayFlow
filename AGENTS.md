@@ -11,7 +11,8 @@ V0.5 Backend and Frontend functionality is complete. V0.5.1 is a
 presentation-only patch integrated into `main` and released as `v0.5.1`, the
 current stable version; the real database schema remains
 `0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
-tags; V0.6 is the next planned development version.
+tags. V0.6 feature development is complete and accepted for release
+preparation, but V0.6 is not formally released.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -77,13 +78,17 @@ Only the version currently being implemented may be changed. Do not start later 
 
 ## V0.6 Development Safety
 
-- V0.6 is frozen design for Data Safety & Recovery, not implemented functionality.
+- V0.6 Data Safety & Recovery implementation Phases 1–4 are complete, reviewed,
+  and accepted for release preparation; V0.6 is not formally released.
 - NO DATABASE MIGRATION REQUIRED: keep schema `0005_add_deadlines_recurrence_reminders`;
   do not create `0006` or change Task/Project/Deadline/Recurrence/Reminder semantics.
 - Use SQLite Online Backup API, including committed WAL data; never assume copying
   an active database's main file produces a consistent backup.
 - Restore is offline Maintenance CLI only. The running Backend must not replace
   its active database through an HTTP endpoint.
+- Isolated Restore execution is implemented and tested only for independent
+  system-temporary databases. Real project-database Restore remains prohibited;
+  the current real-data storage qualification is `NOT QUALIFIED`.
 - Destructive tests and all development Restore operations use isolated temporary
   databases. Real Restore requires separate explicit approval. Compare the real
   database SHA-256 before and after automated tests.

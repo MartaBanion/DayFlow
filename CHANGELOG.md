@@ -1,9 +1,32 @@
 # Changelog
 
-## [Unreleased] — V0.5.1 UI/UX Refinement
+## [Unreleased] — V0.6 Data Safety & Recovery
 
-V0.5.1 is a presentation-only patch in release preparation. Release status is
-confirmed by Git tags.
+V0.6 feature development and Full Acceptance are complete and accepted for
+release preparation, but V0.6 is not formally released. Real project-database
+Restore remains prohibited; current Real Restore Storage Qualification is
+`NOT QUALIFIED`.
+
+### Added
+
+- Backup Core with consistent SQLite backups, Manifest V1, list, verify, and
+  controlled path/origin safety.
+- Maintenance UI, Restore Dry Run, isolated Restore execution, recovery
+  coordination, completed acknowledgement, and Reminder poll failure
+  visibility with Retry and automatic recovery.
+
+### Compatibility
+
+- The database schema remains `0005_add_deadlines_recurrence_reminders`; no
+  `0006` migration is included.
+- Real Restore is not authorized for the project database. Restore evidence is
+  preserved and the isolated execution boundary remains documented.
+
+## [v0.5.1] — UI/UX Refinement
+
+V0.5.1 is a presentation-only patch and the current stable release. Its
+release-preparation phase is historical; release status is confirmed by the
+annotated Git tag.
 
 ### Changed
 

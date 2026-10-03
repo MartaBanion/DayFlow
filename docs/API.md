@@ -11,8 +11,9 @@
 Current application version: `v0.5.1`. V0.5.1 is a UI/UX-only patch; Deadline,
 Recurrence, and Reminder Backend and Frontend API contracts remain unchanged.
 The real database schema is `0005_add_deadlines_recurrence_reminders`, with no
-new migration for this patch. Release status is confirmed by Git tags. V0.6 is
-the next planned development version.
+new migration for this patch. Release status is confirmed by Git tags. V0.6
+feature development is complete and accepted for release preparation, but V0.6
+is not formally released.
 
 ## Frozen V0.6 Backup API / CLI Boundary
 
@@ -23,10 +24,12 @@ Run creates a RestorePlan only; it does not create a lock, write restore state,
 copy or replace SQLite files, migrate, or stop services. Phase 3C implements
 TTY-confirmed execution only for independent databases in the system temporary
 directory; project real data is rejected. Phase 3D recovery coordination and
-explicit completed acknowledgement are implemented pending Review. Production
-Restore and Reminder poll visibility are not implemented. See
-Architecture for prototype limits; no real recovery is possible through these
-prototypes.
+explicit completed acknowledgement are implemented and reviewed. Phase 4
+Reminder poll failure visibility, Retry, and automatic recovery are implemented
+and reviewed. Isolated Restore execution is available only for independent
+system-temporary databases; real project-data Restore remains prohibited and
+current Real Restore Storage Qualification is `NOT QUALIFIED`. See Architecture
+for prototype limits; no real recovery is authorized for the project database.
 
 Phase 3C isolated execution uses `python -m app.maintenance_cli restore <backup_id>`.
 Both input/output must be TTY and confirmation must exactly match

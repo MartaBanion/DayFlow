@@ -9,7 +9,8 @@ patch on top of the completed Deadline, Repeat, and Reminder functionality.
 The UI work is integrated into `main` and released as the current stable version `v0.5.1`; Backend
 API and database schema are unchanged. The real database schema is
 `0005_add_deadlines_recurrence_reminders`. Release status is confirmed by Git
-tags. V0.6 is the next planned development version.
+tags. V0.6 feature development is complete and accepted for release
+preparation, but V0.6 is not formally released.
 
 ## V0.1 Features
 

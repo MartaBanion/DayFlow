@@ -3,8 +3,9 @@
 Current application version: **v0.5.1 — UI/UX refinement**.
 V0.5 Backend and Frontend are complete, and the V0.5.1 presentation-only patch
 is integrated into `main` and released as the current stable version `v0.5.1`. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`; V0.6 remains the next
-planned feature-development version.
+remains `0005_add_deadlines_recurrence_reminders`. V0.6 feature development is
+complete and accepted for release preparation, but V0.6 is not formally
+released.
 
 ## Current
 
@@ -263,12 +264,18 @@ maintenance lock, state tracking and Launcher/Backend startup blocking prototype
 are committed. Phase 3B read-only Restore Dry Run and RestorePlan generation are
 committed. Phase 3C Restore Execution protocol is frozen and an isolated-only
 execution prototype is committed. Phase 3D recovery coordination, storage
-capability probes and explicit completed acknowledgement are implemented in the
-working tree and committed. The acknowledge fail-open review finding is closed
-by a durable two-phase startup-clearance receipt. Phase 4 Reminder Poll Failure
-Visibility, Retry, and automatic recovery are implemented in the working tree
-pending Review. Real Restore remains unimplemented. Process-abort tests are not
-power-loss durability acceptance.
+capability probes and explicit completed acknowledgement are implemented,
+reviewed, and committed. The acknowledge fail-open review finding is closed by
+a durable two-phase startup-clearance receipt. Phase 4 Reminder Poll Failure
+Visibility, Retry, and automatic recovery are implemented, reviewed, and
+committed. Phase 5 Full Acceptance passed the Functional, Regression, Data
+Safety, Migration, Launcher, Restore Boundary, and Repository Hygiene gates;
+the Documentation Gate is synchronized by this maintenance. V0.6 is accepted
+for release preparation but is not formally released. Isolated Restore
+execution is implemented and verified; real project-database Restore remains
+prohibited. Real Restore Storage Qualification is currently `NOT QUALIFIED`
+because the real data mount differs from the system-temporary qualification
+mount. Process-abort tests are not power-loss durability acceptance.
 The current stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
@@ -292,12 +299,13 @@ Implementation sequence (each phase has independent Review, Tests, and Commit):
    lifetime exclusive cooperative lock, external-use refusal, verified Safety
    Backup, independent candidate, no-overwrite switch and crash evidence.
 8. Phase 3D: Launcher/Backend lease handoff and connection shutdown coordination,
-   DB/WAL/SHM switching/crash-safety finalization. No real Restore is authorized.
+   DB/WAL/SHM switching/crash-safety finalization. Completed and reviewed; no
+   real Restore is authorized.
 9. Phase 4: Reminder Poll Failure Visibility, Retry, and automatic recovery;
-   remove it from V0.6 if scope expands.
-10. Phase 5: Full Acceptance, approved real Backup smoke, Restore on disposable
-   copies only.
-11. Release Gate: version/documentation sync and release verification.
+   completed and reviewed.
+10. Phase 5: Full Acceptance with isolated Backup/Restore tests, normal Launcher
+    smoke, and release-gate verification. Completed.
+11. Release Preparation: version/documentation sync and release verification.
 
 Execution protocol is specified in `docs/ARCHITECTURE.md`; artifact/identity rules
 are in `docs/DATABASE.md`. Operator stops DayFlow before execution admission;

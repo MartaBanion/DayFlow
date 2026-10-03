@@ -6,9 +6,9 @@ Current application version: **v0.5.1** — UI/UX refinement.
 V0.5 Backend and Frontend are complete; the V0.5.1 presentation-only patch is
 implemented, integrated into `main`, and released as the current stable version
 `v0.5.1`. The real
-database schema remains `0005_add_deadlines_recurrence_reminders`; V0.6
-remains the next planned feature-development version. Release status is
-confirmed by Git tags.
+database schema remains `0005_add_deadlines_recurrence_reminders`. V0.6 feature
+development is complete and accepted for release preparation, but V0.6 is not
+formally released. Release status is confirmed by Git tags.
 
 ## Frozen V0.6 — Data Safety & Recovery
 
@@ -17,10 +17,15 @@ Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
 generation are committed. Phase 3C isolated-only execution is committed.
-Phase 3D coordination and completed acknowledgement are committed. Phase 4
-Reminder poll failure visibility, Retry, and automatic recovery are implemented
-in the working tree, pending Review. Production/real-database Restore remains
-unimplemented. Isolated tests do not prove power-loss durability.
+Phase 3D coordination and completed acknowledgement are committed and reviewed.
+Phase 4 Reminder poll failure visibility, Retry, and automatic recovery are
+committed and reviewed. Phase 5 Full Acceptance passed the Functional,
+Regression, Data Safety, Migration, Launcher, Restore Boundary, and Repository
+Hygiene gates. V0.6 is accepted for release preparation but is not formally
+released. Isolated Restore execution is implemented and verified only for
+independent system-temporary databases; real project-database Restore remains
+prohibited, and Real Restore Storage Qualification is currently `NOT QUALIFIED`.
+Isolated tests do not prove power-loss durability.
 Stable release is `v0.5.1`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
@@ -529,7 +534,7 @@ automatically. Original archive, sidecars,
 evidence, T/S/C, logs and receipts have no V0.6 automatic cleanup; future manual
 retention must not remove unresolved operations or the coordination inode.
 
-#### Phase 3D Recovery Coordination (Implemented, Pending Review)
+#### Phase 3D Recovery Coordination (Implemented and Reviewed)
 
 Backend owns the shared coordination lease for its whole ASGI lifespan.
 Uvicorn drains requests before lifespan shutdown; tracked application Sessions
@@ -663,8 +668,10 @@ SHA-256 before/after automation; it remains at `0005`. Full matrix:
 | Reminder | poll failure, Retry, recovery, no implicit Reminder mutation |
 | Regression | Backend, Vitest, existing 28 Playwright scenarios, type-check, build |
 
-Acceptance includes approved real Backup smoke (no Restore) and disposable-copy
-Restore. Real Restore always requires separate explicit approval.
+Phase 5 acceptance used isolated Backup/Restore coverage and normal Launcher
+smoke; no real Backup smoke or real Restore was performed. Real Restore always
+requires separate explicit approval, and the current real-data storage
+qualification is `NOT QUALIFIED`.
 
 Excluded: Review/Statistics, Saved Views, Manual Ordering, Kanban, AI, Cloud
 Sync, Multi User, Mobile App, External Calendar, Project Hierarchy, Reminder
