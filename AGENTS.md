@@ -6,11 +6,10 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Current application version: `v0.6.0` — Data Safety & Recovery (Release
-Preparation). V0.5.1 remains the last published stable tag. V0.6 feature
-development and Full Acceptance are complete; the `v0.6.0` tag and formal
-release do not exist yet. The real database schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Current stable application version: `v0.6.0` — Data Safety & Recovery. The
+annotated `v0.6.0` tag is the published stable release. Current development is
+V0.7 Daily & Weekly Review, beginning with Product / Architecture Freeze. The
+real database schema remains `0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -74,10 +73,10 @@ Only the version currently being implemented may be changed. Do not start later 
 - Database writes go through services and transactions.
 - Do not use `Base.metadata.create_all()` in application runtime.
 
-## V0.6 Development Safety
+## V0.6 Data Safety Boundary
 
-- V0.6.0 Data Safety & Recovery implementation Phases 1–5 are complete and
-  accepted for release preparation; the release Commit and Tag are not created.
+- V0.6.0 Data Safety & Recovery implementation Phases 1–5 are complete,
+  accepted, committed, tagged, and formally released.
 - NO DATABASE MIGRATION REQUIRED: keep schema `0005_add_deadlines_recurrence_reminders`;
   do not create `0006` or change Task/Project/Deadline/Recurrence/Reminder semantics.
 - Use SQLite Online Backup API, including committed WAL data; never assume copying
@@ -96,9 +95,25 @@ Only the version currently being implemented may be changed. Do not start later 
   backups, candidate, and operation log. No automatic rollback or downgrade.
 - Keep Backup Metadata, Restore logs, and maintenance state in controlled,
   Git-ignored filesystem locations. Never log personal Task contents or secrets.
-- Only Reminder poll failure visibility/Retry is permitted as ancillary work.
-  Statistics, AI, task organization, notification services, and unrelated
-  refactoring are outside V0.6.
+- V0.6 ancillary work was limited to Reminder poll failure visibility/Retry.
+  The released data-safety behavior must not be expanded during V0.7.
+
+## V0.7 Development Safety
+
+- V0.7 has one theme: Daily & Weekly Review. Do not expand it into a Dashboard,
+  Statistics system, Task Organization project, or unrelated UI redesign.
+- Review is a read-only current-state view. It must never materialize recurrence,
+  mutate Tasks/Projects/Reminders, write snapshots or caches, or update a
+  last-viewed timestamp.
+- `completed_at_utc` is the latest retained completion timestamp for a Task,
+  not immutable event history. Never use `updated_at_utc` as a completion time.
+- Daily and Monday-based weekly boundaries use the configured DayFlow IANA
+  timezone and are converted independently to UTC half-open ranges.
+- NO DATABASE MIGRATION REQUIRED: retain
+  `0005_add_deadlines_recurrence_reminders`; do not create `0006`. If immutable
+  history becomes necessary, stop and request a new product decision.
+- V0.8 Task Organization, advanced Search, bulk Inbox work, quick defer,
+  Backup/Restore/Recovery changes, and real Restore remain outside V0.7.
 
 ## Migration Rules
 
@@ -124,15 +139,14 @@ Only the version currently being implemented may be changed. Do not start later 
 ## Prohibited Actions
 
 - No Drag & Drop, Resize, AI, external Calendar, PWA,
-  Authentication, Docker, CI/CD, or remote Git work during V0.5 development
-  and stabilization.
+  Authentication, Docker, CI/CD, or remote Git work during V0.7 development.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
 
-A V0.5 implementation is complete when Deadline, Recurrence, Reminder Backend,
-Migration 0005, Frontend, and their tests run against isolated temporary `0005` data,
-V0.1–V0.4 regression tests pass, no secrets or personal data are exposed,
-documentation is synchronized, and the approved real database is verified at
-`0005_add_deadlines_recurrence_reminders`. Final acceptance and database verification must be recorded
-before the next planned development version begins.
+A V0.7 implementation is complete when `#review` reliably answers what was
+completed today and this week, what is currently overdue, what planned work is
+carried over, and the current Project snapshot; Task and Project navigation
+works; Review remains read-only; isolated tests and full regression pass; no
+Migration is added; documentation is synchronized; and the approved real
+database is read-only verified at `0005_add_deadlines_recurrence_reminders`.

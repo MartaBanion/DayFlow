@@ -2,15 +2,362 @@
 
 ## Current Version
 
-Current application version: **v0.6.0 — Data Safety & Recovery (Release
-Preparation)**. V0.5 Backend and Frontend are complete; `v0.5.1` remains the
-last published stable tag. V0.6 feature development and Full Acceptance are
-complete, but the `v0.6.0` tag and formal release do not exist yet. The real
-database schema remains `0005_add_deadlines_recurrence_reminders`.
+Current stable application version: **v0.6.0 — Data Safety & Recovery**. The
+annotated `v0.6.0` tag is the published stable release. Current development is
+V0.7 Daily & Weekly Review, in Product / Architecture Freeze. The real database
+schema remains `0005_add_deadlines_recurrence_reminders`.
+
+## Frozen V0.7 — Daily & Weekly Review
+
+Status: Phase 0 Product / Architecture Freeze. No V0.7 product code or database
+change is implemented by this phase. The single V0.7 theme is a lightweight,
+read-only Daily & Weekly Review that closes the existing capture → plan → do →
+review loop. It is not a Dashboard, Statistics system, or Task Organization
+release.
+
+### Product Decision and Scope
+
+V0.7 adds one Hash view, `#review`, with a main-navigation entry 回顾 and two
+scopes: Today and This Week. It must let the user answer:
+
+1. What did I complete today?
+2. What did I complete this week?
+3. What is currently overdue?
+4. What previously planned work is still pending?
+5. What is the current basic state of each Project?
+
+Review is list-first and action-light. It may open the existing Task Editor,
+open an existing Project Detail, or navigate to Today, Inbox, or Calendar. It
+does not become another task-management surface: no inline complex editor,
+batch operation, Drag & Drop, Project/Category/Tag management, or new mutation
+contract belongs on this page.
+
+Explicitly out of scope: Statistics Dashboard, charts, trends, productivity
+scores, streaks, time tracking, Activity/Event History, immutable completion
+history, Saved Views, Kanban, Subtasks, Project Tree, Manual Ordering, Drag &
+Drop, Batch Edit, advanced Search, Inbox bulk triage, quick defer, Calendar
+redesign, large TaskEditor refactoring, AI, auto-scheduling, AI task breakdown,
+OS/background notifications, and every Backup/Restore/Recovery/Storage
+Qualification change. V0.8 Task Organization remains separate. Real Restore
+remains prohibited under the released V0.6 boundary.
+
+### Review Clock and Range Contract
+
+One `generated_at_utc` instant is captured at the start of a Review request.
+All range boundaries, current-overdue decisions and response timestamps derive
+from that same instant; the request must not call independent clocks that can
+cross a boundary and disagree.
+
+The authoritative Review timezone is the configured DayFlow IANA timezone
+(`DAYFLOW_TIMEZONE`, exposed as `local_timezone`), not the browser timezone and
+not a hard-coded UTC offset. Resolve it with `zoneinfo`; invalid configuration
+fails the request safely rather than silently using UTC or a fixed offset.
+
+Daily range:
+
+- derive the current local date from `generated_at_utc` in the configured zone;
+- local start is that date at `00:00:00`;
+- local end is the next local date at `00:00:00`;
+- convert each local boundary independently to UTC;
+- query `completed_at_utc` with the half-open range `[start, end)`.
+
+Weekly range:
+
+- the week begins Monday at `00:00:00` local time;
+- it ends the following Monday at `00:00:00` local time;
+- derive Monday from the request's local date, then convert both local calendar
+  boundaries independently to UTC;
+- query with the same half-open `[start, end)` rule.
+
+Independent conversion is required because a local day or week containing a
+DST transition need not be exactly 24 or 168 elapsed hours. `+08:00` or any
+other fixed offset must not be embedded in Review code. An instant exactly at
+the start is included; an instant exactly at the exclusive end is not.
+
+### Completed Review Semantics
+
+A Task appears in Completed Review only when all are true at query time:
+
+```text
+task.deleted_at_utc IS NULL
+AND task.status = 'completed'
+AND task.completed_at_utc IS NOT NULL
+AND range_start_utc <= task.completed_at_utc < range_end_utc
+```
+
+This means “currently retained Tasks whose current completion timestamp falls
+inside the selected range.” It is not a history of completion events.
+
+- Completing a pending Task sets `completed_at_utc` and may include it.
+- Reopening a Task clears `completed_at_utc`, so it leaves Completed Review.
+- Completing it again uses the latest `completed_at_utc`; an older completion
+  is not retained.
+- Soft-deleted Tasks are excluded even if their completion timestamp remains.
+- The existing restore operation returns a deleted/completed Task to pending
+  and clears `completed_at_utc`, so it is excluded.
+- A malformed completed row without `completed_at_utc` is excluded rather than
+  assigned an invented time; Review never repairs it.
+- `updated_at_utc` is never used as a completion timestamp or fallback.
+
+Completed Tasks are ordered by `completed_at_utc` descending, then Task ID
+ascending as a stable tie-breaker. The response count equals the returned list
+length because V0.7 has no pagination or truncation.
+
+### Current Overdue Semantics
+
+Review reuses the existing Deadline meaning and evaluates it at the request's
+single `generated_at_utc` instant. It does not invent a second overdue model.
+Only non-deleted pending Tasks can be Current Overdue.
+
+- Timed Deadline: overdue when `generated_at_utc >= deadline_at_utc`.
+- Date-only Deadline: convert `generated_at_utc` into the Task's persisted
+  `deadline_timezone`; overdue when that local date is later than
+  `deadline_date`.
+- A date-only Deadline remains `due_today`, not overdue, during its saved local
+  date.
+- Completed or soft-deleted Tasks are excluded.
+- A Task without a Deadline is not overdue.
+
+Implementation should centralize an explicit-instant Deadline evaluator and
+reuse the released Deadline semantics, so Review membership and serialized
+Deadline status cannot drift. It must not duplicate a subtly different rule.
+Overdue is ordered by earliest `deadline_date`; on the same date, timed
+Deadlines come first in `deadline_at_utc` order, followed by date-only
+Deadlines; creation time and Task ID provide deterministic tie-breakers.
+
+### Carryover Semantics
+
+Carryover is exactly:
+
+```text
+task.planned_date < current DayFlow local date
+AND task.status = 'pending'
+AND task.deleted_at_utc IS NULL
+```
+
+The current local date comes from the same request clock and configured Review
+timezone. A Task planned today is not Carryover. A Deadline-only Task with no
+`planned_date` is not Carryover, although it can independently be Overdue. A
+Task that satisfies both concepts appears in both sections; Review does not
+deduplicate facts across sections. Carryover is ordered by oldest planned date,
+then creation time and Task ID.
+
+Today remains a planning view based primarily on `planned_date = today`.
+Review/Today is a retrospective/current-attention view based on completions in
+the Daily range plus current Overdue, current Carryover and Project snapshots.
+Their routes, services, labels and tests must remain semantically distinct.
+
+### Recurrence and Task Lifecycle Semantics
+
+Each recurrence occurrence is an ordinary persisted Task row and participates
+using its own current state and `completed_at_utc`:
+
+- a completed occurrence can appear in Completed Review;
+- the newly generated next occurrence is pending and cannot appear;
+- Skip soft-deletes the skipped occurrence and is not a completion;
+- normal Delete is not a completion;
+- stopping a recurrence rule is not a Task completion event;
+- materialization is never triggered by Review GET.
+
+No recurrence history is synthesized, and missed occurrences are not
+backfilled for Review.
+
+### Project Review Semantics
+
+Project Review is a current snapshot. It includes every non-deleted Project,
+whether its own status is `active` or `completed`, and excludes soft-deleted
+Projects. For each Project, count only associated non-deleted Tasks:
+
+- `task_count`: all current non-deleted Tasks;
+- `completed_task_count`: Tasks currently completed;
+- `pending_task_count`: Tasks currently pending;
+- `overdue_task_count`: pending Tasks that satisfy the canonical current
+  overdue rule at `generated_at_utc`;
+- `progress_percent`: existing integer `completed / total` calculation, with an
+  empty Project at `0`;
+- `latest_completed_at_utc`: maximum `completed_at_utc` among non-deleted Tasks
+  that are still completed, without limiting it to the selected Review range.
+
+`task_count = completed_task_count + pending_task_count` under the current Task
+status contract. Project status remains independent of Task status; a completed
+Project can truthfully show pending Tasks. Project rows are ordered with active
+Projects first, then completed Projects, case-insensitive name, and Project ID
+as a stable tie-breaker.
+
+`latest_completed_at_utc` means only “the most recent currently retained Task
+completion.” It must not be labeled Last Activity or Last Progress. V0.7 does
+not expose `stagnant_days`, `last_activity`, `inactive_since`, or a claim that a
+Project is stalled. V0.7 freezes no separate Project attention state or API
+field. The UI may display included facts such as “存在 N 个逾期任务”, but it
+must not synthesize an attention score or inferred diagnosis.
+
+### API and Service Boundary
+
+Freeze one endpoint because Today and Week return the same resource shape:
+
+```text
+GET /api/v1/review?scope=today
+GET /api/v1/review?scope=week
+```
+
+`scope` is required and restricted to `today` or `week`; invalid values use the
+existing FastAPI validation/error envelope. There is no arbitrary date range,
+historical cursor, grouping, analytics query language, or mutation endpoint.
+
+The response uses existing snake_case and UTC serialization conventions:
+
+```text
+scope: today | week
+local_timezone: IANA timezone
+local_date: local YYYY-MM-DD derived from generated_at_utc
+range_start_utc: inclusive RFC3339 UTC instant
+range_end_utc: exclusive RFC3339 UTC instant
+generated_at_utc: request clock snapshot
+completed: { count, tasks: TaskRead[] }
+overdue: { count, tasks: TaskRead[] }
+carryover: { count, tasks: TaskRead[] }
+projects: ReviewProject[]
+```
+
+`ReviewProject` contains `id`, `name`, `status`, `task_count`,
+`completed_task_count`, `pending_task_count`, `overdue_task_count`,
+`progress_percent`, and nullable `latest_completed_at_utc`. Task items retain
+the existing `TaskRead` shape so the Frontend can open the current Task Editor
+without a second lookup contract. Review-specific construction must evaluate
+Deadline status with the same request clock used for section membership.
+
+Switching scope changes only the completion range and its Completed section.
+Overdue, Carryover, and Project data are current snapshots at
+`generated_at_utc`, so they can legitimately be identical between Today and
+Week responses.
+
+### Read-Only Guarantee and Query Strategy
+
+Review route and service execute SELECT operations only. They must not call
+`session.add`, `flush`, `commit`, mutation services, recurrence materialization,
+Reminder transitions, or any filesystem maintenance operation. GET must not:
+
+- change Task, Project, Recurrence or Reminder rows;
+- update `completed_at_utc`, versions, timestamps or last-viewed state;
+- create statistics, snapshots, cache rows, files or telemetry;
+- run Backup, Restore, Migration, repair, checkpoint or cleanup work.
+
+Tests compare relevant rows before/after GET and prove Repeat materialization is
+not called. A normal SQLAlchemy read transaction may be opened and closed, but
+application state remains unchanged.
+
+Use a small Review service beside existing services, not a generic Analytics
+layer. A bounded query shape is sufficient:
+
+1. query Completed Tasks for the selected range with bounded eager loading;
+2. query non-deleted pending candidates whose Deadline or old planned date can
+   place them in attention lists, then derive Overdue and Carryover from that
+   shared set;
+3. query all non-deleted Projects once;
+4. aggregate per-Project total/completed/pending/latest-completion in grouped
+   queries and accumulate canonical overdue counts from the pending candidates.
+
+`selectinload` may issue bounded relationship queries for Task cards; there
+must not be one Task-table scan per Project or lazy relationship N+1 behavior.
+Personal scale does not justify a complex warehouse, cache, or precomputed
+table. V0.7 has **NO PAGINATION**: all matching items and all non-deleted
+Projects are returned, counts equal list lengths, and no “查看更多” partial-result
+contract is introduced. Reassess pagination only from measured V0.8-scale data.
+
+### UI Information Architecture
+
+Add 回顾 to the main Hash navigation, after 项目 and before the separate
+maintenance navigation. `#review` defaults to Today. The Today / This Week
+selector uses visible text and semantic buttons or tabs with keyboard support;
+it requests the corresponding scope and never changes business data.
+
+The page order is frozen:
+
+1. page heading and Today / This Week scope selector;
+2. compact Completion Summary for the selected range;
+3. Completed Tasks list;
+4. Needs Attention, containing separate Overdue and Carryover lists;
+5. Project Review list.
+
+Keep the existing DayFlow tokens and visual language. Do not introduce a new
+font, palette, glass treatment, chart library, card dashboard, large KPI grid,
+gauge or decorative motion. Task and Project rows are compact navigation
+surfaces, not inline management controls. Opening a Task uses the existing
+Task Editor; opening a Project uses the existing `#project:<id>` detail flow.
+
+The same Task may be shown in both Overdue and Carryover and must retain clear
+section labels. Completed, Overdue and attention meaning uses text/semantic
+labels in addition to color. Heading order is logical, interactive controls are
+keyboard reachable with visible focus, and loading regions expose an accessible
+busy state. Errors are announced and offer a 重试 action without replacing the
+rest of the application.
+
+Frozen state meanings and initial copy:
+
+- Loading: `正在加载回顾…`
+- Today completed empty: `今天还没有完成的任务`
+- Week completed empty: `本周还没有保留的完成记录`
+- Overdue empty: `目前没有逾期任务`
+- Carryover empty: `没有需要处理的遗留任务`
+- Project empty: `暂无项目`
+- Error: `回顾加载失败`, with `重试`
+
+Exact copy may receive small Phase 2 polish without changing these meanings.
+Loading/Error/Retry is local to Review. At 1440×900, 1024×768 and 900×700,
+sections stack without whole-page horizontal scrolling; long titles truncate
+visually while retaining accessible full text. Mobile navigation redesign and
+smaller viewport acceptance remain future UX backlog.
+
+### Test Matrix
+
+Backend/API coverage must include:
+
+| Area | Required coverage |
+| --- | --- |
+| Range | Daily range, Monday-based weekly range, configured timezone, DST-sensitive zone, exact inclusive start, exact exclusive end |
+| Completed | current completed included, reopened excluded, soft-deleted excluded, restored-to-pending excluded, missing timestamp not guessed, latest re-completion semantics, `updated_at_utc` never used |
+| Recurrence | completed occurrence included, next pending occurrence excluded, Skip/Delete/Stop excluded, GET never materializes |
+| Overdue | date-only boundary in saved timezone, timed exact-instant boundary, completed/deleted excluded, no-Deadline excluded |
+| Carryover | yesterday included, today excluded, completed/deleted excluded, Deadline-only without planned date excluded, overlap with Overdue retained |
+| Projects | active and completed non-deleted Projects, soft-deleted excluded, total/pending/completed/overdue counts, empty progress, percentage, latest retained completion, no activity/stagnation inference |
+| Contract | both scopes, invalid scope, UTC serialization, deterministic ordering, count/list agreement, common request clock |
+| Read-only | no row/timestamp/version mutation, no commit/materialization/cache/file side effect |
+| Query shape | bounded eager/grouped queries and no per-Project Task scan |
+
+Frontend/Vitest/E2E coverage must include `#review` navigation, default Today,
+Week switch, Completed/Overdue/Carryover lists, Project Review, all empty states,
+loading, error, Retry, Task Editor open, Project Detail open, scope switching,
+textual status semantics, keyboard/focus basics, and responsive layouts at the
+three desktop acceptance sizes. E2E uses only the fail-closed isolated temporary
+database runner; it never accesses the real database.
+
+### Migration, Phases, and Definition of Done
+
+**NO DATABASE MIGRATION REQUIRED.** Existing `completed_at_utc`,
+`planned_date`, Task status, Deadline fields, Project relationship and Project
+status support the frozen current-state semantics. Do not create `0006` or
+change historic migrations. If implementation discovers that immutable event
+history is necessary, stop and return to product decision rather than adding a
+hidden Migration or substituting `updated_at_utc`.
+
+The only V0.7 phases are:
+
+1. Phase 0 — Product / Architecture Freeze.
+2. Phase 1 — Review Core: read-only Backend Review API and Backend tests.
+3. Phase 2 — Review UI / Integration: `#review`, navigation, Frontend tests and
+   isolated E2E.
+4. Phase 3 — Acceptance / Release: full regression, real-database read-only
+   validation, documentation and release gate.
+
+V0.7 is done when the user can open `#review` and reliably answer the five
+product questions above, then enter the existing Task or Project flow to take
+the next action. Completion also requires frozen semantics, no Review writes,
+no Migration, isolated tests, full regression and real-database read-only
+verification.
 
 ## Frozen V0.6 — Data Safety & Recovery
 
-Status: Completed / Release Preparation. Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
+Status: Completed and formally released as `v0.6.0`. Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
 Phase 2 Maintenance UI is committed with rough manual visual acceptance.
 Phase 3A maintenance lock/state tracking and Launcher/Backend startup blocking
 prototypes are committed. Phase 3B read-only Restore Dry Run and RestorePlan
@@ -19,12 +366,13 @@ Phase 3D coordination and completed acknowledgement are committed and reviewed.
 Phase 4 Reminder poll failure visibility, Retry, and automatic recovery are
 committed and reviewed. Phase 5 Full Acceptance passed the Functional,
 Regression, Data Safety, Migration, Launcher, Restore Boundary, and Repository
-Hygiene gates. V0.6.0 Full Acceptance is PASS; the release Commit and Tag have
-not been created. Isolated Restore execution is implemented and verified only for
+Hygiene gates. V0.6.0 Full Acceptance is PASS; release Commit
+`fc8311b3f97536907158f940d2f414e30c98a301` is tagged by the annotated
+`v0.6.0` release. Isolated Restore execution is implemented and verified only for
 independent system-temporary databases; real project-database Restore remains
 prohibited, and Real Restore Storage Qualification is currently `NOT QUALIFIED`.
 Isolated tests do not prove power-loss durability.
-The last published stable tag is `v0.5.1`. This version is not Statistics,
+The published stable tag is `v0.6.0`. This version is not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
 ### Product and Storage Boundaries
@@ -45,7 +393,8 @@ Current application/schema status comes from the read-only runtime endpoint,
 not historical Backup metadata. List verification is labeled as a registration
 record; measured verification results remain local to the current view. An
 unverified compatible record says 需要验证, not currently safe to Restore.
-Restore guidance explains offline overwrite risks and deferred Phase 3 work.
+Restore guidance explains offline overwrite risks and the continuing
+real-project-database Restore prohibition.
 
 Default root is `data/backups/`. Use Python `sqlite3.Connection.backup()` with
 a read-only source connection; include committed WAL data. Copying the active

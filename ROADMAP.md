@@ -1,10 +1,9 @@
 # DayFlow Personal Roadmap
 
-Current application version: **v0.6.0 — Data Safety & Recovery (Release
-Preparation)**. V0.5 Backend and Frontend are complete, and `v0.5.1` remains
-the last published stable tag. V0.6 feature development and Full Acceptance
-are complete; the `v0.6.0` tag has not been created. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`.
+Current stable application version: **v0.6.0 — Data Safety & Recovery**. The
+annotated `v0.6.0` tag is the published stable release. Current development is
+V0.7 Daily & Weekly Review, in Product / Architecture Freeze. The real database
+schema remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -252,12 +251,12 @@ to V0.6 by default:
 - Broader design-language consistency
 - Dark Mode as a future candidate only
 
-## Later
+## Released
 
 ### V0.6 — Data Safety & Recovery
 
-Status: Completed / Release Preparation. Product scope and architecture are
-frozen. Phase 1 Backup Core,
+Status: Completed and formally released as `v0.6.0`. Product scope and
+architecture are frozen. Phase 1 Backup Core,
 Create/List/Verify API and Manifest V1 are committed. Phase 2 Maintenance UI
 is committed and has passed rough manual visual acceptance. Phase 3A state-only
 maintenance lock, state tracking and Launcher/Backend startup blocking prototypes
@@ -271,12 +270,13 @@ Visibility, Retry, and automatic recovery are implemented, reviewed, and
 committed. Phase 5 Full Acceptance passed the Functional, Regression, Data
 Safety, Migration, Launcher, Restore Boundary, and Repository Hygiene gates;
 the Documentation Gate is synchronized. V0.6.0 Full Acceptance is PASS. The
-release Commit and Tag have not been created. Isolated Restore
+release Commit is `fc8311b3f97536907158f940d2f414e30c98a301`, and the annotated
+`v0.6.0` tag points to that Commit. Isolated Restore
 execution is implemented and verified; real project-database Restore remains
 prohibited. Real Restore Storage Qualification is currently `NOT QUALIFIED`
 because the real data mount differs from the system-temporary qualification
 mount. Process-abort tests are not power-loss durability acceptance.
-The last published stable release remains `v0.5.1`. NO DATABASE MIGRATION REQUIRED:
+The published stable release is `v0.6.0`. NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
 MVP: consistent Create Backup, List Backups, Verify Backup, Restore Dry Run,
@@ -335,13 +335,67 @@ Sync, Multi User, Mobile App, External Calendar, Project Hierarchy, Reminder
 Background Service, Repeat Time Block, unrelated bundle/Starlette warnings,
 large TaskEditor extraction, global CSS or API Client refactoring.
 
-### Later Candidates
+## Current Development
 
-AI Provider abstraction and Mock Provider are deferred candidates, not V0.6 scope.
-- V0.7: Natural-language Task creation.
-- V0.8: AI Task decomposition.
-- V0.9: AI Scheduling and Schedule Sandbox.
-- V1.0: PWA, Backup/Restore, Statistics, and stability work.
+### V0.7 — Daily & Weekly Review
+
+Status: Phase 0 Product / Architecture Freeze. The product decision is final;
+implementation has not started. V0.7 is a read-only, list-first Review flow,
+not a Dashboard or Statistics system.
+
+Must Have:
+
+- Hash view and main navigation entry: `#review` / 回顾.
+- Scope selector: Today / This Week, with Monday-based weeks in the configured
+  DayFlow IANA timezone.
+- Completed Review containing only non-deleted Tasks that are still completed
+  and whose retained `completed_at_utc` falls in the selected UTC half-open
+  range.
+- Current Overdue based on the existing date-only/timed Deadline semantics.
+- Carryover defined only as non-deleted pending Tasks whose `planned_date` is
+  earlier than the current DayFlow local date.
+- Current Project snapshots: non-deleted Task totals, completed/pending/overdue
+  counts, completion percentage, and latest retained Task completion.
+- Navigation from Review to the existing Task Editor and Project Detail.
+- A pure read-only Review API with isolated Backend, Frontend, and E2E tests.
+
+Historical limits are explicit: `completed_at_utc` is the latest retained Task
+completion state, not immutable history; Reopen/Restore-to-pending removes a
+Task from Completed Review; `updated_at_utc` is never a completion proxy. Each
+recurrence occurrence participates as its own Task. Skip, Delete, and Stop are
+not completion events. Project Review is a current snapshot and never claims
+stagnation or last activity.
+
+NO DATABASE MIGRATION REQUIRED. Keep
+`0005_add_deadlines_recurrence_reminders`; do not create `0006`. If immutable
+event history becomes necessary, implementation must stop for a new product
+decision.
+
+Explicitly excluded: Dashboard/charts/trends/productivity scores, streaks,
+time tracking, Activity/Event History, Saved Views, Kanban, Subtasks, Project
+Tree, Manual Ordering, Drag & Drop, Batch Edit, advanced Search, bulk Inbox
+triage, quick defer, Calendar or TaskEditor redesign, AI/auto-scheduling,
+background notifications, and all Backup/Restore/Recovery work.
+
+Implementation phases:
+
+1. Phase 0: Product / Architecture Freeze.
+2. Phase 1: read-only Review API and Backend tests.
+3. Phase 2: `#review`, navigation, Frontend tests, and isolated E2E.
+4. Phase 3: full acceptance, real-database read-only validation, documentation,
+   and release gate.
+
+Definition of Done: `#review` reliably answers what was completed today and
+this week, what is currently overdue, what planned work is carried over, and
+the current basic state of each Project, with navigation to the existing Task
+and Project flows.
+
+## Later Candidates
+
+- V0.8 Task Organization remains a separate candidate and is not V0.7 scope.
+- V0.9 Planning Flow refinement remains separate from Review.
+- AI assistance remains a future candidate after the core product workflow is
+  mature; it is not on the active V0.7 path.
 
 ## Candidate / Backlog
 

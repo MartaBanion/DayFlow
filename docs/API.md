@@ -8,15 +8,166 @@
 
 ## Current Version
 
-Current application version: `v0.6.0` (Release Preparation). V0.5.1 is the
-last published stable tag; V0.6.0 has not been tagged. Deadline, Recurrence,
-Reminder, Backup, and Recovery API contracts use the completed V0.6 behavior.
+Current stable application version: `v0.6.0`. The annotated `v0.6.0` tag is the
+published stable release. Deadline, Recurrence, Reminder, Backup, and Recovery
+API contracts use the released V0.6 behavior. V0.7 Daily & Weekly Review is in
+Product / Architecture Freeze; its API below is frozen but not yet implemented.
 The real database schema remains `0005_add_deadlines_recurrence_reminders`, with
 no new migration.
 
+## Frozen V0.7 Review API (Not Yet Implemented)
+
+V0.7 adds one read-only resource with two fixed scopes:
+
+```text
+GET /api/v1/review?scope=today
+GET /api/v1/review?scope=week
+```
+
+One endpoint with a constrained query parameter matches the existing DayFlow
+style (`/tasks`, `/calendar`) and avoids duplicate Today/Week response models.
+`scope` is required and is exactly `today` or `week`; other values return the
+existing FastAPI 422 validation envelope. V0.7 provides no arbitrary start/end
+dates, analytics language, pagination, write endpoint or Review history API.
+
+### Response Contract
+
+The response model is:
+
+```json
+{
+  "scope": "today",
+  "local_timezone": "Asia/Shanghai",
+  "local_date": "2026-10-03",
+  "range_start_utc": "2026-10-02T16:00:00.000000Z",
+  "range_end_utc": "2026-10-03T16:00:00.000000Z",
+  "generated_at_utc": "2026-10-03T04:00:00.000000Z",
+  "completed": {
+    "count": 0,
+    "tasks": []
+  },
+  "overdue": {
+    "count": 0,
+    "tasks": []
+  },
+  "carryover": {
+    "count": 0,
+    "tasks": []
+  },
+  "projects": []
+}
+```
+
+Real Task entries use the existing `TaskRead` shape. `count` always equals the
+corresponding array length.
+V0.7 returns all matches and has no pagination or truncation.
+
+Fields:
+
+| Field | Contract |
+| --- | --- |
+| `scope` | Echoes `today` or `week` |
+| `local_timezone` | Configured DayFlow IANA timezone used for Review boundaries |
+| `local_date` | Date in `local_timezone` at `generated_at_utc` |
+| `range_start_utc` | Inclusive UTC completion-range boundary |
+| `range_end_utc` | Exclusive UTC completion-range boundary |
+| `generated_at_utc` | Single clock instant used by the entire response |
+| `completed` | Current retained completed Tasks inside `[start, end)` |
+| `overdue` | Current non-deleted pending Tasks overdue at `generated_at_utc` |
+| `carryover` | Current non-deleted pending Tasks planned before `local_date` |
+| `projects` | Current snapshots for all non-deleted Projects |
+
+Today uses local midnight to next local midnight. Week uses Monday local
+midnight to the following Monday local midnight. Each boundary is independently
+converted through `local_timezone`, so DST may produce a range that is not
+exactly 24 or 168 elapsed hours. Switching scope changes the completion range;
+Overdue, Carryover and Project snapshots remain current at the common
+`generated_at_utc` instant.
+
+Each `projects` entry has this shape:
+
+```json
+{
+  "id": "canonical-project-uuid",
+  "name": "Project name",
+  "status": "active",
+  "task_count": 4,
+  "completed_task_count": 1,
+  "pending_task_count": 3,
+  "overdue_task_count": 1,
+  "progress_percent": 25,
+  "latest_completed_at_utc": "2026-10-03T03:00:00.000000Z"
+}
+```
+
+`latest_completed_at_utc` is nullable and means the maximum retained completion
+timestamp among that Project's non-deleted Tasks that are still completed. It
+is not Last Activity, Last Progress, or immutable history. Both active and
+completed non-deleted Projects are returned; Project status remains independent
+from Task status. There is no `stagnant`, `last_activity`, `attention_status` or
+attention-score field in V0.7.
+
+### Section Membership
+
+Completed membership requires all of:
+
+```text
+deleted_at_utc IS NULL
+status = completed
+completed_at_utc IS NOT NULL
+range_start_utc <= completed_at_utc < range_end_utc
+```
+
+Reopen and restore-to-pending clear `completed_at_utc`, soft deletion excludes
+the Task, and re-completion uses only the latest timestamp. `updated_at_utc` is
+never accepted as a completion fallback.
+
+Current Overdue uses the released Deadline semantics at `generated_at_utc`:
+
+- timed Deadline: `generated_at_utc >= deadline_at_utc`;
+- date-only Deadline: the current date in the Task's saved
+  `deadline_timezone` is later than `deadline_date`;
+- only pending, non-deleted Tasks qualify.
+
+Carryover requires `planned_date < local_date`, pending status and no soft
+delete. A Deadline-only Task with no planned date is not Carryover. A Task may
+appear in both Overdue and Carryover because they are separate facts.
+
+Each recurrence occurrence is evaluated as its own Task. A completed
+occurrence can qualify; its generated pending successor cannot. Skip, Delete,
+Stop, and materialization are not completion events. GET Review never invokes
+materialization.
+
+### Ordering and Read-Only Contract
+
+- Completed: newest `completed_at_utc`, then Task ID.
+- Overdue: earliest `deadline_date`; timed Deadlines before date-only Deadlines
+  on the same date; then timed instant, creation time and Task ID.
+- Carryover: oldest `planned_date`, then creation time, Task ID.
+- Projects: active before completed, then case-insensitive name and Project ID.
+
+Review performs SELECT operations only. It never mutates Task, Project,
+Recurrence or Reminder state; updates timestamps or versions; writes a cache,
+snapshot or last-viewed value; creates files; performs Backup/Restore; or runs a
+Migration. The service captures one request clock, uses bounded eager/grouped
+queries, and must not perform a Task-table scan per Project.
+
+### Error and Test Contract
+
+Expected failures use the existing safe error envelope without internal paths
+or stack traces. Invalid `scope` is 422. Invalid configured IANA timezone or a
+database read failure returns a safe server error and performs no fallback
+write or guessed time conversion.
+
+Backend acceptance covers Daily/Week and DST boundaries, exact half-open
+limits, Reopen/Delete/Restore/Repeat semantics, date-only and timed Overdue,
+Carryover exclusions and overlap, Project aggregates/latest completion,
+deterministic ordering, count/list agreement, common request clock, bounded
+query shape and before/after proof that GET has no side effects.
+
 ## Frozen V0.6 Backup API / CLI Boundary
 
-Status: Phase 1 Create/List/Verify and Manifest V1 are committed. Phase 2
+Status: released in `v0.6.0`. Phase 1 Create/List/Verify and Manifest V1 are committed. Phase 2
 Maintenance UI is committed. Phase 3A adds state-only maintenance/startup
 safety prototypes, and Phase 3B adds a read-only Restore Dry Run CLI. The Dry
 Run creates a RestorePlan only; it does not create a lock, write restore state,
@@ -37,8 +188,8 @@ and unsupported force flags refuse. CLI prints operation/backup/safety IDs and
 verification result, explicitly leaving DayFlow stopped and maintenance
 confirmation required. Success never clears the V2 maintenance marker. Dry Run
 `--json` is unchanged. No HTTP Restore endpoint or real Restore permission exists.
-Release-preparation application version is `v0.6.0`; the last stable tag is
-`v0.5.1`. Business API and schema remain unchanged. NO DATABASE MIGRATION
+The stable application version and tag are `v0.6.0`. Business API and schema
+remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
 
 Phase 3D offline commands (no HTTP contract changes):

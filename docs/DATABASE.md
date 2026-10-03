@@ -9,7 +9,7 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: `0005` / V0.6.0 Release Preparation
+## Current Schema: `0005` / V0.6.0 Stable
 
 The real database is currently at:
 
@@ -17,10 +17,10 @@ The real database is currently at:
 0005_add_deadlines_recurrence_reminders
 ```
 
-Current application version: `v0.6.0` (Release Preparation). V0.5.1 is the
-last published stable tag. V0.6.0 changes no business schema or migration; the
-real schema remains `0005_add_deadlines_recurrence_reminders`. The `v0.6.0` tag
-has not been created.
+Current stable application version and annotated tag: `v0.6.0`. V0.6.0 changes
+no business schema or migration; the real schema remains
+`0005_add_deadlines_recurrence_reminders`. V0.7 Daily & Weekly Review is in
+Product / Architecture Freeze and also requires no schema change.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -327,23 +327,131 @@ Block data. It must fail closed if any row has a non-`NULL` schedule field. A
 downgrade is only safe when all three new columns are empty, such as on a clean
 test database.
 
+## V0.7 Review Read Model (Frozen; No Schema Change)
+
+V0.7 Review is computed from the existing `0005` current state. It creates no
+table, column, index, event log, snapshot or cache. The Review service performs
+SELECT operations only.
+
+### Completion State, Not Event History
+
+Completed Review selects a Task only while all of these remain true:
+
+```text
+deleted_at_utc IS NULL
+status = 'completed'
+completed_at_utc IS NOT NULL
+range_start_utc <= completed_at_utc < range_end_utc
+```
+
+`completed_at_utc` is the current retained completion timestamp. It is not an
+immutable event ledger:
+
+- completing writes it;
+- reopening or restoring to pending clears it;
+- re-completing writes a new latest value;
+- soft deletion excludes the row from Review without manufacturing history.
+
+`updated_at_utc` changes for many unrelated mutations and must never be used as
+a completion timestamp or fallback. A completed row with a missing completion
+timestamp is excluded and not repaired by Review.
+
+Each recurrence occurrence is already a distinct Task row through
+`recurrence_rule_id` plus `recurrence_occurrence_date`. It participates using
+its own current status and completion timestamp. A completed occurrence can be
+reviewed; its pending successor cannot. Skip and normal Delete are soft-delete
+outcomes, not completions. Stopping a rule is not a Task completion event.
+
+### Local Calendar Boundaries
+
+Review captures one UTC request instant and converts it through the configured
+DayFlow IANA timezone. Daily completion boundaries are local midnight to the
+next local midnight. Weekly boundaries are Monday local midnight to the next
+Monday local midnight. Convert endpoints independently to UTC and query the
+half-open range `[start, end)`; do not assume a fixed UTC offset or fixed
+24/168-hour duration across DST.
+
+`planned_date` remains a local date-only planning value. Carryover uses the
+current date in the configured DayFlow timezone:
+
+```text
+planned_date < current_local_date
+AND status = 'pending'
+AND deleted_at_utc IS NULL
+```
+
+A missing `planned_date` cannot be Carryover. Deadline-only Tasks can be
+Overdue but are not Carryover.
+
+### Existing Deadline Semantics
+
+Review does not persist an overdue flag. At the request instant, a non-deleted
+pending Task is overdue when:
+
+- its timed `deadline_at_utc` is less than or equal to the request UTC instant;
+  or
+- it has a date-only Deadline and the request instant's date in the saved
+  `deadline_timezone` is later than `deadline_date`.
+
+Completed and soft-deleted Tasks are never Current Overdue. The implementation
+must reuse a canonical explicit-instant Deadline evaluator rather than defining
+a second Review-only rule.
+
+### Project Snapshot Derivation
+
+Project Review includes every Project where `projects.deleted_at_utc IS NULL`,
+including both active and completed Project statuses. For each Project, only
+associated Tasks with `tasks.deleted_at_utc IS NULL` contribute:
+
+| Review field | Derivation |
+| --- | --- |
+| `task_count` | Count of all retained Project Tasks |
+| `completed_task_count` | Count with `status = 'completed'` |
+| `pending_task_count` | Count with `status = 'pending'` |
+| `overdue_task_count` | Pending count satisfying canonical current Deadline overdue semantics |
+| `progress_percent` | Existing integer completed/total calculation; empty Project is 0 |
+| `latest_completed_at_utc` | Maximum timestamp among retained Tasks still completed |
+
+These values are never stored. `latest_completed_at_utc` is not Project
+activity history and cannot justify `stagnant_days`, `last_activity`,
+`inactive_since`, or a “Project stalled” claim. Project status remains
+independent from Task status. V0.7 stores or returns no derived Project
+attention score/state.
+
+### Query and Index Boundary
+
+The initial personal-data scale uses bounded SQLAlchemy SELECTs: one selected
+Completed set, one shared pending candidate set for Overdue/Carryover, one
+Project set, and grouped Project aggregates. Relationship loading may use
+bounded `selectinload`; do not scan the Task table separately for each Project.
+
+V0.7 has no pagination, truncation, precomputed analytics or new index. Existing
+indexes support planned-date, project and Deadline candidate filtering; measure
+real isolated query plans before proposing any future index. A performance
+finding does not authorize `0006` during V0.7.
+
+### Migration Decision
+
+**NO DATABASE MIGRATION REQUIRED.** Existing `completed_at_utc`,
+`planned_date`, status, Deadline fields and Project relation support the frozen
+current-state Review. Do not create `0006` or edit migrations `0001`–`0005`.
+If immutable completion/activity history becomes a required product feature,
+stop implementation and request a separate product and migration decision.
+
 ## Backup
 
-The last stable v0.5.1 release has manual verified maintenance backups. V0.6.0
-Release Preparation includes Phase 1 development
-implements Backup Core/Create/List/Verify. Phase 2 Maintenance UI and Phase 3B
-read-only Dry Run and Phase 3C isolated execution are committed and reviewed.
-Phase 3D recovery coordination and Phase 4 Reminder poll failure visibility are
-committed and reviewed. Phase 5 Full Acceptance passed all functional,
-regression, data-safety, migration, launcher, restore-boundary, and repository
-hygiene gates. V0.6.0 Full Acceptance is PASS; the release Commit and Tag have
-not been created. Isolated Restore execution is verified only for independent
-system-temporary databases. Real project-database Restore remains prohibited,
-and Real Restore Storage Qualification is currently `NOT QUALIFIED`.
+The stable v0.6.0 release includes Backup Core/Create/List/Verify, Maintenance
+UI, read-only Dry Run, isolated Restore execution, recovery coordination, and
+Reminder poll failure visibility. Full Acceptance passed the functional,
+regression, data-safety, migration, launcher, restore-boundary, repository and
+documentation gates; its annotated release tag exists. Isolated Restore
+execution is verified only for independent system-temporary databases. Real
+project-database Restore remains prohibited, and Real Restore Storage
+Qualification is currently `NOT QUALIFIED`.
 Use SQLite Online Backup API for consistency,
 including committed WAL data; never assume copying an active main file is safe.
 
-### V0.6 Filesystem Model (Backup Implemented; Restore Execution Design Frozen)
+### V0.6 Filesystem Model (Released; Real Restore Still Prohibited)
 
 NO DATABASE MIGRATION REQUIRED. Keep `0005_add_deadlines_recurrence_reminders`;
 do not create `0006`, modify historic migrations, or add Backup business tables.

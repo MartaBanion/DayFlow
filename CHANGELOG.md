@@ -1,11 +1,32 @@
 # Changelog
 
-## [Unreleased] — V0.6.0 Data Safety & Recovery
+## [Unreleased] — V0.7 Daily & Weekly Review
 
-V0.6.0 Release Preparation is complete and Full Acceptance is PASS. The
-annotated `v0.6.0` tag and formal release have not been created; the last
-published stable tag remains `v0.5.1`. Real project-database Restore remains
-prohibited; current Real Restore Storage Qualification is `NOT QUALIFIED`.
+V0.7 Product / Architecture Freeze defines a read-only `#review` experience
+for Today and This Week. Product implementation has not started.
+
+### Planned
+
+- Current-state completed Task review using retained `completed_at_utc`.
+- Current overdue and carryover lists with Task navigation.
+- Current Project progress, pending/overdue counts, and latest retained Task
+  completion.
+- No Dashboard, charts, immutable history, Task Organization expansion, or
+  Backup/Restore work.
+
+### Compatibility
+
+- NO DATABASE MIGRATION REQUIRED; the schema remains
+  `0005_add_deadlines_recurrence_reminders` and no `0006` exists.
+- Review GET operations are read-only and do not materialize recurrence or
+  mutate business data.
+
+## [v0.6.0] — Data Safety & Recovery
+
+V0.6.0 is the current published stable release. Full Acceptance passed and the
+annotated `v0.6.0` tag points to its release Commit. Real project-database
+Restore remains prohibited; current Real Restore Storage Qualification is
+`NOT QUALIFIED`.
 
 ### Added
 
@@ -31,7 +52,7 @@ prohibited; current Real Restore Storage Qualification is `NOT QUALIFIED`.
 
 ## [v0.5.1] — UI/UX Refinement
 
-V0.5.1 is a presentation-only patch and the current stable release. Its
+V0.5.1 is a presentation-only patch and a previous stable release. Its
 release-preparation phase is historical; release status is confirmed by the
 annotated Git tag.
 
