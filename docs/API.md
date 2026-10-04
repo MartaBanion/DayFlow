@@ -13,8 +13,8 @@ annotated `v0.7.0` tag points to release Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. Deadline, Recurrence, Reminder,
 Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
 is implemented, integrated, accepted, and released. V0.8 Task Organization at
-Scale is frozen at Product / Architecture Phase 0; its Task Query changes are
-not implemented yet. The real database schema remains
+Scale is frozen at Product / Architecture Phase 0; Phase 1 Task Query Core is
+complete. Phase 2 has not started. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -382,7 +382,7 @@ Response:
 Backend in that timezone. Frontend “今天” logic must use this runtime value
 instead of the browser's local date.
 
-## V0.8 Task Query Contract (Phase 0 Frozen)
+## V0.8 Task Query Contract (Phase 1 Complete)
 
 V0.8 extends the existing Task list endpoint. It does not create a Search or
 Analytics endpoint, and it keeps the existing response shape:
@@ -426,10 +426,10 @@ timezone, or a hard-coded offset. Overdue reuses the canonical
 with `deadline_at_utc`, while date-only deadlines compare the request instant's
 date in the Task's saved `deadline_timezone` with `deadline_date`.
 
-Phase 1 should satisfy this with a small TaskRead serialization helper that
-accepts `generated_at_utc` explicitly for the list request. It must not call the
-current wall-clock `Task.deadline_status` property for this path. No general
-Clock Framework, model redesign, or schema change is required.
+Phase 1 satisfies this with a small TaskRead serialization helper that accepts
+`generated_at_utc` explicitly for the list request. It does not call the current
+wall-clock `Task.deadline_status` property for this path. No general Clock
+Framework, model redesign, or schema change is required.
 
 `overdue=true` therefore implies current pending, non-deleted, canonical
 Overdue status. Combining it with `status=completed` returns an empty

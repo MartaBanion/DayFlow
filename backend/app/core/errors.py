@@ -128,6 +128,15 @@ class ReviewConfigurationError(AppError):
         )
 
 
+class TaskQueryConfigurationError(AppError):
+    def __init__(self):
+        super().__init__(
+            "task_query_configuration_error",
+            "Task query timezone configuration is invalid",
+            500,
+        )
+
+
 class RecurrenceValidationError(AppError):
     def __init__(self, message: str):
         super().__init__("recurrence_validation_error", message, 422)

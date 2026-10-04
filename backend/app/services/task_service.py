@@ -17,17 +17,23 @@ from app.core.errors import (
     ScheduleValidationError,
     TagNameConflictError,
     TagNotFoundError,
+    TaskQueryConfigurationError,
     TaskNotFoundError,
     TaskVersionConflictError,
 )
 from app.core.config import get_settings
-from app.core.time import utc_now
+from app.core.time import ensure_utc, utc_now
 from app.core.schedule import (
     local_schedule_to_utc,
     move_schedule_to_date,
+    resolve_timezone,
     validate_persisted_schedule,
 )
-from app.core.deadline import local_deadline_to_utc, validate_persisted_deadline
+from app.core.deadline import (
+    deadline_status_at,
+    local_deadline_to_utc,
+    validate_persisted_deadline,
+)
 from app.models.category import Category
 from app.models.project import Project
 from app.models.tag import Tag, task_tags
@@ -38,7 +44,10 @@ from app.schemas.task import (
     TagCreate,
     TagUpdate,
     TaskCreate,
+    TaskSortValue,
+    TaskStatusFilterValue,
     TaskUpdate,
+    PlannedBucketValue,
 )
 
 logger = logging.getLogger("dayflow.task")
@@ -102,7 +111,13 @@ class TaskService:
         category_id: str | None = None,
         project_id: str | None = None,
         tag_id: str | None = None,
+        status: str | None = None,
+        overdue: bool = False,
+        planned_bucket: str | None = None,
+        sort: str = TaskSortValue.DEFAULT.value,
+        generated_at_utc: datetime | None = None,
     ) -> list[Task]:
+        request_clock = ensure_utc(generated_at_utc or utc_now())
         statement = (
             select(Task)
             .options(
@@ -118,6 +133,18 @@ class TaskService:
             statement = statement.where(
                 Task.planned_date.is_(None),
                 Task.status == TaskStatus.PENDING.value,
+            )
+        if status is not None and status != TaskStatusFilterValue.ALL.value:
+            statement = statement.where(Task.status == status)
+        if planned_bucket is not None:
+            planned_date_filter = self._planned_bucket_filter(
+                planned_bucket, request_clock
+            )
+            statement = statement.where(planned_date_filter)
+        if overdue:
+            statement = statement.where(
+                Task.status == TaskStatus.PENDING.value,
+                Task.deadline_date.is_not(None),
             )
         if query:
             pattern = self._like_pattern(query)
@@ -138,12 +165,76 @@ class TaskService:
                 task_tags, task_tags.c.task_id == Task.id
             ).where(task_tags.c.tag_id == tag_id)
 
-        statement = statement.order_by(
-            case((Task.status == TaskStatus.PENDING.value, 0), else_=1),
+        statement = statement.order_by(*self._task_order(sort))
+        tasks = list(session.scalars(statement).unique().all())
+        if overdue:
+            tasks = [
+                task
+                for task in tasks
+                if self._deadline_status(task, request_clock) == "overdue"
+            ]
+        return tasks
+
+    @staticmethod
+    def _planned_bucket_filter(planned_bucket: str, generated_at_utc: datetime):
+        try:
+            zone = resolve_timezone(get_settings().timezone)
+        except ScheduleValidationError as error:
+            raise TaskQueryConfigurationError() from error
+        current_local_date = generated_at_utc.astimezone(zone).date()
+        if planned_bucket == PlannedBucketValue.UNSCHEDULED.value:
+            return Task.planned_date.is_(None)
+        if planned_bucket == PlannedBucketValue.TODAY.value:
+            return Task.planned_date == current_local_date
+        if planned_bucket == PlannedBucketValue.PAST.value:
+            return Task.planned_date < current_local_date
+        return Task.planned_date > current_local_date
+
+    @staticmethod
+    def _task_order(sort: str):
+        pending_first = case(
+            (Task.status == TaskStatus.PENDING.value, 0), else_=1
+        )
+        if sort == TaskSortValue.PLANNED.value:
+            return (
+                case((Task.planned_date.is_(None), 1), else_=0),
+                Task.planned_date,
+                Task.created_at_utc,
+                Task.id,
+            )
+        if sort == TaskSortValue.DEADLINE.value:
+            return (
+                case((Task.deadline_date.is_(None), 1), else_=0),
+                Task.deadline_date,
+                case((Task.deadline_at_utc.is_(None), 1), else_=0),
+                Task.deadline_at_utc,
+                Task.created_at_utc,
+                Task.id,
+            )
+        if sort == TaskSortValue.COMPLETED.value:
+            return (
+                case((Task.completed_at_utc.is_(None), 1), else_=0),
+                Task.completed_at_utc.desc(),
+                Task.created_at_utc,
+                Task.id,
+            )
+        return (
+            pending_first,
             Task.planned_date.is_(None),
             Task.created_at_utc,
+            Task.id,
         )
-        return list(session.scalars(statement).unique().all())
+
+    @staticmethod
+    def _deadline_status(task: Task, generated_at_utc: datetime) -> str:
+        return deadline_status_at(
+            status=task.status,
+            deleted_at_utc=task.deleted_at_utc,
+            deadline_date=task.deadline_date,
+            deadline_at_utc=task.deadline_at_utc,
+            deadline_timezone=task.deadline_timezone,
+            generated_at_utc=generated_at_utc,
+        )
 
     def today(self, session: Session, target_date: date) -> list[Task]:
         return self.list(session, target_date)

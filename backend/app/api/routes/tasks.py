@@ -7,8 +7,17 @@ from sqlalchemy.orm import Session
 from app.api.deps import db_session
 from app.core.config import get_settings
 from app.core.errors import CalendarRangeError
-from app.core.time import today_in_timezone
-from app.schemas.task import PriorityValue, TaskCreate, TaskRead, TaskUpdate, TaskVersionRequest
+from app.core.time import today_in_timezone, utc_now
+from app.schemas.task import (
+    PlannedBucketValue,
+    PriorityValue,
+    TaskCreate,
+    TaskRead,
+    TaskSortValue,
+    TaskStatusFilterValue,
+    TaskUpdate,
+    TaskVersionRequest,
+)
 from app.services.task_service import TaskService
 
 router = APIRouter(prefix="/api/v1", tags=["tasks"])
@@ -37,9 +46,14 @@ def list_tasks(
     category_id: UUID | None = None,
     project_id: UUID | None = None,
     tag_id: UUID | None = None,
+    status_filter: TaskStatusFilterValue | None = Query(default=None, alias="status"),
+    overdue: bool = Query(default=False),
+    planned_bucket: PlannedBucketValue | None = Query(default=None),
+    sort: TaskSortValue = Query(default=TaskSortValue.DEFAULT),
     session: Session = Depends(db_session),
 ) -> list[TaskRead]:
-    return service.list(
+    generated_at_utc = utc_now()
+    tasks = service.list(
         session,
         planned_date,
         inbox=inbox,
@@ -48,7 +62,15 @@ def list_tasks(
         category_id=str(category_id) if category_id is not None else None,
         project_id=str(project_id) if project_id is not None else None,
         tag_id=str(tag_id) if tag_id is not None else None,
+        status=status_filter.value if status_filter is not None else None,
+        overdue=overdue,
+        planned_bucket=(
+            planned_bucket.value if planned_bucket is not None else None
+        ),
+        sort=sort.value,
+        generated_at_utc=generated_at_utc,
     )
+    return [TaskRead.from_task_at(task, generated_at_utc) for task in tasks]
 
 
 @router.get("/today", response_model=list[TaskRead])

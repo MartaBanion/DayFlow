@@ -4,6 +4,7 @@ from datetime import date, datetime, time as time_type, timezone
 from enum import StrEnum
 from uuid import UUID
 
+from app.core.deadline import deadline_status_at
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from app.models.task import DeadlineStatus, Task, TaskPriority, TaskStatus
@@ -13,6 +14,26 @@ from app.schemas.project import ProjectSummary
 class TaskStatusValue(StrEnum):
     PENDING = TaskStatus.PENDING.value
     COMPLETED = TaskStatus.COMPLETED.value
+
+
+class TaskStatusFilterValue(StrEnum):
+    PENDING = TaskStatus.PENDING.value
+    COMPLETED = TaskStatus.COMPLETED.value
+    ALL = "all"
+
+
+class PlannedBucketValue(StrEnum):
+    UNSCHEDULED = "unscheduled"
+    TODAY = "today"
+    PAST = "past"
+    FUTURE = "future"
+
+
+class TaskSortValue(StrEnum):
+    DEFAULT = "default"
+    PLANNED = "planned"
+    DEADLINE = "deadline"
+    COMPLETED = "completed"
 
 
 class PriorityValue(StrEnum):
@@ -223,6 +244,25 @@ class TaskRead(BaseModel):
     completed_at_utc: datetime | None
     deleted_at_utc: datetime | None
     version: int
+
+    @classmethod
+    def from_task_at(cls, task: Task, generated_at_utc: datetime) -> "TaskRead":
+        values = {
+            field_name: (
+                deadline_status_at(
+                    status=task.status,
+                    deleted_at_utc=task.deleted_at_utc,
+                    deadline_date=task.deadline_date,
+                    deadline_at_utc=task.deadline_at_utc,
+                    deadline_timezone=task.deadline_timezone,
+                    generated_at_utc=generated_at_utc,
+                )
+                if field_name == "deadline_status"
+                else getattr(task, field_name)
+            )
+            for field_name in cls.model_fields
+        }
+        return cls.model_validate(values)
 
     @field_serializer(
         "created_at_utc",

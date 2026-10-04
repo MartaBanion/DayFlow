@@ -3,9 +3,10 @@
 Current stable application version: **v0.7.0 — Daily & Weekly Review**. The
 annotated `v0.7.0` tag is the published stable release and points to Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete.
-Current development is V0.8 Task Organization at Scale, with Product /
-Architecture Phase 0 frozen and Phase 1 not started. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`.
+Current development is V0.8 Task Organization at Scale. Product / Architecture
+Phase 0 is frozen and Phase 1 Task Query Core is complete; Phase 2 has not
+started. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -398,7 +399,8 @@ and Project flows.
 
 ### V0.8 — Task Organization at Scale
 
-Status: Product / Architecture Phase 0 frozen; implementation has not started.
+Status: Product / Architecture Phase 0 frozen; Phase 1 Task Query Core
+complete. Phase 2 has not started.
 The single theme is Search / Filter / Sort with Project reuse. V0.8 extends the
 existing `GET /api/v1/tasks` endpoint and keeps the existing `TaskRead[]`
 response shape.
@@ -437,8 +439,9 @@ tables, or indexes during Phase 0.
 Implementation phases:
 
 1. Phase 0: Product / Architecture Freeze — frozen.
-2. Phase 1: Task Query Core — filters, fixed sorts, request clock, canonical
-   Deadline reuse, and Backend tests.
+2. Phase 1: Task Query Core — complete. This adds
+   filters, fixed sorts, request clock, canonical Deadline reuse, and Backend
+   tests.
 3. Phase 2: Search / Project UI Integration — controls, reuse, Frontend tests,
    and isolated E2E; Inbox Quick Project/Priority is separately optional.
 4. Phase 3: Full Acceptance / Release.
