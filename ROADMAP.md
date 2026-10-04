@@ -400,7 +400,7 @@ and Project flows.
 ### V0.8 — Task Organization at Scale
 
 Status: Product / Architecture Phase 0 frozen; Phase 1 Task Query Core
-complete. Phase 2 has not started.
+complete; Phase 2 Search / Project UI Integration complete.
 The single theme is Search / Filter / Sort with Project reuse. V0.8 extends the
 existing `GET /api/v1/tasks` endpoint and keeps the existing `TaskRead[]`
 response shape.
@@ -443,7 +443,8 @@ Implementation phases:
    filters, fixed sorts, request clock, canonical Deadline reuse, and Backend
    tests.
 3. Phase 2: Search / Project UI Integration — controls, reuse, Frontend tests,
-   and isolated E2E; Inbox Quick Project/Priority is separately optional.
+   and isolated E2E — complete. Inbox Quick Project/Priority remains separately
+   optional and is not implemented.
 4. Phase 3: Full Acceptance / Release.
 
 Definition of Done: the user can quickly find all pending Tasks, current

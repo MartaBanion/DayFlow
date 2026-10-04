@@ -2,13 +2,22 @@ import { expect, test } from '@playwright/test'
 
 import {
   chooseInboxFilter,
+  chooseProjectTaskFilter,
   clearTaskSelect,
+  createProject,
   createTask,
   openTaskEditor,
   saveTaskEditor,
   taskCard,
+  todayDate,
   uniqueName,
 } from '../helpers/api'
+
+function shiftDate(value: string, days: number): string {
+  const date = new Date(`${value}T12:00:00+08:00`)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
 
 test('项目支持创建、关联任务、进度、删除和恢复', async ({ page, request }) => {
   const projectName = uniqueName('E2E-项目')
@@ -112,4 +121,49 @@ test('项目支持创建、关联任务、进度、删除和恢复', async ({ pa
 
   await page.reload()
   await expect(page.locator('.project-card').filter({ hasText: renamedProject }).first()).toBeVisible()
+})
+
+test('Project Detail 复用任务筛选并保持固定项目与整体进度', async ({ page, request }) => {
+  const today = todayDate()
+  const yesterday = shiftDate(today, -1)
+  const project = await createProject(request, uniqueName('E2E-筛选项目'))
+  const pendingTitle = uniqueName('E2E-项目待完成')
+  const overdueTitle = uniqueName('E2E-项目逾期')
+  const completedTitle = uniqueName('E2E-项目已完成')
+  const outsideTitle = uniqueName('E2E-项目外任务')
+
+  await createTask(request, { title: pendingTitle, planned_date: yesterday, project_id: project.id })
+  await createTask(request, {
+    title: overdueTitle,
+    planned_date: yesterday,
+    project_id: project.id,
+    deadline: { date: yesterday, timezone: 'Asia/Shanghai' },
+  })
+  const completed = await createTask(request, { title: completedTitle, planned_date: today, project_id: project.id })
+  const completedResponse = await request.post(`/api/v1/tasks/${completed.id}/complete`, {
+    data: { version: completed.version },
+  })
+  expect(completedResponse.ok(), await completedResponse.text()).toBeTruthy()
+  await createTask(request, { title: outsideTitle, planned_date: yesterday })
+
+  await page.goto(`/#project:${project.id}`)
+  await expect(page.getByRole('heading', { name: project.name, exact: true })).toBeVisible()
+  await expect(page.locator('.project-detail-summary')).toContainText('1 / 3')
+  await expect(page.locator('.project-detail-summary')).toContainText('33%')
+
+  await chooseProjectTaskFilter(page, 0, '待完成')
+  await expect(taskCard(page, pendingTitle)).toBeVisible()
+  await expect(taskCard(page, completedTitle)).toHaveCount(0)
+
+  await page.locator('#project-overdue-filter').check()
+  await expect(taskCard(page, overdueTitle)).toBeVisible()
+  await expect(taskCard(page, pendingTitle)).toHaveCount(0)
+
+  await page.locator('.project-task-filters').getByRole('button', { name: '清除筛选', exact: true }).click()
+  await expect(taskCard(page, pendingTitle)).toBeVisible()
+  await expect(taskCard(page, completedTitle)).toBeVisible()
+  await expect(taskCard(page, outsideTitle)).toHaveCount(0)
+  await expect(page).toHaveURL(new RegExp(`#project:${project.id}$`))
+  await expect(page.locator('.project-detail-summary')).toContainText('1 / 3')
+  await expect(page.locator('.project-detail-summary')).toContainText('33%')
 })

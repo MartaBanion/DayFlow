@@ -8,7 +8,7 @@ import type { Project, Task } from '../types'
 import ProjectDetailView from './ProjectDetailView.vue'
 
 const stubs = {
-  'el-alert': { props: ['title'], template: '<div class="stub-alert">{{ title }}</div>' },
+  'el-alert': { props: ['title'], template: '<div class="stub-alert"><span>{{ title }}</span><slot /></div>' },
   'el-button': {
     props: ['nativeType', 'disabled', 'loading'],
     template: '<button :disabled="disabled" :type="nativeType || \'button\'"><slot /></button>',
@@ -16,6 +16,14 @@ const stubs = {
   'el-dialog': { props: ['modelValue'], template: '<div v-if="modelValue"><slot /></div>' },
   'el-empty': { props: ['description'], template: '<div>{{ description }}<slot /></div>' },
   'el-progress': { props: ['percentage'], template: '<div>{{ percentage }}%</div>' },
+  'el-option': {
+    props: ['label', 'value'],
+    template: '<option :value="value">{{ label }}</option>',
+  },
+  'el-select': {
+    props: ['modelValue'],
+    template: '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value); $emit(\'change\', $event.target.value)"><slot /></select>',
+  },
   'el-tag': { template: '<span><slot /></span>' },
   TaskEditor: {
     props: ['open'],
@@ -156,5 +164,35 @@ describe('ProjectDetailView', () => {
     expect(projectApi.get).toHaveBeenCalledTimes(2)
     expect(wrapper.find('.today-state.is-error').exists()).toBe(false)
     expect(wrapper.text()).toContain('关联任务')
+  })
+
+  it('reuses the fixed project id for task filters and reset', async () => {
+    wrapper = mount(ProjectDetailView, {
+      props: { projectId: project.id },
+      global: { stubs },
+    })
+    await flushPromises()
+
+    await wrapper.findAll('select')[0].setValue('pending')
+    await flushPromises()
+    await wrapper.find('#project-overdue-filter').setValue(true)
+    await flushPromises()
+    await wrapper.findAll('select')[1].setValue('past')
+    await flushPromises()
+    await wrapper.findAll('select')[2].setValue('planned')
+    await flushPromises()
+
+    expect(taskApi.list).toHaveBeenLastCalledWith({
+      projectId: project.id,
+      status: 'pending',
+      overdue: true,
+      plannedBucket: 'past',
+      sort: 'planned',
+    })
+
+    await wrapper.get('.project-task-filters').findAll('button').find(button => button.text() === '清除筛选')!.trigger('click')
+    await flushPromises()
+    expect(taskApi.list).toHaveBeenLastCalledWith({ projectId: project.id })
+    expect(wrapper.text()).toContain('学习 Linux')
   })
 })

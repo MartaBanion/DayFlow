@@ -6,6 +6,7 @@ import type {
   TaskPriority,
   RuntimeInfo,
   TaskUpdatePayload,
+  TaskListParams,
   Tag,
   Project,
   ProjectCreatePayload,
@@ -104,14 +105,7 @@ export const taskApi = {
     return request<Task[]>(`/calendar?${query.toString()}`)
   },
 
-  list(params: {
-    inbox?: boolean
-    query?: string
-    priority?: TaskPriority
-    categoryId?: string
-    tagId?: string
-    projectId?: string
-  } = {}): Promise<Task[]> {
+  list(params: TaskListParams = {}): Promise<Task[]> {
     const query = new URLSearchParams()
     if (params.inbox) query.set('inbox', 'true')
     if (params.query) query.set('q', params.query)
@@ -119,6 +113,10 @@ export const taskApi = {
     if (params.categoryId) query.set('category_id', params.categoryId)
     if (params.tagId) query.set('tag_id', params.tagId)
     if (params.projectId) query.set('project_id', params.projectId)
+    if (params.status) query.set('status', params.status)
+    if (params.overdue) query.set('overdue', 'true')
+    if (params.plannedBucket) query.set('planned_bucket', params.plannedBucket)
+    if (params.sort) query.set('sort', params.sort)
     const suffix = query.toString() ? `?${query.toString()}` : ''
     return request<Task[]>(`/tasks${suffix}`)
   },

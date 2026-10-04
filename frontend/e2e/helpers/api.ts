@@ -202,3 +202,12 @@ export async function chooseInboxFilter(
   await page.locator('.filter-row .el-select').nth(index).click()
   await page.getByRole('option', { name: option, exact: true }).click()
 }
+
+export async function chooseProjectTaskFilter(
+  page: Page,
+  index: number,
+  option: string,
+): Promise<void> {
+  await page.locator('.project-filter-row .el-select').nth(index).click()
+  await page.getByRole('option', { name: option, exact: true }).click()
+}

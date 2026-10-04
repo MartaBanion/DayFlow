@@ -14,7 +14,8 @@ annotated `v0.7.0` tag points to release Commit
 Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
 is implemented, integrated, accepted, and released. V0.8 Task Organization at
 Scale is frozen at Product / Architecture Phase 0; Phase 1 Task Query Core is
-complete. Phase 2 has not started. The real database schema remains
+complete; Phase 2 Search / Project UI Integration is complete. The real
+database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -382,7 +383,7 @@ Response:
 Backend in that timezone. Frontend “今天” logic must use this runtime value
 instead of the browser's local date.
 
-## V0.8 Task Query Contract (Phase 1 Complete)
+## V0.8 Task Query Contract (Phase 1 and Phase 2 Complete)
 
 V0.8 extends the existing Task list endpoint. It does not create a Search or
 Analytics endpoint, and it keeps the existing response shape:

@@ -4,7 +4,7 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { projectApi, taskApi } from '../api'
-import type { Project } from '../types'
+import type { Project, Task } from '../types'
 import InboxView from './InboxView.vue'
 
 const project: Project = {
@@ -22,8 +22,27 @@ const project: Project = {
   progress_percent: 0,
 }
 
+const task: Task = {
+  id: 'task-1',
+  title: '整理任务',
+  description: null,
+  status: 'pending',
+  planned_date: null,
+  start_at_utc: null,
+  end_at_utc: null,
+  schedule_timezone: null,
+  priority: 'normal',
+  category: null,
+  tags: [],
+  created_at_utc: '2026-09-28T00:00:00.000000Z',
+  updated_at_utc: '2026-09-28T00:00:00.000000Z',
+  completed_at_utc: null,
+  deleted_at_utc: null,
+  version: 1,
+}
+
 const stubs = {
-  'el-alert': { props: ['title'], template: '<div>{{ title }}</div>' },
+  'el-alert': { props: ['title'], template: '<div><span>{{ title }}</span><slot /></div>' },
   'el-button': {
     props: ['nativeType', 'disabled', 'loading'],
     template: '<button :disabled="disabled" :type="nativeType || \'button\'"><slot /></button>',
@@ -108,5 +127,96 @@ describe('Inbox project filter', () => {
     expect(wrapper.text()).toContain('搜索失败')
     expect(wrapper.text()).not.toContain('收件箱加载失败')
     expect(wrapper.findAll('button').some(b => b.text() === '重试')).toBe(true)
+  })
+
+  it('maps V0.8 search filters to the frozen task query enums', async () => {
+    wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })
+    await flushPromises()
+
+    await wrapper.findAll('select')[4].setValue('pending')
+    await flushPromises()
+    await wrapper.find('#overdue-filter').setValue(true)
+    await flushPromises()
+    await wrapper.findAll('select')[5].setValue('past')
+    await flushPromises()
+    await wrapper.findAll('select')[6].setValue('completed')
+    await flushPromises()
+
+    expect(taskApi.list).toHaveBeenLastCalledWith({
+      inbox: false,
+      query: undefined,
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+      status: 'pending',
+      overdue: true,
+      plannedBucket: 'past',
+      sort: 'completed',
+    })
+  })
+
+  it('resets search filters without changing the search mode', async () => {
+    wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })
+    await flushPromises()
+    await wrapper.find('input#overdue-filter').setValue(true)
+    await flushPromises()
+    await wrapper.findAll('select')[4].setValue('completed')
+    await flushPromises()
+
+    await wrapper.findAll('button').find(button => button.text() === '清除筛选')!.trigger('click')
+    await flushPromises()
+
+    expect(taskApi.list).toHaveBeenLastCalledWith({
+      inbox: false,
+      query: undefined,
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
+    expect(wrapper.text()).toContain('搜索结果')
+  })
+
+  it('keeps loaded search results when a refresh fails and offers retry', async () => {
+    vi.mocked(taskApi.list).mockReset()
+    let listCalls = 0
+    vi.mocked(taskApi.list).mockImplementation(() => {
+      listCalls += 1
+      return listCalls === 1 ? Promise.resolve([task]) : Promise.reject(new Error('offline'))
+    })
+
+    wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })
+    await flushPromises()
+    expect(wrapper.text()).toContain(task.title)
+
+    await wrapper.findAll('button').find(button => button.text() === '刷新')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(task.title)
+    expect(wrapper.text()).toContain('当前结果可能未更新')
+    expect(wrapper.findAll('button').some(button => button.text() === '重试')).toBe(true)
+  })
+
+  it('ignores an older response after filters change quickly', async () => {
+    vi.mocked(taskApi.list).mockReset()
+    const resolvers: Array<(value: Task[]) => void> = []
+    vi.mocked(taskApi.list).mockImplementation(() => new Promise(resolve => resolvers.push(resolve)))
+
+    wrapper = mount(InboxView, { props: { searchOnly: true }, global: { stubs } })
+    await flushPromises()
+    expect(resolvers).toHaveLength(1)
+    resolvers[0]!([])
+    await flushPromises()
+
+    await wrapper.findAll('select')[4].setValue('pending')
+    await wrapper.findAll('select')[5].setValue('past')
+    expect(resolvers.length).toBeGreaterThan(1)
+
+    const latestResolver = resolvers.at(-1)!
+    latestResolver([task])
+    for (const resolver of resolvers.slice(0, -1)) resolver([{ ...task, title: '旧响应' }])
+    await flushPromises()
+
+    expect(wrapper.text()).toContain(task.title)
+    expect(wrapper.text()).not.toContain('旧响应')
   })
 })

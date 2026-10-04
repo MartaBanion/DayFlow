@@ -155,6 +155,24 @@ describe('application navigation', () => {
     expect(wrapper.get('main').text()).toContain('日常回顾')
     expect(reviewApi.get).toHaveBeenCalledWith('today')
   })
+  it('opens Search as an all-task search mode', async () => {
+    vi.spyOn(taskApi, 'list').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listCategories').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
+    window.location.hash = '#search'
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+
+    expect(wrapper.get('main').text()).toContain('搜索任务')
+    expect(wrapper.get('main').text()).toContain('搜索所有未删除任务，可组合筛选。')
+    expect(taskApi.list).toHaveBeenCalledWith({
+      inbox: false,
+      query: undefined,
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
+  })
   it('uses plain Chinese labels and marks the current Hash destination', async () => {
     vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
     vi.spyOn(taskApi, 'list').mockResolvedValue([])
@@ -274,9 +292,10 @@ describe('Inbox and search', () => {
     await wrapper.get('form.search-form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.find('.today-state.is-error').exists()).toBe(true)
+    expect(wrapper.find('.today-state.is-error').exists()).toBe(false)
+    expect(wrapper.find('.page-alert').exists()).toBe(true)
     expect(wrapper.text()).toContain('请求失败，请稍后重试。（HTTP 503）')
-    expect(wrapper.text()).not.toContain('没有找到相关任务')
+    expect(wrapper.text()).toContain('当前结果可能未更新')
     expect(list).toHaveBeenLastCalledWith({
       inbox: false,
       query: 'linux',
@@ -285,7 +304,7 @@ describe('Inbox and search', () => {
       tagId: undefined,
     })
 
-    await wrapper.get('.today-state.is-error button').trigger('click')
+    await wrapper.get('.page-alert button').trigger('click')
     await flushPromises()
     expect(list).toHaveBeenCalledTimes(3)
   })

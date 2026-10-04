@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { projectApi, recurrenceApi, taskApi } from '../api'
@@ -11,6 +11,10 @@ import type {
   Tag,
   Task,
   TaskCreatePayload,
+  TaskListParams,
+  TaskPlannedBucket,
+  TaskSort,
+  TaskStatusFilter,
   TaskUpdatePayload,
 } from '../types'
 import TaskCard from './TaskCard.vue'
@@ -27,6 +31,7 @@ const loadState = ref<LoadState>('loading')
 const isLoading = ref(false)
 const isSaving = ref(false)
 const errorMessage = ref('')
+const staleData = ref(false)
 const isEditorOpen = ref(false)
 const editingTask = ref<Task | null>(null)
 const categories = ref<Category[]>([])
@@ -34,6 +39,15 @@ const tags = ref<Tag[]>([])
 const projects = ref<Project[]>([])
 const metadataLoaded = ref(false)
 const runtimeTimezone = ref('')
+const statusFilter = ref<TaskStatusFilter | ''>('')
+const overdueFilter = ref(false)
+const plannedBucketFilter = ref<TaskPlannedBucket | ''>('')
+const sortFilter = ref<TaskSort | ''>('')
+let requestSequence = 0
+
+const hasTaskFilters = computed(() => Boolean(
+  statusFilter.value || overdueFilter.value || plannedBucketFilter.value || sortFilter.value,
+))
 
 function showProjectList(): void {
   window.location.hash = '#projects'
@@ -43,23 +57,48 @@ function showError(error: unknown): void {
   errorMessage.value = getProjectErrorMessage(error)
 }
 
-async function loadProject(): Promise<void> {
-  loadState.value = 'loading'
+function taskListParams(): TaskListParams {
+  const params: TaskListParams = { projectId: props.projectId }
+  if (statusFilter.value) params.status = statusFilter.value
+  if (overdueFilter.value) params.overdue = true
+  if (plannedBucketFilter.value) params.plannedBucket = plannedBucketFilter.value
+  if (sortFilter.value) params.sort = sortFilter.value
+  return params
+}
+
+function resetTaskFilters(): void {
+  statusFilter.value = ''
+  overdueFilter.value = false
+  plannedBucketFilter.value = ''
+  sortFilter.value = ''
+  void loadProject(true)
+}
+
+async function loadProject(preserveList = false): Promise<void> {
+  const requestId = ++requestSequence
+  if (!preserveList) loadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
+  staleData.value = false
   try {
     const [loadedProject, loadedTasks] = await Promise.all([
       projectApi.get(props.projectId),
-      taskApi.list({ projectId: props.projectId }),
+      taskApi.list(taskListParams()),
     ])
+    if (requestId !== requestSequence) return
     project.value = loadedProject
     tasks.value = loadedTasks
     loadState.value = 'loaded'
   } catch (error) {
+    if (requestId !== requestSequence) return
     loadState.value = 'error'
     errorMessage.value = getProjectLoadErrorMessage(error)
+    if (preserveList && project.value) {
+      loadState.value = 'loaded'
+      staleData.value = true
+    }
   } finally {
-    isLoading.value = false
+    if (requestId === requestSequence) isLoading.value = false
   }
 }
 
@@ -139,7 +178,7 @@ async function saveTask(payload: TaskUpdatePayload): Promise<void> {
     }
     if (!saved) return
     isEditorOpen.value = false
-    await loadProject()
+    await loadProject(true)
     ElMessage.success(editingTask.value ? '任务已更新' : '任务已创建')
   } catch (error) {
     showError(error)
@@ -152,7 +191,7 @@ async function completeTask(task: Task): Promise<void> {
   isSaving.value = true
   try {
     await taskApi.complete(task.id, task.version)
-    await loadProject()
+    await loadProject(true)
     ElMessage.success('任务已完成')
   } catch (error) {
     showError(error)
@@ -166,7 +205,7 @@ async function skipTask(task: Task): Promise<void> {
   isSaving.value = true
   try {
     await recurrenceApi.skip(task.id, task.version)
-    await loadProject()
+    await loadProject(true)
     ElMessage.success('本次任务已跳过，下一次任务已准备好')
   } catch (error) {
     errorMessage.value = getFeatureErrorMessage(error, '跳过本次任务')
@@ -179,7 +218,7 @@ async function restoreTask(task: RestoreTarget): Promise<void> {
   isSaving.value = true
   try {
     await taskApi.restore(task.id, task.version)
-    await loadProject()
+    await loadProject(true)
     ElMessage.success('任务已恢复')
   } catch (error) {
     showError(error)
@@ -202,7 +241,7 @@ async function deleteTask(task: Task): Promise<void> {
   isSaving.value = true
   try {
     await taskApi.remove(task.id, task.version)
-    await loadProject()
+    await loadProject(true)
     ElMessage.success('任务已删除')
   } catch (error) {
     showError(error)
@@ -223,7 +262,7 @@ onMounted(loadProject)
       <p v-if="project?.description" class="muted">{{ project.description }}</p>
     </div>
     <div class="page-header-actions">
-      <el-button plain :loading="isLoading" @click="loadProject">刷新</el-button>
+      <el-button plain :loading="isLoading" @click="loadProject(true)">刷新</el-button>
       <el-button type="primary" :disabled="!project" @click="openCreateTask">新建任务</el-button>
     </div>
   </header>
@@ -245,12 +284,14 @@ onMounted(loadProject)
     <el-alert
       v-if="errorMessage"
       class="page-alert"
-      :title="errorMessage"
+      :title="staleData ? `${errorMessage} 当前结果可能未更新。` : errorMessage"
       type="error"
       show-icon
       closable
       @close="errorMessage = ''"
-    />
+    >
+      <el-button v-if="staleData" text @click="loadProject(true)">重试</el-button>
+    </el-alert>
 
     <section class="project-detail-summary">
       <div class="project-detail-status-row">
@@ -263,6 +304,48 @@ onMounted(loadProject)
       <el-progress :percentage="project.progress_percent" :stroke-width="10" />
     </section>
 
+    <section class="search-panel project-task-filters" aria-labelledby="project-task-filters-title" :aria-busy="isLoading">
+      <div class="filter-toolbar">
+        <div>
+          <p id="project-task-filters-title" class="eyebrow">任务筛选</p>
+          <span class="filter-summary">{{ hasTaskFilters ? '正在使用筛选条件' : '显示这个项目的全部任务' }}</span>
+          <span v-if="isLoading" class="filter-loading" role="status" aria-live="polite">正在更新项目任务…</span>
+        </div>
+        <el-button text :disabled="!hasTaskFilters" @click="resetTaskFilters">清除筛选</el-button>
+      </div>
+      <div class="filter-row project-filter-row">
+        <div class="filter-field"><label for="project-status-filter">状态</label>
+        <el-select id="project-status-filter" v-model="statusFilter" clearable placeholder="全部状态" aria-label="项目任务状态" @change="loadProject(true)">
+          <el-option label="待完成" value="pending" />
+          <el-option label="已完成" value="completed" />
+          <el-option label="全部状态" value="all" />
+        </el-select>
+        </div>
+        <div class="filter-field filter-checkbox-field">
+          <label class="filter-checkbox-label" for="project-overdue-filter">
+            <input id="project-overdue-filter" v-model="overdueFilter" type="checkbox" @change="loadProject(true)" />
+            <span>仅看逾期</span>
+          </label>
+        </div>
+        <div class="filter-field"><label for="project-planned-filter">计划日期</label>
+        <el-select id="project-planned-filter" v-model="plannedBucketFilter" clearable placeholder="不限" aria-label="项目任务计划日期" @change="loadProject(true)">
+          <el-option label="未安排" value="unscheduled" />
+          <el-option label="今天" value="today" />
+          <el-option label="过去" value="past" />
+          <el-option label="未来" value="future" />
+        </el-select>
+        </div>
+        <div class="filter-field"><label for="project-sort-filter">排序</label>
+        <el-select id="project-sort-filter" v-model="sortFilter" clearable placeholder="默认" aria-label="项目任务排序" @change="loadProject(true)">
+          <el-option label="默认" value="default" />
+          <el-option label="计划日期" value="planned" />
+          <el-option label="截止日期" value="deadline" />
+          <el-option label="最近完成" value="completed" />
+        </el-select>
+        </div>
+      </div>
+    </section>
+
     <section class="task-section project-task-section">
       <div class="section-heading task-heading">
         <div>
@@ -271,8 +354,9 @@ onMounted(loadProject)
         </div>
         <el-tag type="info" effect="plain">{{ tasks.length }}</el-tag>
       </div>
-      <el-empty v-if="tasks.length === 0" description="这个项目还没有任务">
-        <el-button type="primary" @click="openCreateTask">新建任务</el-button>
+      <el-empty v-if="tasks.length === 0" :description="hasTaskFilters ? '没有符合当前条件的任务' : '这个项目还没有任务'">
+        <el-button v-if="hasTaskFilters" @click="resetTaskFilters">清除筛选</el-button>
+        <el-button v-else type="primary" @click="openCreateTask">新建任务</el-button>
       </el-empty>
       <div v-else class="task-list">
         <TaskCard
@@ -302,6 +386,6 @@ onMounted(loadProject)
     :save-error="errorMessage"
     @update:open="isEditorOpen = $event"
     @submit="saveTask"
-    @changed="(task) => { if (task) editingTask = task; void loadProject() }"
+    @changed="(task) => { if (task) editingTask = task; void loadProject(true) }"
   />
 </template>

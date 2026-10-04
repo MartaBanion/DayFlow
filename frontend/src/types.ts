@@ -1,4 +1,7 @@
 export type TaskStatus = 'pending' | 'completed'
+export type TaskStatusFilter = 'pending' | 'completed' | 'all'
+export type TaskPlannedBucket = 'unscheduled' | 'today' | 'past' | 'future'
+export type TaskSort = 'default' | 'planned' | 'deadline' | 'completed'
 export type TaskPriority = 'low' | 'normal' | 'high'
 export type ProjectStatus = 'active' | 'completed'
 export type DeadlineStatus = 'none' | 'upcoming' | 'due_today' | 'overdue' | 'completed'
@@ -62,6 +65,19 @@ export interface Task {
   version: number
   recurrence_rule_id?: string | null
   recurrence_occurrence_date?: string | null
+}
+
+export interface TaskListParams {
+  inbox?: boolean
+  query?: string
+  priority?: TaskPriority
+  categoryId?: string
+  tagId?: string
+  projectId?: string
+  status?: TaskStatusFilter
+  overdue?: boolean
+  plannedBucket?: TaskPlannedBucket
+  sort?: TaskSort
 }
 
 export interface TaskCreatePayload {
