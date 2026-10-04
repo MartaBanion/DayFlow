@@ -2,17 +2,17 @@
 
 ## Current Version
 
-Current application version: **v0.7.0 — Daily & Weekly Review (Release
-Preparation)**. The published stable release remains **v0.6.0** and its
-annotated tag is unchanged. Phase 0 is frozen and committed; Phase 1 Review
-Core is implemented and committed; Phase 2 Review UI / Integration is
-implemented and committed; Phase 3 Full Acceptance is PASS. V0.7.0 is not
-released. The real database schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Current stable application version: **v0.7.0 — Daily & Weekly Review**. The
+annotated `v0.7.0` tag points to release Commit
+`b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete,
+accepted, and released. V0.8 Task Organization at Scale is frozen at Product /
+Architecture Phase 0; Phase 1 has not started. The real database schema
+remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
 
-Status: Release Preparation. Phase 0 Product / Architecture Freeze and Phase 1
+Status: Completed and formally released as `v0.7.0`. Phase 0 Product /
+Architecture Freeze and Phase 1
 Review Core are complete and committed. Phase 2 read-only `#review` Frontend
 view, Hash navigation, existing Task Editor / Project Detail navigation, and
 isolated Frontend/E2E integration tests are complete and committed. Phase 3
@@ -363,6 +363,86 @@ the next action. Completion also requires frozen semantics, no Review writes,
 no Migration, isolated tests, full regression and real-database read-only
 verification.
 
+## Frozen V0.8 — Task Organization at Scale
+
+Status: Product / Architecture Phase 0 frozen; implementation has not started.
+The V0.8 theme is Search / Filter / Sort with Project reuse. It is a small
+current-state organization layer over the existing Task list, not a new query
+engine or Analytics system.
+
+### Task Query Boundary
+
+Extend `GET /api/v1/tasks` rather than creating a Search endpoint. Preserve the
+existing `TaskRead[]` response shape, soft-delete exclusion, backward-compatible
+omitted-parameter behavior, and AND semantics. Existing `q`, `priority`,
+`category_id`, `tag_id`, `project_id`, `planned_date`, and `inbox` filters stay
+available. The frozen additions are:
+
+- `status=pending|completed|all`, using current Task status;
+- `overdue=true`, using only the canonical `deadline_status_at()` evaluator;
+- `planned_bucket=unscheduled|today|past|future`, based only on `planned_date`;
+- `sort=default|planned|deadline|completed`, with fixed direction and stable
+  tie-breakers.
+
+Every Task-list request captures one explicit `generated_at_utc`. Overdue and
+planned-bucket evaluation, plus serialized Task deadline status, use that same
+instant. Planned buckets use the configured DayFlow IANA timezone. Date-only
+Deadline evaluation uses the Task's saved `deadline_timezone`; timed Deadline
+evaluation compares the same instant with `deadline_at_utc`. Invalid enum values
+use the existing API validation envelope, and invalid timezone configuration
+fails safely. Phase 1 should pass the instant to a small TaskRead serialization
+helper instead of using the current wall-clock `Task.deadline_status` property
+for this endpoint; this does not require a Clock Framework, model redesign, or
+schema change.
+
+The existing Inbox meaning remains strict:
+`planned_date IS NULL AND status = pending AND deleted_at_utc IS NULL`.
+Consequently `inbox=true&status=completed` and
+`inbox=true&planned_bucket=today` are empty intersections rather than silently
+ignoring a filter. `planned_bucket=unscheduled` is broader than Inbox and may
+include completed Tasks. `completed_at_utc` remains the latest retained state,
+not immutable history.
+
+### Fixed Sorts and Project Reuse
+
+`default` preserves the current pending-first, planned-before-unplanned,
+created-time order; `planned` is planned date ascending with NULL last;
+`deadline` is deadline date ascending with NULL last, timed before date-only on
+the same date, then timed instant; and `completed` is completed timestamp
+descending with NULL last. All use creation time and Task ID as stable
+tie-breakers. Sort does not alter status or Overdue semantics and has no
+ascending/descending control.
+
+Project Detail reuses `GET /api/v1/tasks?project_id=<id>` with the same filters,
+sorts, loading/error/reset behavior, and a fixed project identifier. No second
+Project search contract, grouping engine, Kanban, Batch Edit, or drag ordering
+is introduced. Search mode must be visibly distinct from Inbox mode while
+remaining a local component state; no Pinia, saved views, or persistent query
+store is required.
+
+V0.8 has NO PAGINATION until measured isolated data demonstrates a need. Do not
+add an index, table, column, or `0006` in Phase 0. Review remains its own
+read-only service, Calendar remains its own date-range contract, and Backup,
+Restore, Recovery, and Storage Qualification are unchanged. Inbox Quick Project
+and Quick Priority are optional Should Have work after the core; Quick Postpone
+and Move Tomorrow/Next Week remain V0.9 scope.
+
+### V0.8 Phases and Acceptance
+
+1. Phase 0 — Product / Architecture Freeze — frozen.
+2. Phase 1 — Task Query Core: filters, fixed sorts, request clock, canonical
+   Deadline reuse, and Backend tests.
+3. Phase 2 — Search / Project UI Integration: controls, Project reuse,
+   Frontend tests, and isolated E2E; Inbox quick actions are separately
+   optional.
+4. Phase 3 — Full Acceptance / Release.
+
+The Definition of Done is the ability to find pending, current completed,
+Overdue, and planned-bucket Tasks with a small stable sort set, and to use the
+same organization capability inside Project Detail. Tests must cover filter
+combinations, canonical boundaries, soft delete, stable ordering, request
+clock consistency, no unintended writes, and bounded query behavior.
+
 ## Frozen V0.6 — Data Safety & Recovery
 
 Status: Completed and formally released as `v0.6.0`. Phase 1 Backup Core/Create/List/Verify/Manifest V1 are committed.
@@ -380,7 +460,7 @@ Hygiene gates. V0.6.0 Full Acceptance is PASS; release Commit
 independent system-temporary databases; real project-database Restore remains
 prohibited, and Real Restore Storage Qualification is currently `NOT QUALIFIED`.
 Isolated tests do not prove power-loss durability.
-The published stable tag is `v0.6.0`. This version is not Statistics,
+The V0.6.0 published stable tag was `v0.6.0`. This version was not Statistics,
 Review, AI, Task Organization, or a Notification Service.
 
 ### Product and Storage Boundaries

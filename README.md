@@ -4,10 +4,11 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**Current application version: v0.7.0 — Daily & Weekly Review (Release
-Preparation).** The published stable release remains v0.6.0 and its annotated
-tag is unchanged. V0.7 Full Acceptance passed; v0.7.0 has not been released.
-The real database schema remains
+**Current stable application version: v0.7.0 — Daily & Weekly Review.** The
+annotated `v0.7.0` tag is the published stable release at Commit
+`b632f10dbc9cde7da04083a60ef758dea648b594`. V0.8 Task Organization at Scale
+is frozen at Product / Architecture Phase 0; Phase 1 implementation has not
+started. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
@@ -24,14 +25,30 @@ been verified.
 - No real project-database Restore authorization; storage qualification remains
   `NOT QUALIFIED`.
 
-## V0.7 Current Development
+## V0.7 Daily & Weekly Review
 
-V0.7 has one product theme: Daily & Weekly Review. The implemented `#review`
+V0.7 has one product theme: Daily & Weekly Review. The released `#review`
 view presents current-state completed Tasks, current overdue and carryover work,
 and Project snapshots for Today and This Week. It is a read-only, list-first
 review flow rather than a Statistics Dashboard. Phases 0–3 are complete and
-V0.7 requires no database Migration. The current status is V0.7.0 Release
-Preparation; v0.7.0 is not yet released.
+V0.7 requires no database Migration. `completed_at_utc` remains the latest
+retained completion state, not immutable activity history.
+
+## V0.8 Task Organization at Scale
+
+V0.8 is frozen around Search / Filter / Sort with Project reuse. The release
+scope is intentionally small: extend the existing `/api/v1/tasks` query with
+current-status, Overdue, planned-date bucket, and limited stable-sort controls;
+reuse those controls in Project Detail with a fixed `project_id`; and make
+Search mode visibly distinct from Inbox mode. All filters use AND semantics,
+soft-deleted Tasks remain excluded, and the response remains the existing
+`TaskRead[]` list with no pagination.
+
+V0.8 requires no database migration and does not create `0006`. It does not
+include a query language, Saved Views, grouping, Kanban, Batch Edit, Activity
+History, Dashboard/Charts, or Backup/Restore/Recovery work. Inbox Quick Project
+and Quick Priority are optional Should Have work after the core scope; Quick
+Postpone remains a V0.9 planning concern.
 
 ## V0.1 Features
 

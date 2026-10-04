@@ -1,12 +1,11 @@
 # DayFlow Personal Roadmap
 
-Current application version: **v0.7.0 — Daily & Weekly Review (Release
-Preparation)**. The published stable release remains **v0.6.0** and its
-annotated tag is unchanged. Phase 0 is frozen and committed; Phase 1 Review
-Core is implemented and committed; Phase 2 Review UI / Integration is
-implemented and committed; Phase 3 Full Acceptance is PASS. V0.7.0 is not
-released. The real database schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Current stable application version: **v0.7.0 — Daily & Weekly Review**. The
+annotated `v0.7.0` tag is the published stable release and points to Commit
+`b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete.
+Current development is V0.8 Task Organization at Scale, with Product /
+Architecture Phase 0 frozen and Phase 1 not started. The real database schema
+remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -279,7 +278,8 @@ execution is implemented and verified; real project-database Restore remains
 prohibited. Real Restore Storage Qualification is currently `NOT QUALIFIED`
 because the real data mount differs from the system-temporary qualification
 mount. Process-abort tests are not power-loss durability acceptance.
-The published stable release is `v0.6.0`. NO DATABASE MIGRATION REQUIRED:
+At the time of the V0.6 release, the published stable release was `v0.6.0`.
+NO DATABASE MIGRATION REQUIRED:
 the real schema stays `0005_add_deadlines_recurrence_reminders`; no `0006`.
 
 MVP: consistent Create Backup, List Backups, Verify Backup, Restore Dry Run,
@@ -340,13 +340,13 @@ large TaskEditor extraction, global CSS or API Client refactoring.
 
 ## Current Development
 
-### V0.7 — Daily & Weekly Review
+### V0.7 — Daily & Weekly Review (Released)
 
-Status: Release Preparation. Phase 0 Product / Architecture Freeze and Phase 1
+Status: Completed and formally released as `v0.7.0`. Phase 0 Product /
+Architecture Freeze and Phase 1
 Review Core are complete and committed. Phase 2 `#review` UI and Frontend
 integration are complete and committed. Phase 3 Full Acceptance is PASS. V0.7
-remains a read-only, list-first Review flow, not a Dashboard or Statistics
-system, and is not released.
+is a read-only, list-first Review flow, not a Dashboard or Statistics system.
 
 Must Have:
 
@@ -396,12 +396,63 @@ this week, what is currently overdue, what planned work is carried over, and
 the current basic state of each Project, with navigation to the existing Task
 and Project flows.
 
+### V0.8 — Task Organization at Scale
+
+Status: Product / Architecture Phase 0 frozen; implementation has not started.
+The single theme is Search / Filter / Sort with Project reuse. V0.8 extends the
+existing `GET /api/v1/tasks` endpoint and keeps the existing `TaskRead[]`
+response shape.
+
+Must Have:
+
+- Current status filter: `pending`, `completed`, or `all`.
+- Canonical `overdue=true` filter using the existing Deadline evaluator.
+- Planned-date buckets: `unscheduled`, `today`, `past`, and `future`, using
+  the configured DayFlow IANA timezone.
+- Limited fixed sorts: `default`, `planned`, `deadline`, and `completed`, each
+  with documented null placement and stable tie-breakers.
+- Project Detail reuse of the same filters and sorts with a fixed
+  `project_id`, plus clear Search mode, AND semantics, Reset, and isolated
+  regression coverage.
+
+The default query behavior remains backward compatible, Inbox keeps its strict
+pending/unplanned meaning, and contradictory combinations return the natural
+empty intersection rather than silently ignoring a parameter. Each Task-list
+request captures one `generated_at_utc`; Overdue and planned buckets use that
+same instant, and TaskRead deadline status must use the same boundary.
+
+Should Have: optional Quick Project and Quick Priority Inbox actions after the
+core query scope is complete. URL/hash filter state is optional only if it is
+nearly free and does not introduce a global store.
+
+Explicitly out of scope: a new Search API, query language, Saved Views,
+grouping engine, Kanban, Subtasks, Manual Ordering, Drag & Drop, Batch Edit,
+Activity History, pagination without measured evidence, Quick Postpone, Move
+Tomorrow/Next Week, Calendar/Review redesign, AI, and Backup/Restore/Recovery.
+
+NO DATABASE MIGRATION REQUIRED. Keep
+`0005_add_deadlines_recurrence_reminders`; do not create `0006`, new columns,
+tables, or indexes during Phase 0.
+
+Implementation phases:
+
+1. Phase 0: Product / Architecture Freeze — frozen.
+2. Phase 1: Task Query Core — filters, fixed sorts, request clock, canonical
+   Deadline reuse, and Backend tests.
+3. Phase 2: Search / Project UI Integration — controls, reuse, Frontend tests,
+   and isolated E2E; Inbox Quick Project/Priority is separately optional.
+4. Phase 3: Full Acceptance / Release.
+
+Definition of Done: the user can quickly find all pending Tasks, current
+completed Tasks, current Overdue Tasks, planned-date buckets, and use a small
+set of stable sorts; Project Detail offers the same organization capability.
+
 ## Later Candidates
 
-- V0.8 Task Organization remains a separate candidate and is not V0.7 scope.
-- V0.9 Planning Flow refinement remains separate from Review.
+- V0.9 Planning Flow refinement remains separate from V0.8 organization.
+- V1.0 Product Maturity follows the focused V0.8 and V0.9 milestones.
 - AI assistance remains a future candidate after the core product workflow is
-  mature; it is not on the active V0.7 path.
+  mature; it is not on the active V0.8 path.
 
 ## Candidate / Backlog
 

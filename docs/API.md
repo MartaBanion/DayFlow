@@ -8,13 +8,13 @@
 
 ## Current Version
 
-Current application version: `v0.7.0` — Release Preparation. The published
-stable release remains `v0.6.0` and its annotated tag is unchanged. Deadline,
-Recurrence, Reminder, Backup, and Recovery API contracts use the released V0.6
-behavior. V0.7 Phase 0 is frozen and committed; the Daily & Weekly Review API
-below is implemented and committed in Phase 1, with its Frontend integration
-complete and committed in Phase 2. Phase 3 Full Acceptance is PASS; the
-`v0.7.0` release does not yet exist. The real database schema remains
+Current stable application version: `v0.7.0` — Daily & Weekly Review. The
+annotated `v0.7.0` tag points to release Commit
+`b632f10dbc9cde7da04083a60ef758dea648b594`. Deadline, Recurrence, Reminder,
+Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
+is implemented, integrated, accepted, and released. V0.8 Task Organization at
+Scale is frozen at Product / Architecture Phase 0; its Task Query changes are
+not implemented yet. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -190,8 +190,8 @@ and unsupported force flags refuse. CLI prints operation/backup/safety IDs and
 verification result, explicitly leaving DayFlow stopped and maintenance
 confirmation required. Success never clears the V2 maintenance marker. Dry Run
 `--json` is unchanged. No HTTP Restore endpoint or real Restore permission exists.
-The stable application version and tag are `v0.6.0`. Business API and schema
-remain unchanged. NO DATABASE MIGRATION
+The V0.6.0 release application version and tag were `v0.6.0`. Business API and
+schema remain unchanged. NO DATABASE MIGRATION
 REQUIRED; continue `0005_add_deadlines_recurrence_reminders` with no `0006`.
 
 Phase 3D offline commands (no HTTP contract changes):
@@ -381,6 +381,86 @@ Response:
 `timezone` is the configured IANA timezone. `local_date` is calculated by the
 Backend in that timezone. Frontend “今天” logic must use this runtime value
 instead of the browser's local date.
+
+## V0.8 Task Query Contract (Phase 0 Frozen)
+
+V0.8 extends the existing Task list endpoint. It does not create a Search or
+Analytics endpoint, and it keeps the existing response shape:
+
+```text
+GET /api/v1/tasks
+```
+
+Existing filters remain available: `q`, `priority`, `category_id`, `tag_id`,
+`project_id`, `planned_date`, and `inbox`. V0.8 adds these constrained query
+parameters:
+
+| Parameter | Allowed values | Meaning |
+| --- | --- | --- |
+| `status` | `pending`, `completed`, `all` | Current Task status; omitted preserves the current default behavior |
+| `overdue` | `true` (the UI value) | Keep only current pending Tasks overdue under the canonical Deadline evaluator |
+| `planned_bucket` | `unscheduled`, `today`, `past`, `future` | Compare only `planned_date` with the current DayFlow local date |
+| `sort` | `default`, `planned`, `deadline`, `completed` | Select one fixed, stable ordering; no direction control |
+
+All supplied filters are combined with AND semantics. Soft-deleted Tasks are
+always excluded. `status=completed` means the current status only; it is not a
+historical completion search. Invalid enum values use the existing FastAPI 422
+validation envelope. There are no custom date ranges, query language,
+pagination, or response wrapper.
+
+The existing `inbox=true` contract remains strict:
+`planned_date IS NULL AND status = pending AND deleted_at_utc IS NULL`.
+Therefore `inbox=true&status=completed` returns an empty intersection rather
+than ignoring either parameter, and `inbox=true&planned_bucket=today` is also
+empty. `planned_bucket=unscheduled` is broader than Inbox and can include a
+completed Task when combined with `status=all`.
+
+### Request Clock and Timezone
+
+Each Task-list request captures exactly one `generated_at_utc`. Overdue
+evaluation, planned buckets, and any serialized `TaskRead.deadline_status` use
+that same instant. Planned buckets derive `current_local_date` from the
+configured DayFlow IANA timezone; they never use the browser timezone, system
+timezone, or a hard-coded offset. Overdue reuses the canonical
+`deadline_status_at()` evaluator: timed deadlines compare the request instant
+with `deadline_at_utc`, while date-only deadlines compare the request instant's
+date in the Task's saved `deadline_timezone` with `deadline_date`.
+
+Phase 1 should satisfy this with a small TaskRead serialization helper that
+accepts `generated_at_utc` explicitly for the list request. It must not call the
+current wall-clock `Task.deadline_status` property for this path. No general
+Clock Framework, model redesign, or schema change is required.
+
+`overdue=true` therefore implies current pending, non-deleted, canonical
+Overdue status. Combining it with `status=completed` returns an empty
+intersection. `planned_bucket=past&overdue=true` is a valid intersection.
+
+### Fixed Sort Semantics
+
+The sort values have fixed directions and stable tie-breakers:
+
+- `default` preserves the existing effective order: pending first, then
+  planned dates before `NULL planned_date`, then `created_at_utc` ascending,
+  with `id` as the final stability tie-breaker. This reflects the current
+  `Task.planned_date IS NULL` ascending expression.
+- `planned` orders planned dates ascending, puts `NULL planned_date` last,
+  then uses `created_at_utc` ascending and `id`.
+- `deadline` orders `deadline_date` ascending with NULL deadlines last. On the
+  same date, timed deadlines precede date-only deadlines; timed rows then use
+  `deadline_at_utc` ascending, followed by `created_at_utc` and `id`. This is a
+  display order only and never changes canonical Overdue meaning.
+- `completed` orders `completed_at_utc` descending with NULL values last, then
+  `created_at_utc` ascending and `id`. It is permitted with pending Tasks for a
+  stable result; it does not change the status filter.
+
+Project Detail reuses this exact endpoint and query contract with a fixed
+`project_id`; it does not receive a second Project-task search endpoint. The
+Review service and Calendar range API remain separate contracts.
+
+V0.8 keeps returning `TaskRead[]` with no pagination, `limit`, `offset`, or
+cursor. NO DATABASE MIGRATION REQUIRED: the existing `0005` fields and current
+indexes are sufficient for the frozen contract. Performance will be checked
+with isolated sanity data before any future index or migration decision.
 
 ## V0.1 Endpoints
 

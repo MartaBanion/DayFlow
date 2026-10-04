@@ -1,12 +1,52 @@
 # Changelog
 
-## [Unreleased] — V0.7.0 Daily & Weekly Review
+## [Unreleased] — V0.8 Task Organization at Scale
 
-V0.7.0 Release Preparation. Daily & Weekly Review implementation and Full
-Acceptance are complete. The version remains unreleased; no release date or tag
-is declared here.
+V0.8 Product / Architecture Phase 0 is frozen around Search / Filter / Sort
+with Project reuse. Implementation has not started.
 
-### Completed for Release Preparation
+### Frozen Scope
+
+- Status filters: pending, completed, and all.
+- Canonical Overdue filter and DayFlow-timezone planned-date buckets.
+- Limited stable sorting for default, planned, deadline, and completed views.
+- Reuse of the same Task query contract in Project Detail.
+- Existing `TaskRead[]` response shape, AND semantics, Reset, and no pagination.
+
+NO DATABASE MIGRATION REQUIRED. No `0006` exists. Inbox Quick Project and Quick
+Priority remain optional Should Have work; Quick Postpone remains V0.9 scope.
+
+## [v0.7.0] — Daily & Weekly Review
+
+V0.7.0 is formally released. The annotated `v0.7.0` tag points to release
+Commit `b632f10dbc9cde7da04083a60ef758dea648b594`.
+
+### Added
+
+- Daily and weekly current-state Review using retained `completed_at_utc`.
+- Current Completed, Overdue, and Carryover lists with Task navigation.
+- Current Project progress, pending/overdue counts, and latest retained Task
+  completion.
+- Read-only Review API and `#review` UI with Today/This Week scopes.
+- Project navigation, Loading/Error/Retry, responsive behavior, and accessible
+  controls.
+
+### Compatibility
+
+- `completed_at_utc` is not immutable activity history; Reopen removes a Task
+  from Completed Review and `updated_at_utc` is never a completion proxy.
+- NO DATABASE MIGRATION REQUIRED; the schema remains
+  `0005_add_deadlines_recurrence_reminders` and no `0006` exists.
+- Review GET operations are read-only and do not materialize recurrence or
+  mutate business data.
+
+## V0.7.0 Release Preparation History
+
+Historical record: V0.7.0 Release Preparation, before the annotated release
+tag was created. Daily & Weekly Review implementation and Full Acceptance were
+complete at that point.
+
+### Completed in Preparation
 
 - Daily and weekly current-state Review using retained `completed_at_utc`.
 - Current Completed, Overdue, and Carryover lists with Task navigation.
@@ -27,8 +67,8 @@ is declared here.
 
 ## [v0.6.0] — Data Safety & Recovery
 
-V0.6.0 is the current published stable release. Full Acceptance passed and the
-annotated `v0.6.0` tag points to its release Commit. Real project-database
+V0.6.0 was the published stable release before v0.7.0. Full Acceptance passed
+and the annotated `v0.6.0` tag points to its release Commit. Real project-database
 Restore remains prohibited; current Real Restore Storage Qualification is
 `NOT QUALIFIED`.
 

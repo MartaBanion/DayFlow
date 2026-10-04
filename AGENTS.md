@@ -6,14 +6,12 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Published stable release: `v0.6.0` — Data Safety & Recovery; its annotated tag
-is unchanged. Current application version under Release Preparation is `v0.7.0`
-— Daily & Weekly Review. Phase 0 is complete; Phase 1 Review Core is complete
-and committed as `d366a2b42427be170eca64877ab66d3a0e5ca34e`; Phase 2 Review UI
-is complete and committed as `fde488d08ab05221a376c9af01d39b30f3762114`; and
-Phase 3 Full Acceptance is complete. V0.7.0 is not released. The real database
-schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Published stable release: `v0.7.0` — Daily & Weekly Review; its annotated tag
+points to release Commit
+`b632f10dbc9cde7da04083a60ef758dea648b594`. Current development is V0.8 Task
+Organization at Scale. Product / Architecture Phase 0 is frozen in the core
+documentation; Phase 1 implementation has not started. The real database
+schema remains `0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -119,6 +117,31 @@ Only the version currently being implemented may be changed. Do not start later 
 - V0.8 Task Organization, advanced Search, bulk Inbox work, quick defer,
   Backup/Restore/Recovery changes, and real Restore remain outside V0.7.
 
+## V0.8 Development Safety
+
+- V0.8 has one theme: Task Organization at Scale — Search / Filter / Sort with
+  Project reuse. Do not expand it into a Dashboard, Statistics system,
+  Activity History, Kanban, Subtasks, Saved Views, Batch Edit, AI, or unrelated
+  UI redesign.
+- Extend the existing `GET /api/v1/tasks` contract rather than creating a
+  second Search API. Preserve `TaskRead[]`, backward-compatible defaults,
+  soft-delete exclusion, and AND semantics across filters.
+- The frozen query inputs are `status`, `overdue`, `planned_bucket`, and
+  `sort`, alongside the existing text, Priority, Category, Tag, Project, and
+  Inbox filters. Project Detail reuses the same query with a fixed
+  `project_id`.
+- Every Task-list request uses one explicit `generated_at_utc` for Overdue and
+  DayFlow-timezone planned buckets. Overdue must reuse the canonical Deadline
+  evaluator; the response must not disagree with the filter at a boundary.
+- NO DATABASE MIGRATION REQUIRED: retain
+  `0005_add_deadlines_recurrence_reminders`; do not create `0006`, new tables,
+  columns, or indexes without a new product decision. V0.8 has no pagination
+  until measured data justifies revisiting that decision.
+- Inbox Quick Project and Quick Priority are optional Should Have work, not a
+  release gate. Quick Postpone and Move Tomorrow/Next Week remain V0.9 scope.
+  Review, Calendar, Backup, Restore, Recovery, and Storage Qualification stay
+  on their existing boundaries.
+
 ## Migration Rules
 
 - Every schema change requires an Alembic migration.
@@ -143,7 +166,7 @@ Only the version currently being implemented may be changed. Do not start later 
 ## Prohibited Actions
 
 - No Drag & Drop, Resize, AI, external Calendar, PWA,
-  Authentication, Docker, CI/CD, or remote Git work during V0.7 development.
+  Authentication, Docker, CI/CD, or remote Git work during V0.8 development.
 - No modification of protected workspace mounts to bypass a safety boundary.
 
 ## Definition of Done
