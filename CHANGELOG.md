@@ -1,10 +1,10 @@
 # Changelog
 
-## [Unreleased] — V0.7 Daily & Weekly Review
+## [Unreleased] — V0.7.0 Daily & Weekly Review
 
-V0.7 Daily & Weekly Review implementation and Full Acceptance are complete. This
-unreleased work is ready for Release Preparation; `v0.7.0` has not been
-released and no release date or tag is declared here.
+V0.7.0 Release Preparation. Daily & Weekly Review implementation and Full
+Acceptance are complete. The version remains unreleased; no release date or tag
+is declared here.
 
 ### Completed for Release Preparation
 

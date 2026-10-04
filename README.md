@@ -4,11 +4,10 @@ DayFlow Personal is a local-first, single-user productivity application.
 
 ## Current Version
 
-**Current stable application version: v0.6.0 — Data Safety & Recovery.** The
-annotated `v0.6.0` tag is the published stable release. V0.7 Daily & Weekly
-Review Phase 0–3 is complete, including Full Acceptance, and the project is
-ready for V0.7.0 Release Preparation. V0.7.0 has not been released. The real
-database schema remains
+**Current application version: v0.7.0 — Daily & Weekly Review (Release
+Preparation).** The published stable release remains v0.6.0 and its annotated
+tag is unchanged. V0.7 Full Acceptance passed; v0.7.0 has not been released.
+The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
@@ -31,8 +30,8 @@ V0.7 has one product theme: Daily & Weekly Review. The implemented `#review`
 view presents current-state completed Tasks, current overdue and carryover work,
 and Project snapshots for Today and This Week. It is a read-only, list-first
 review flow rather than a Statistics Dashboard. Phases 0–3 are complete and
-V0.7 requires no database Migration. The next step is V0.7.0 Release
-Preparation; V0.7.0 is not yet released.
+V0.7 requires no database Migration. The current status is V0.7.0 Release
+Preparation; v0.7.0 is not yet released.
 
 ## V0.1 Features
 

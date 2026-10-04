@@ -9,7 +9,7 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: `0005` / V0.6.0 Stable
+## Current Schema: `0005` / V0.7.0 Release Preparation
 
 The real database is currently at:
 
@@ -17,10 +17,11 @@ The real database is currently at:
 0005_add_deadlines_recurrence_reminders
 ```
 
-Current stable application version and annotated tag: `v0.6.0`. V0.6.0 changes
-no business schema or migration; the real schema remains
-`0005_add_deadlines_recurrence_reminders`. V0.7 Phase 0 is frozen and Phase 1
-implements the read-only Review Core without any schema change.
+Published stable application version and annotated tag: `v0.6.0`. Current
+application version under Release Preparation: `v0.7.0`. V0.7 Phases 0–3 are
+complete and introduce no business schema or migration; the real schema remains
+`0005_add_deadlines_recurrence_reminders`. Review is read-only and no `0006`
+exists.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block

@@ -1,12 +1,12 @@
 # DayFlow Personal Roadmap
 
-Current stable application version: **v0.6.0 — Data Safety & Recovery**. The
-annotated `v0.6.0` tag is the published stable release. Current development is
-V0.7 Daily & Weekly Review. Phase 0 is frozen and committed; Phase 1 Review
+Current application version: **v0.7.0 — Daily & Weekly Review (Release
+Preparation)**. The published stable release remains **v0.6.0** and its
+annotated tag is unchanged. Phase 0 is frozen and committed; Phase 1 Review
 Core is implemented and committed; Phase 2 Review UI / Integration is
-implemented and committed; Phase 3 Full Acceptance is complete. V0.7 is ready
-for Release Preparation, but V0.7.0 is not released. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`.
+implemented and committed; Phase 3 Full Acceptance is PASS. V0.7.0 is not
+released. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -342,11 +342,11 @@ large TaskEditor extraction, global CSS or API Client refactoring.
 
 ### V0.7 — Daily & Weekly Review
 
-Status: Phase 0 Product / Architecture Freeze and Phase 1 Review Core are
-complete and committed. Phase 2 `#review` UI and Frontend integration are
-complete and committed. Phase 3 Full Acceptance is complete. V0.7 is ready for
-Release Preparation but is not released; it remains a read-only, list-first
-Review flow, not a Dashboard or Statistics system.
+Status: Release Preparation. Phase 0 Product / Architecture Freeze and Phase 1
+Review Core are complete and committed. Phase 2 `#review` UI and Frontend
+integration are complete and committed. Phase 3 Full Acceptance is PASS. V0.7
+remains a read-only, list-first Review flow, not a Dashboard or Statistics
+system, and is not released.
 
 Must Have:
 
