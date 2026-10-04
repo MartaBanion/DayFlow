@@ -4,11 +4,11 @@ from datetime import date, datetime, timezone
 from enum import StrEnum
 from typing import TYPE_CHECKING
 from uuid import uuid4
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import CheckConstraint, Date, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.deadline import deadline_status_at
 from app.core.time import utc_now
 from app.db.base import Base
 from app.db.types import UTCDateTime
@@ -156,22 +156,13 @@ class Task(Base):
 
     @property
     def deadline_status(self) -> str:
-        if self.deadline_date is None or self.deleted_at_utc is not None:
-            return DeadlineStatus.NONE.value
-        if self.status == TaskStatus.COMPLETED.value:
-            return DeadlineStatus.COMPLETED.value
-        zone = ZoneInfo(self.deadline_timezone)
-        now_local = datetime.now(zone)
-        if self.deadline_at_utc is not None:
-            deadline_at = self.deadline_at_utc
-            if deadline_at.tzinfo is None or deadline_at.utcoffset() is None:
-                deadline_at = deadline_at.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) >= deadline_at.astimezone(timezone.utc):
-                return DeadlineStatus.OVERDUE.value
-        elif now_local.date() > self.deadline_date:
-            return DeadlineStatus.OVERDUE.value
-        if now_local.date() == self.deadline_date:
-            return DeadlineStatus.DUE_TODAY.value
-        return DeadlineStatus.UPCOMING.value
+        return deadline_status_at(
+            status=self.status,
+            deleted_at_utc=self.deleted_at_utc,
+            deadline_date=self.deadline_date,
+            deadline_at_utc=self.deadline_at_utc,
+            deadline_timezone=self.deadline_timezone,
+            generated_at_utc=datetime.now(timezone.utc),
+        )
 
     __mapper_args__ = {"version_id_col": version}

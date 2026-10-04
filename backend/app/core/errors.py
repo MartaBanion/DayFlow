@@ -119,6 +119,15 @@ class DeadlineValidationError(AppError):
         super().__init__("deadline_validation_error", message, 422)
 
 
+class ReviewConfigurationError(AppError):
+    def __init__(self):
+        super().__init__(
+            "review_configuration_error",
+            "Review timezone configuration is invalid",
+            500,
+        )
+
+
 class RecurrenceValidationError(AppError):
     def __init__(self, message: str):
         super().__init__("recurrence_validation_error", message, 422)

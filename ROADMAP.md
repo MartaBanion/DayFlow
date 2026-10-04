@@ -2,8 +2,9 @@
 
 Current stable application version: **v0.6.0 — Data Safety & Recovery**. The
 annotated `v0.6.0` tag is the published stable release. Current development is
-V0.7 Daily & Weekly Review, in Product / Architecture Freeze. The real database
-schema remains `0005_add_deadlines_recurrence_reminders`.
+V0.7 Daily & Weekly Review. Phase 0 is frozen and committed; Phase 1 Review
+Core is implemented and pending Phase 1 review. The real database schema
+remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -339,9 +340,10 @@ large TaskEditor extraction, global CSS or API Client refactoring.
 
 ### V0.7 — Daily & Weekly Review
 
-Status: Phase 0 Product / Architecture Freeze. The product decision is final;
-implementation has not started. V0.7 is a read-only, list-first Review flow,
-not a Dashboard or Statistics system.
+Status: Phase 0 Product / Architecture Freeze is complete and committed. Phase
+1 implements the read-only Backend Review Core and is pending Phase 1 review.
+Phase 2 `#review` UI work has not started. V0.7 is a read-only, list-first
+Review flow, not a Dashboard or Statistics system.
 
 Must Have:
 
@@ -379,8 +381,9 @@ background notifications, and all Backup/Restore/Recovery work.
 
 Implementation phases:
 
-1. Phase 0: Product / Architecture Freeze.
-2. Phase 1: read-only Review API and Backend tests.
+1. Phase 0: Product / Architecture Freeze — complete and committed.
+2. Phase 1: read-only Review API and Backend tests — implemented, pending
+   review.
 3. Phase 2: `#review`, navigation, Frontend tests, and isolated E2E.
 4. Phase 3: full acceptance, real-database read-only validation, documentation,
    and release gate.

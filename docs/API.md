@@ -10,12 +10,12 @@
 
 Current stable application version: `v0.6.0`. The annotated `v0.6.0` tag is the
 published stable release. Deadline, Recurrence, Reminder, Backup, and Recovery
-API contracts use the released V0.6 behavior. V0.7 Daily & Weekly Review is in
-Product / Architecture Freeze; its API below is frozen but not yet implemented.
-The real database schema remains `0005_add_deadlines_recurrence_reminders`, with
-no new migration.
+API contracts use the released V0.6 behavior. V0.7 Phase 0 is frozen and
+committed; the Daily & Weekly Review API below is implemented in Phase 1 and is
+pending Phase 1 review. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`, with no new migration.
 
-## Frozen V0.7 Review API (Not Yet Implemented)
+## V0.7 Review API (Phase 1 Implemented; Pending Review)
 
 V0.7 adds one read-only resource with two fixed scopes:
 

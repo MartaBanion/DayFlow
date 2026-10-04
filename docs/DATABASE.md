@@ -19,8 +19,8 @@ The real database is currently at:
 
 Current stable application version and annotated tag: `v0.6.0`. V0.6.0 changes
 no business schema or migration; the real schema remains
-`0005_add_deadlines_recurrence_reminders`. V0.7 Daily & Weekly Review is in
-Product / Architecture Freeze and also requires no schema change.
+`0005_add_deadlines_recurrence_reminders`. V0.7 Phase 0 is frozen and Phase 1
+implements the read-only Review Core without any schema change.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -327,7 +327,7 @@ Block data. It must fail closed if any row has a non-`NULL` schedule field. A
 downgrade is only safe when all three new columns are empty, such as on a clean
 test database.
 
-## V0.7 Review Read Model (Frozen; No Schema Change)
+## V0.7 Review Read Model (Phase 1 Implemented; No Schema Change)
 
 V0.7 Review is computed from the existing `0005` current state. It creates no
 table, column, index, event log, snapshot or cache. The Review service performs
