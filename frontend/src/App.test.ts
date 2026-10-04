@@ -7,7 +7,7 @@ import { nextTick } from 'vue'
 import { version } from '../package.json'
 
 import App from './App.vue'
-import { ApiRequestError, backupApi, projectApi, taskApi } from './api'
+import { ApiRequestError, backupApi, projectApi, reviewApi, taskApi } from './api'
 import type { Task } from './types'
 
 const today = '2026-09-26'
@@ -132,6 +132,29 @@ describe('application navigation', () => {
     expect(link.attributes('aria-current')).toBe('page')
     expect(wrapper.get('main').text()).toContain('还没有备份')
   })
+  it('opens Review through the main Hash navigation entry', async () => {
+    vi.spyOn(reviewApi, 'get').mockResolvedValue({
+      scope: 'today',
+      local_timezone: 'Asia/Shanghai',
+      local_date: today,
+      range_start_utc: '2026-09-25T16:00:00.000000Z',
+      range_end_utc: '2026-09-26T16:00:00.000000Z',
+      generated_at_utc: '2026-09-26T04:00:00.000000Z',
+      completed: { count: 0, tasks: [] },
+      overdue: { count: 0, tasks: [] },
+      carryover: { count: 0, tasks: [] },
+      projects: [],
+    })
+    window.location.hash = '#review'
+    wrapper = mount(App, { global: { plugins: [ElementPlus] } })
+    await flushPromises()
+
+    const link = wrapper.get('nav[aria-label="主要导航"] a[href="#review"]')
+    expect(link.text()).toBe('回顾')
+    expect(link.attributes('aria-current')).toBe('page')
+    expect(wrapper.get('main').text()).toContain('日常回顾')
+    expect(reviewApi.get).toHaveBeenCalledWith('today')
+  })
   it('uses plain Chinese labels and marks the current Hash destination', async () => {
     vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
     vi.spyOn(taskApi, 'list').mockResolvedValue([])
@@ -142,7 +165,7 @@ describe('application navigation', () => {
     await flushPromises()
 
     const links = wrapper.findAll('nav[aria-label="主要导航"] a')
-    expect(links.map((link) => link.text())).toEqual(['今天', '收件箱', '日历', '搜索', '项目'])
+    expect(links.map((link) => link.text())).toEqual(['今天', '收件箱', '日历', '回顾', '搜索', '项目'])
     expect(links[0]?.attributes('aria-current')).toBe('page')
     expect(links.filter((link) => link.attributes('aria-current') === 'page')).toHaveLength(1)
 
@@ -155,7 +178,7 @@ describe('application navigation', () => {
     window.location.hash = '#project:project-1'
     window.dispatchEvent(new Event('hashchange'))
     await flushPromises()
-    expect(links[4]?.attributes('aria-current')).toBe('page')
+    expect(links[5]?.attributes('aria-current')).toBe('page')
     expect(wrapper.find('.workspace-projects .workspace-content').exists()).toBe(true)
   })
 })

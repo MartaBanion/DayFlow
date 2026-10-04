@@ -18,9 +18,17 @@ import type {
   ReminderPayload,
   Backup,
   BackupVerification,
+  ReviewResponse,
+  ReviewScope,
 } from './types'
 
 const API_BASE = '/api/v1'
+
+export const reviewApi = {
+  get(scope: ReviewScope): Promise<ReviewResponse> {
+    return request<ReviewResponse>(`/review?scope=${encodeURIComponent(scope)}`)
+  },
+}
 
 export const backupApi = {
   list(): Promise<Backup[]> { return request<Backup[]>('/backups') },

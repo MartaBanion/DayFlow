@@ -5,14 +5,16 @@
 Current stable application version: **v0.6.0 — Data Safety & Recovery**. The
 annotated `v0.6.0` tag is the published stable release. Current development is
 V0.7 Daily & Weekly Review. Phase 0 is frozen and committed; Phase 1 Review
-Core is implemented and pending Phase 1 review. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`.
+Core is implemented and committed; Phase 2 Review UI / Integration is
+implemented and pending Phase 2 review. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
 
-Status: Phase 0 Product / Architecture Freeze is complete and committed. Phase
-1 implements the read-only Backend Review API, service, schemas, and isolated
-tests and is pending Phase 1 review. Phase 2 Frontend work has not started; no
+Status: Phase 0 Product / Architecture Freeze and Phase 1 Review Core are
+complete and committed. Phase 2 implements the read-only `#review` Frontend
+view, Hash navigation, existing Task Editor / Project Detail navigation, and
+isolated Frontend/E2E integration tests and is pending Phase 2 review; no
 database change is introduced. The single V0.7 theme is a lightweight,
 read-only Daily & Weekly Review that closes the existing capture → plan → do →
 review loop. It is not a Dashboard, Statistics system, or Task Organization

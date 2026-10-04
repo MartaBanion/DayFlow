@@ -4,6 +4,7 @@ export type ProjectStatus = 'active' | 'completed'
 export type DeadlineStatus = 'none' | 'upcoming' | 'due_today' | 'overdue' | 'completed'
 export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly'
 export type ReminderStatus = 'pending' | 'acknowledged' | 'dismissed'
+export type ReviewScope = 'today' | 'week'
 
 export interface Category {
   id: string
@@ -163,6 +164,36 @@ export interface RuntimeInfo {
   local_date: string
   app_version?: string
   database_schema?: string | null
+}
+
+export interface ReviewTaskSection {
+  count: number
+  tasks: Task[]
+}
+
+export interface ReviewProject {
+  id: string
+  name: string
+  status: ProjectStatus
+  task_count: number
+  completed_task_count: number
+  pending_task_count: number
+  overdue_task_count: number
+  progress_percent: number
+  latest_completed_at_utc: string | null
+}
+
+export interface ReviewResponse {
+  scope: ReviewScope
+  local_timezone: string
+  local_date: string
+  range_start_utc: string
+  range_end_utc: string
+  generated_at_utc: string
+  completed: ReviewTaskSection
+  overdue: ReviewTaskSection
+  carryover: ReviewTaskSection
+  projects: ReviewProject[]
 }
 
 export interface Backup {

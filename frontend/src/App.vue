@@ -10,13 +10,15 @@ import ProjectDetailView from './components/ProjectDetailView.vue'
 import ProjectsView from './components/ProjectsView.vue'
 import ReminderCenter from './components/ReminderCenter.vue'
 import MaintenanceView from './components/MaintenanceView.vue'
+import ReviewView from './components/ReviewView.vue'
 
-type ViewName = 'today' | 'inbox' | 'calendar' | 'search' | 'projects' | 'project-detail' | 'maintenance'
+type ViewName = 'today' | 'inbox' | 'calendar' | 'review' | 'search' | 'projects' | 'project-detail' | 'maintenance'
 
 function viewFromHash(): ViewName {
   const hash = window.location.hash
   if (hash === '#inbox') return 'inbox'
   if (hash === '#calendar') return 'calendar'
+  if (hash === '#review') return 'review'
   if (hash === '#search') return 'search'
   if (hash === '#projects') return 'projects'
   if (hash === '#maintenance') return 'maintenance'
@@ -85,6 +87,15 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
         </a>
         <a
           class="nav-item"
+          :class="{ 'is-active': currentView === 'review' }"
+          :aria-current="currentView === 'review' ? 'page' : undefined"
+          href="#review"
+          @click="currentView = 'review'"
+        >
+          回顾
+        </a>
+        <a
+          class="nav-item"
           :class="{ 'is-active': currentView === 'search' }"
           :aria-current="currentView === 'search' ? 'page' : undefined"
           href="#search"
@@ -132,6 +143,7 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', syncViewFromHash)
       <div class="workspace-content">
         <TodayView v-if="currentView === 'today'" />
         <InboxView v-else-if="currentView === 'inbox'" />
+        <ReviewView v-else-if="currentView === 'review'" />
         <InboxView v-else-if="currentView === 'search'" search-only />
         <ProjectsView v-else-if="currentView === 'projects'" />
         <MaintenanceView v-else-if="currentView === 'maintenance'" />
