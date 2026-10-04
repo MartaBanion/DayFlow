@@ -2,15 +2,19 @@
 
 ## [Unreleased] — V0.7 Daily & Weekly Review
 
-V0.7 Product / Architecture Freeze defines a read-only `#review` experience
-for Today and This Week. Product implementation has not started.
+V0.7 Daily & Weekly Review implementation and Full Acceptance are complete. This
+unreleased work is ready for Release Preparation; `v0.7.0` has not been
+released and no release date or tag is declared here.
 
-### Planned
+### Completed for Release Preparation
 
-- Current-state completed Task review using retained `completed_at_utc`.
-- Current overdue and carryover lists with Task navigation.
+- Daily and weekly current-state Review using retained `completed_at_utc`.
+- Current Completed, Overdue, and Carryover lists with Task navigation.
 - Current Project progress, pending/overdue counts, and latest retained Task
   completion.
+- Read-only Review API and `#review` UI with Today/This Week scopes.
+- Project navigation, Loading/Error/Retry, responsive behavior, and accessible
+  controls.
 - No Dashboard, charts, immutable history, Task Organization expansion, or
   Backup/Restore work.
 

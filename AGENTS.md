@@ -8,8 +8,12 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 Current stable application version: `v0.6.0` — Data Safety & Recovery. The
 annotated `v0.6.0` tag is the published stable release. Current development is
-V0.7 Daily & Weekly Review, beginning with Product / Architecture Freeze. The
-real database schema remains `0005_add_deadlines_recurrence_reminders`.
+V0.7 Daily & Weekly Review. Phase 0 is complete; Phase 1 Review Core is complete
+and committed as `d366a2b42427be170eca64877ab66d3a0e5ca34e`; Phase 2 Review UI
+is complete and committed as `fde488d08ab05221a376c9af01d39b30f3762114`; and
+Phase 3 Full Acceptance is complete. Next is V0.7.0 Release Preparation;
+V0.7.0 is not released. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
