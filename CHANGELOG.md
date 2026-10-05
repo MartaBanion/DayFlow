@@ -1,11 +1,19 @@
 # Changelog
 
-## [Unreleased] — V0.9 Planning Flow Refinement
+## [Unreleased] — V1.0 Product Maturity
 
-V0.9 Phases 0–2 are complete. Full Acceptance is PASS, including the Month
-empty-date blocker fix and its existing Day View regression. Application
-Version is `0.9.0`; Release Preparation is current, Stable Release remains
-`v0.8.0`, and V0.9.0 is not released.
+V1.0 Product Maturity Audit and Final Product Acceptance are PASS. The V1.0
+Phase 1 Inbox semantic Must Fix is complete in
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. Release status is ready for
+V1.0.0 Release Preparation; application version remains `0.9.0` and
+`v1.0.0` is not released.
+
+## [v0.9.0] — Quick Reschedule + Lightweight Month Drill-down
+
+V0.9.0 is formally released. The annotated `v0.9.0` tag points to release
+Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.9 Phases 0–3 are
+complete, including the Month empty-date blocker fix and its existing Day View
+regression.
 
 ### Frozen Scope
 

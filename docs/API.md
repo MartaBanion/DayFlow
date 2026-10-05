@@ -8,15 +8,14 @@
 
 ## Current Version
 
-Stable release: `v0.8.0` — Task Organization at Scale. Current application
-version: `0.9.0`. The annotated `v0.8.0` tag points to release Commit
-`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. Deadline, Recurrence, Reminder,
-Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
-and V0.8 Task Organization are implemented, integrated, accepted, and
-released. Current application version is `0.9.0`; V0.9 Phases 0–2 are
-complete, the Month empty-date blocker is fixed, and Phase 3 Full Acceptance is
-PASS. The current status is V0.9.0 Release Preparation; V0.9.0 is not
-released. The real database schema remains
+Stable release: `v0.9.0` — Quick Reschedule + Lightweight Month Drill-down.
+Current application version: `0.9.0`. The annotated `v0.9.0` tag points to
+release Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`. Deadline,
+Recurrence, Reminder, Backup, and Recovery API contracts use their released
+behavior. V0.9 Phases 0–3 are complete and released; the Month empty-date
+blocker is fixed. V1.0 Product Maturity Audit and Final Product Acceptance
+PASS, and the current status is ready for V1.0.0 Release Preparation. `v1.0.0`
+is not released. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -465,12 +464,11 @@ indexes are sufficient for the accepted contract. Isolated performance sanity
 checks passed; no future index or migration decision is required for this
 release. Phase 3 Full Acceptance is complete and V0.8.0 is released.
 
-## V0.9 Planning Contract (Phase 2 Integrated; Full Acceptance PASS)
+## V0.9 Planning Contract (Released; Full Acceptance PASS)
 
 Status: Phase 1 Quick Reschedule Core and Phase 2 Today / Calendar / Month UI
 integration are complete. Phase 3 Full Acceptance is PASS, including empty
-Month dates rendering the existing Day View. V0.9.0 Release Preparation is
-next; V0.9.0 is not released.
+Month dates rendering the existing Day View. V0.9.0 is formally released.
 
 V0.9 uses the existing Task mutation contract. It does not create a
 `/reschedule`, `/postpone`, or `/planning` endpoint.
@@ -507,6 +505,13 @@ clock and `schedule_timezone`; the Backend recalculates UTC instants. Deadline
 fields, Reminder rows, recurrence rules, occurrence dates, and future
 occurrences are not modified or materialized. Month date selection is UI-only
 and switches to the existing Day View without a new endpoint or write.
+
+## V1.0 Product Maturity Status
+
+The Product Maturity Audit and Final Product Acceptance are PASS. The Phase 1
+Inbox semantic fix keeps `inbox=true` when a query is supplied, so Inbox
+search remains distinct from global Search. The next status is V1.0.0 Release
+Preparation; no new API, migration, `0006`, or dependency is introduced.
 
 ## V0.1 Endpoints
 

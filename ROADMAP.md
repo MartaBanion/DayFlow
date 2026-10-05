@@ -1,18 +1,14 @@
 # DayFlow Personal Roadmap
 
-Stable release: **v0.8.0 — Task Organization at Scale**. Current DayFlow
-application version: **0.9.0**. The annotated `v0.8.0` tag remains the published
-stable release and points to Commit
-`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.8 Phases 0–3 are complete and
-released. Phase 0 is committed as
-`97e118a0d546f57fcee7a9dd6ae53f6f0010db80`, Phase 1 as
-`82691ac61bbce3cf745de2cfd5904f7619c1a642`, and Phase 2 as
-`60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
-code commit. Current development is V0.9 Planning Flow Refinement; Phases 0–2
-and Full Acceptance are complete, the Month empty-date blocker is fixed, and
-the current status is V0.9.0 Release Preparation. V0.9.0 is not released. The
-real database schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Stable release: **v0.9.0 — Quick Reschedule + Lightweight Month Drill-down**.
+Current DayFlow application version: **0.9.0**. The annotated `v0.9.0` tag
+points to release Commit
+`f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.9 Phases 0–3 are complete and
+released, including the Month empty-date blocker fix. V1.0 Product Maturity
+Audit and Final Product Acceptance PASS; the V1.0 Phase 1 Inbox semantic Must
+Fix is complete in `0c8e0b470ab097305e7dc39d7f9cf8703306243e`. The current
+status is ready for V1.0.0 Release Preparation. `v1.0.0` is not released. The
+real database schema remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -462,10 +458,10 @@ set of stable sorts; Project Detail offers the same organization capability.
 ### V0.9 — Planning Flow Refinement
 
 Status: Phase 0 Product / Architecture Freeze, Phase 1 Quick Reschedule Core,
-and Phase 2 Today / Calendar / Month Integration are complete. Phase 3 Full
-Acceptance is PASS, including the Month empty-date blocker fix. The current
-status is V0.9.0 Release Preparation; V0.9.0 is not released. The frozen
-theme is **Quick Reschedule + Lightweight Month Drill-down**.
+Phase 2 Today / Calendar / Month Integration, and Phase 3 Full Acceptance are
+complete. The Month empty-date blocker is fixed and V0.9.0 is formally
+released. The frozen theme is **Quick Reschedule + Lightweight Month
+Drill-down**.
 
 Must Have:
 
@@ -503,13 +499,21 @@ Implementation phases:
 1. Phase 0: Product / Architecture Freeze — complete.
 2. Phase 1: Quick Reschedule Core — complete.
 3. Phase 2: Today / Calendar / Month Integration — complete.
-4. Phase 3: Full Acceptance / Release — complete; V0.9.0 release preparation
-   is current.
+4. Phase 3: Full Acceptance / Release — complete; V0.9.0 is released.
 
 Definition of Done: a user can reschedule a pending Task from Today and
 Calendar, preserve Time Block local clock/timezone with conflict handling,
 leave Deadline/Reminder/Recurrence unchanged, and enter the existing Day View
 from a Month date.
+
+### V1.0 — Product Maturity
+
+Status: Product Maturity Audit PASS. The single Phase 1 Must Fix preserved
+Inbox semantics when a query is entered and is complete in
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. Final Product Acceptance also
+PASS. The next step is V1.0.0 Release Preparation; `v1.0.0` is not released.
+Reminder action feedback, skip-to-content, and Calendar narrow-width guidance
+remain deferred 1.x polish.
 
 ## Later Candidates
 

@@ -2,16 +2,13 @@
 
 ## Current Version
 
-Stable release: **v0.8.0 — Task Organization at Scale**. Current application
-version: **0.9.0**. The annotated `v0.8.0` tag remains the stable release and
-points to release Commit
-`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.7 and V0.8 are complete,
-accepted, and released. Current development is V0.9 Planning Flow Refinement;
-Phase 0 Product / Architecture Freeze and Phase 1 Quick Reschedule Core are
-complete. Phase 2 Today / Calendar / Month Integration is complete. The Month
-empty-date blocker is fixed and Phase 3 Full Acceptance is PASS. The current
-status is V0.9.0 Release Preparation; V0.9.0 is not released. The
-real database schema remains `0005_add_deadlines_recurrence_reminders`.
+Stable release: **v0.9.0 — Quick Reschedule + Lightweight Month Drill-down**.
+Current application version: **0.9.0**. The annotated `v0.9.0` tag points to
+release Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.9 Phases 0–3
+are complete and released. The Month empty-date blocker is fixed. V1.0
+Product Maturity Audit and Final Product Acceptance PASS; the current status
+is ready for V1.0.0 Release Preparation. `v1.0.0` is not released. The real
+database schema remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
 
@@ -506,8 +503,7 @@ planning editor. Inbox Quick Project and Quick Priority remain DEFERRED.
 1. Phase 0 — Product / Architecture Freeze — complete.
 2. Phase 1 — Quick Reschedule Core — complete.
 3. Phase 2 — Today / Calendar / Month Integration — complete.
-4. Phase 3 — Full Acceptance / Release — complete; V0.9.0 Release Preparation
-   is next.
+4. Phase 3 — Full Acceptance / Release — complete; V0.9.0 is released.
 
 Phase 1 provides the pure date helper, runtime-date semantics, reusable Quick
 Reschedule update helper, and focused Backend/Frontend tests. Phase 2 connects
@@ -527,6 +523,16 @@ columns, or indexes. Drag & Drop, Resize, Batch Edit, Saved Views, Kanban,
 Subtasks, Activity History, Analytics, AI, External Calendar, Cloud Sync,
 Mobile, new Reminder services, Backup/Restore/Recovery, and Authentication
 remain out of scope.
+
+## V1.0 — Product Maturity
+
+The Product Maturity Audit and Final Product Acceptance are PASS. The Phase 1
+Inbox semantic Must Fix is complete in
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`; Inbox query keeps the Inbox
+contract instead of switching to global Search. V1.0.0 Release Preparation is
+ready to begin, but `v1.0.0` is not released. Reminder action feedback,
+skip-to-content, and Calendar narrow-width guidance remain deferred 1.x
+polish.
 
 ## Frozen V0.6 — Data Safety & Recovery
 
