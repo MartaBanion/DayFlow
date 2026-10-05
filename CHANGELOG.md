@@ -2,9 +2,9 @@
 
 ## [Unreleased] — V0.9 Planning Flow Refinement
 
-V0.9 Phase 0 Product / Architecture Freeze is complete. The frozen theme is
-Quick Reschedule + Lightweight Month Drill-down. Implementation has not
-started.
+V0.9 Phases 0–2 are complete. Full Acceptance is PASS, including the Month
+empty-date blocker fix and its existing Day View regression. The current status
+is Ready for V0.9.0 Release Preparation; V0.9.0 is not released.
 
 ### Frozen Scope
 

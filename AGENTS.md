@@ -13,9 +13,11 @@ released. V0.8 Phase 0 is committed as
 `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`, Phase 1 as
 `82691ac61bbce3cf745de2cfd5904f7619c1a642`, and Phase 2 as
 `60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
-code commit. Current development is V0.9 Planning Flow Refinement, with Phase
-0 Product / Architecture Freeze complete. Application Version is `0.8.0`; the
-real database schema remains `0005_add_deadlines_recurrence_reminders`.
+code commit. Current development is V0.9 Planning Flow Refinement. Phases 0–2
+and Full Acceptance are complete, the Month empty-date blocker is fixed, and
+the release status is Ready for V0.9.0 Release Preparation. V0.9.0 is not
+released. Application Version is `0.8.0`; the real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
