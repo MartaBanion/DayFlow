@@ -465,6 +465,9 @@ release. Phase 3 Full Acceptance is complete and V0.8.0 is released.
 
 ## V0.9 Planning Contract (Phase 0 Frozen)
 
+Status: Phase 1 Quick Reschedule Core is complete.
+Today, Calendar, and Month UI integration remain Phase 2 work.
+
 V0.9 uses the existing Task mutation contract. It does not create a
 `/reschedule`, `/postpone`, or `/planning` endpoint.
 

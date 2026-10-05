@@ -496,7 +496,7 @@ TaskRead, runtime endpoint, and Calendar Day View.
 Implementation phases:
 
 1. Phase 0: Product / Architecture Freeze — complete.
-2. Phase 1: Quick Reschedule Core — pending.
+2. Phase 1: Quick Reschedule Core — complete.
 3. Phase 2: Today / Calendar / Month Integration — pending.
 4. Phase 3: Full Acceptance / Release — pending.
 

@@ -500,9 +500,14 @@ planning editor. Inbox Quick Project and Quick Priority remain DEFERRED.
 ### V0.9 Phases and Acceptance
 
 1. Phase 0 — Product / Architecture Freeze — complete.
-2. Phase 1 — Quick Reschedule Core — pending.
+2. Phase 1 — Quick Reschedule Core — complete.
 3. Phase 2 — Today / Calendar / Month Integration — pending.
 4. Phase 3 — Full Acceptance / Release — pending.
+
+Phase 1 provides the pure date helper, runtime-date semantics, reusable
+Quick Reschedule update helper, and focused Backend/Frontend tests. It does not
+connect the helper to Today, Calendar, Month, Search, Project Detail, or
+TaskCard UI; those integrations remain Phase 2.
 
 The Definition of Done is the ability to reschedule pending Tasks from Today
 and Calendar, preserve Time Block local clock/timezone with conflict handling,
