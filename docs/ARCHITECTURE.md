@@ -7,8 +7,8 @@ version: **0.8.0**. The annotated `v0.8.0` tag points to release Commit
 `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.7 and V0.8 are complete,
 accepted, and released. Current development is V0.9 Planning Flow Refinement;
 Phase 0 Product / Architecture Freeze and Phase 1 Quick Reschedule Core are
-complete. Phase 2 Today / Calendar / Month Integration is implemented and
-pending final review. The real database schema remains
+complete. Phase 2 Today / Calendar / Month Integration is complete. Phase 3
+Full Acceptance / Release remains pending. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
@@ -503,8 +503,7 @@ planning editor. Inbox Quick Project and Quick Priority remain DEFERRED.
 
 1. Phase 0 — Product / Architecture Freeze — complete.
 2. Phase 1 — Quick Reschedule Core — complete.
-3. Phase 2 — Today / Calendar / Month Integration — implemented; pending final
-   review.
+3. Phase 2 — Today / Calendar / Month Integration — complete.
 4. Phase 3 — Full Acceptance / Release — pending.
 
 Phase 1 provides the pure date helper, runtime-date semantics, reusable Quick

@@ -15,8 +15,8 @@ Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
 and V0.8 Task Organization are implemented, integrated, accepted, and
 released. Current development is V0.9 Planning Flow Refinement: Phase 0 and
 Phase 1 are complete, and Phase 2 Today / Calendar / Month Integration is
-implemented and pending final review. The real database schema remains
-`0005_add_deadlines_recurrence_reminders`, with no new migration.
+complete. Phase 3 Full Acceptance / Release remains pending. The real database
+schema remains `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
 
@@ -464,11 +464,10 @@ indexes are sufficient for the accepted contract. Isolated performance sanity
 checks passed; no future index or migration decision is required for this
 release. Phase 3 Full Acceptance is complete and V0.8.0 is released.
 
-## V0.9 Planning Contract (Phase 0 Frozen; Phase 2 Integration Pending Review)
+## V0.9 Planning Contract (Phase 2 Integrated; Phase 3 Pending)
 
-Status: Phase 1 Quick Reschedule Core is complete. Phase 2 Today / Calendar /
-Month UI integration is implemented and pending final review. Phase 3 Full
-Acceptance / Release remains pending.
+Status: Phase 1 Quick Reschedule Core and Phase 2 Today / Calendar / Month UI
+integration are complete. Phase 3 Full Acceptance / Release remains pending.
 
 V0.9 uses the existing Task mutation contract. It does not create a
 `/reschedule`, `/postpone`, or `/planning` endpoint.
