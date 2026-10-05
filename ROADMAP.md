@@ -1,7 +1,7 @@
 # DayFlow Personal Roadmap
 
 Stable release: **v0.8.0 — Task Organization at Scale**. Current DayFlow
-application version: **0.8.0**. The annotated `v0.8.0` tag is the published
+application version: **0.9.0**. The annotated `v0.8.0` tag remains the published
 stable release and points to Commit
 `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.8 Phases 0–3 are complete and
 released. Phase 0 is committed as
@@ -10,8 +10,8 @@ released. Phase 0 is committed as
 `60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
 code commit. Current development is V0.9 Planning Flow Refinement; Phases 0–2
 and Full Acceptance are complete, the Month empty-date blocker is fixed, and
-the current status is Ready for V0.9.0 Release Preparation. V0.9.0 is not
-released. The real database schema remains
+the current status is V0.9.0 Release Preparation. V0.9.0 is not released. The
+real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
@@ -464,8 +464,8 @@ set of stable sorts; Project Detail offers the same organization capability.
 Status: Phase 0 Product / Architecture Freeze, Phase 1 Quick Reschedule Core,
 and Phase 2 Today / Calendar / Month Integration are complete. Phase 3 Full
 Acceptance is PASS, including the Month empty-date blocker fix. The current
-status is Ready for V0.9.0 Release Preparation; V0.9.0 is not released. The
-frozen theme is **Quick Reschedule + Lightweight Month Drill-down**.
+status is V0.9.0 Release Preparation; V0.9.0 is not released. The frozen
+theme is **Quick Reschedule + Lightweight Month Drill-down**.
 
 Must Have:
 
@@ -504,7 +504,7 @@ Implementation phases:
 2. Phase 1: Quick Reschedule Core — complete.
 3. Phase 2: Today / Calendar / Month Integration — complete.
 4. Phase 3: Full Acceptance / Release — complete; V0.9.0 release preparation
-   is next.
+   is current.
 
 Definition of Done: a user can reschedule a pending Task from Today and
 Calendar, preserve Time Block local clock/timezone with conflict handling,

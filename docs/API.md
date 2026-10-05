@@ -9,13 +9,13 @@
 ## Current Version
 
 Stable release: `v0.8.0` — Task Organization at Scale. Current application
-version: `0.8.0`. The annotated `v0.8.0` tag points to release Commit
+version: `0.9.0`. The annotated `v0.8.0` tag points to release Commit
 `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. Deadline, Recurrence, Reminder,
 Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
 and V0.8 Task Organization are implemented, integrated, accepted, and
-released. Current development is V0.9 Planning Flow Refinement: Phases 0–2 are
+released. Current application version is `0.9.0`; V0.9 Phases 0–2 are
 complete, the Month empty-date blocker is fixed, and Phase 3 Full Acceptance is
-PASS. The current status is Ready for V0.9.0 Release Preparation; V0.9.0 is not
+PASS. The current status is V0.9.0 Release Preparation; V0.9.0 is not
 released. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 

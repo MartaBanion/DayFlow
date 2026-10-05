@@ -5,7 +5,7 @@ DayFlow Personal is a local-first, single-user productivity application.
 ## Current Version
 
 **Stable release: v0.8.0 — Task Organization at Scale.** The current DayFlow
-application version is `0.8.0`. The annotated `v0.8.0` tag points to release
+application version is `0.9.0`. The annotated `v0.8.0` tag remains the stable release
 Commit `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.8 Phases 0–3 are
 complete and released. Phase 0 is committed as
 `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`, Phase 1 as
@@ -13,8 +13,8 @@ complete and released. Phase 0 is committed as
 `60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
 code commit. Current development is V0.9 Planning Flow Refinement; Phases 0–2
 and Full Acceptance are complete, the Month empty-date blocker is fixed, and
-the release status is Ready for V0.9.0 Release Preparation. V0.9.0 is not
-released. The real database schema remains
+the release status is V0.9.0 Release Preparation. V0.9.0 is not released. The
+real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
@@ -74,7 +74,8 @@ occurrence date, and future occurrences remain unchanged. DayFlow runtime
 `local_date` is the only preset basis; no new API, dependency, migration, or
 `0006` is required. Inbox Quick Project and Quick Priority remain DEFERRED.
 V0.9 Full Acceptance is PASS, including the Month empty-date → existing Day
-View regression; the next step is Release Preparation.
+View regression. Application Version is `0.9.0`; Release Preparation is
+current, while Stable Release remains `v0.8.0` and V0.9.0 is not released.
 
 ## V0.1 Features
 

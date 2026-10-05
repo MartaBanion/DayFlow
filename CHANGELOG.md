@@ -3,8 +3,9 @@
 ## [Unreleased] — V0.9 Planning Flow Refinement
 
 V0.9 Phases 0–2 are complete. Full Acceptance is PASS, including the Month
-empty-date blocker fix and its existing Day View regression. The current status
-is Ready for V0.9.0 Release Preparation; V0.9.0 is not released.
+empty-date blocker fix and its existing Day View regression. Application
+Version is `0.9.0`; Release Preparation is current, Stable Release remains
+`v0.8.0`, and V0.9.0 is not released.
 
 ### Frozen Scope
 
@@ -16,6 +17,10 @@ is Ready for V0.9.0 Release Preparation; V0.9.0 is not released.
 - Presets use DayFlow `/runtime` `local_date` and pure date arithmetic.
 - Moving a scheduled Task preserves its local clock and timezone; Deadline,
   Reminder, and Recurrence remain unchanged.
+- Request-race protection covers Today and Calendar refreshes; optimistic
+  version semantics and existing schedule-conflict handling are reused.
+- DST-aware Time Block movement preserves local clock/timezone semantics.
+- Empty Month dates render the existing Day View, including keyboard activation.
 - No new API, dependency, migration, or `0006`; Inbox Quick Project and Quick
   Priority remain DEFERRED.
 

@@ -15,8 +15,8 @@ released. V0.8 Phase 0 is committed as
 `60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
 code commit. Current development is V0.9 Planning Flow Refinement. Phases 0–2
 and Full Acceptance are complete, the Month empty-date blocker is fixed, and
-the release status is Ready for V0.9.0 Release Preparation. V0.9.0 is not
-released. Application Version is `0.8.0`; the real database schema remains
+the release status is V0.9.0 Release Preparation. V0.9.0 is not released.
+Application Version is `0.9.0`. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.

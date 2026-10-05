@@ -17,12 +17,12 @@ The real database is currently at:
 0005_add_deadlines_recurrence_reminders
 ```
 
-Published stable application version and annotated tag: `v0.8.0`, pointing to
+Published stable release and annotated tag: `v0.8.0`, pointing to
 release Commit `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.7 and V0.8
 Phases 0–3 are complete, accepted, and released. Current application version is
-`0.8.0`; V0.9 Planning Flow Refinement Phases 0–2 and Full Acceptance are
+`0.9.0`; V0.9 Planning Flow Refinement Phases 0–2 and Full Acceptance are
 complete, including the Month empty-date blocker fix. The release status is
-Ready for V0.9.0 Release Preparation; V0.9.0 is not released. The real schema
+V0.9.0 Release Preparation; V0.9.0 is not released. The real schema
 remains `0005_add_deadlines_recurrence_reminders`. Review remains read-only and
 no `0006` exists.
 
