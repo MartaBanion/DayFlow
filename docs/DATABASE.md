@@ -9,7 +9,7 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: `0005` / V0.7.0 Stable; V0.8.0 Release Preparation
+## Current Schema: `0005` / V0.8.0 Stable; V0.9 Phase 0 Freeze
 
 The real database is currently at:
 
@@ -17,14 +17,12 @@ The real database is currently at:
 0005_add_deadlines_recurrence_reminders
 ```
 
-Published stable application version and annotated tag: `v0.7.0`, pointing to
-release Commit `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are
-complete and introduce no business schema or migration. V0.8 Task Organization
-at Scale Phases 0–3, including Full Acceptance, are complete and also require
-no schema change. Current application version is `0.8.0`; Release Preparation
-is in progress and V0.8.0 is not released. The real schema remains
-`0005_add_deadlines_recurrence_reminders`. Review is read-only and no `0006`
-exists.
+Published stable application version and annotated tag: `v0.8.0`, pointing to
+release Commit `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.7 and V0.8
+Phases 0–3 are complete, accepted, and released. Current application version is
+`0.8.0`; V0.9 Planning Flow Refinement Phase 0 is frozen. The real schema
+remains `0005_add_deadlines_recurrence_reminders`. Review remains read-only and
+no `0006` exists.
 
 V0.1 contains the original `tasks` fields. V0.2 adds organization fields and
 the normalized metadata tables. V0.3 adds the optional single-Task Time Block
@@ -464,7 +462,25 @@ relationship, index, event log, snapshot, or cache, and it keeps the existing
 `TaskRead[]` response shape with no pagination. V0.8 therefore has **NO DATABASE
 MIGRATION REQUIRED** and must not create `0006`. Existing indexes were
 validated by the isolated performance sanity check; no index or migration is
-required for the unreleased V0.8.0 candidate.
+required for released V0.8.0.
+
+## V0.9 Planning Flow Boundary (Phase 0 Frozen)
+
+V0.9 uses the existing Task fields and mutation path. Quick Reschedule changes
+`planned_date` only. Move to Inbox must also clear `schedule` because an Inbox
+Task cannot have a Time Block. Existing Time Block move semantics preserve the
+local start/end clock and `schedule_timezone`, then recalculate UTC instants;
+no new column or relationship is needed.
+
+Deadline fields, Reminder rows, recurrence rules, occurrence dates, and future
+occurrences are independent of Quick Reschedule and remain unchanged. Month
+Drill-down is UI-only and reuses the existing Calendar/Day View data path.
+
+V0.9 has **NO DATABASE MIGRATION REQUIRED**. Retain
+`0005_add_deadlines_recurrence_reminders`; do not create `0006`, tables,
+columns, or indexes. The real Restore boundary remains unchanged: real
+project-database Restore is prohibited and Storage Qualification is
+`NOT QUALIFIED`.
 
 ## Backup
 

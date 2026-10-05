@@ -2,15 +2,12 @@
 
 ## Current Version
 
-Stable release: **v0.7.0 — Daily & Weekly Review**. Current application
-version: **0.8.0**, in Release Preparation. The
-annotated `v0.7.0` tag points to release Commit
-`b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete,
-accepted, and released. V0.8 Task Organization at Scale is frozen at Product /
-Architecture Phase 0, Phase 1 Task Query Core, Phase 2 Search / Project UI
-Integration, and Phase 3 Full Acceptance are complete. V0.8.0 is not released;
-Release Preparation is in progress. The real database schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Stable release: **v0.8.0 — Task Organization at Scale**. Current application
+version: **0.8.0**. The annotated `v0.8.0` tag points to release Commit
+`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.7 and V0.8 are complete,
+accepted, and released. Current development is V0.9 Planning Flow Refinement;
+Phase 0 Product / Architecture Freeze is complete. The real database schema
+remains `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
 
@@ -370,7 +367,8 @@ verification.
 
 Status: Product / Architecture Phase 0, Phase 1 Task Query Core, Phase 2
 Search / Project UI Integration, and Phase 3 Full Acceptance complete. V0.8.0
-Release Preparation is in progress; v0.8.0 is not released.
+is formally released by annotated tag `v0.8.0` at Commit
+`6bbd452dcee8fbc793e1c66deba2b986eac3197c`.
 The V0.8 theme is Search / Filter / Sort with Project reuse. It is a small
 current-state organization layer over the existing Task list, not a new query
 engine or Analytics system.
@@ -429,8 +427,7 @@ V0.8 has NO PAGINATION until measured isolated data demonstrates a need. Do not
 add an index, table, column, or `0006` in Phase 0. Review remains its own
 read-only service, Calendar remains its own date-range contract, and Backup,
 Restore, Recovery, and Storage Qualification are unchanged. Inbox Quick Project
-and Quick Priority are optional Should Have work after the core; Quick Postpone
-and Move Tomorrow/Next Week remain V0.9 scope.
+and Quick Priority remain deferred; V0.9 Planning Flow is separate.
 
 ### V0.8 Phases and Acceptance
 
@@ -441,13 +438,83 @@ and Move Tomorrow/Next Week remain V0.9 scope.
 3. Phase 2 — Search / Project UI Integration: controls, Project reuse,
    Frontend tests, and isolated E2E — complete; Inbox quick actions are
    separately optional and not implemented.
-4. Phase 3 — Full Acceptance: complete. Release Preparation is in progress.
+4. Phase 3 — Full Acceptance: complete. V0.8.0 is released.
 
 The Definition of Done is the ability to find pending, current completed,
 Overdue, and planned-bucket Tasks with a small stable sort set, and to use the
 same organization capability inside Project Detail. Tests must cover filter
 combinations, canonical boundaries, soft delete, stable ordering, request
 clock consistency, no unintended writes, and bounded query behavior.
+
+## Frozen V0.9 — Planning Flow Refinement
+
+Status: Phase 0 Product / Architecture Freeze complete. The single theme is
+**Quick Reschedule + Lightweight Month Drill-down**. V0.9 reduces the cost of
+changing a Task's planned date; it does not create a second Planning system.
+
+### Quick Reschedule Contract
+
+Quick Reschedule applies only to pending Tasks and offers Today, Tomorrow, Next
+Monday, Move to Inbox, and Choose Date. Today and Calendar use the same action
+and the existing versioned Task PATCH:
+
+```text
+PATCH /api/v1/tasks/{id}?version=<version>
+```
+
+Normal actions change only `planned_date`. Move to Inbox changes
+`planned_date` to `NULL` and sends `schedule: null` because an Inbox Task
+cannot retain a Time Block. Existing optimistic-version and schedule-conflict
+confirmation semantics remain authoritative; stale versions are never silently
+overwritten.
+
+Today, Tomorrow, and Next Monday use `/api/v1/runtime` `local_date` and pure
+`YYYY-MM-DD` calendar arithmetic. Next Monday means the next Monday after the
+current DayFlow local date. Browser timezone, server-local date, UTC date, and
+natural-language parsing are not used.
+
+Changing the date of a scheduled Task preserves its local start/end clock and
+`schedule_timezone`; the Backend recalculates UTC instants. Deadline fields,
+Reminder rows, recurrence rules, occurrence dates, and future occurrences are
+not changed or materialized. A Quick Reschedule to Inbox explicitly clears the
+Time Block. Quick Reschedule is not an Edit Series operation.
+
+### Month Drill-down and Frontend Boundaries
+
+Month date selection, including an overflow “还有 N 项” action, switches the
+current Calendar mode to the existing Day View with that selected date. It is
+UI-only and does not create or update data. No side panel, Drawer, Dialog,
+Router route, new Calendar API, global planner store, or new dependency is
+introduced. Today and Calendar use local latest-request guards so an older
+refresh cannot overwrite a newer date or result.
+
+The date cell and overflow action must expose an accessible name, visible
+focus, and keyboard activation with Enter or Space. This is limited to the
+Month drill-down controls and does not become a calendar accessibility
+redesign.
+
+TaskCard may expose a lightweight Quick Reschedule menu; API mutation logic
+continues to use the existing conflict helper. Task Editor remains the full
+planning editor. Inbox Quick Project and Quick Priority remain DEFERRED.
+
+### V0.9 Phases and Acceptance
+
+1. Phase 0 — Product / Architecture Freeze — complete.
+2. Phase 1 — Quick Reschedule Core — pending.
+3. Phase 2 — Today / Calendar / Month Integration — pending.
+4. Phase 3 — Full Acceptance / Release — pending.
+
+The Definition of Done is the ability to reschedule pending Tasks from Today
+and Calendar, preserve Time Block local clock/timezone with conflict handling,
+leave Deadline/Reminder/Recurrence unchanged, and enter the existing Day View
+from a Month date.
+
+V0.9 has **NO DATABASE MIGRATION REQUIRED** and no new API. Retain
+`0005_add_deadlines_recurrence_reminders`; do not create `0006`, tables,
+columns, or indexes. Drag & Drop, Resize, Batch Edit, Saved Views, Kanban,
+Subtasks, Activity History, Analytics, AI, External Calendar, Cloud Sync,
+Mobile, new Reminder services, Backup/Restore/Recovery, and Authentication
+remain out of scope.
 
 ## Frozen V0.6 — Data Safety & Recovery
 

@@ -6,18 +6,16 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Published stable release: `v0.7.0` — Daily & Weekly Review; its annotated tag
-points to release Commit
-`b632f10dbc9cde7da04083a60ef758dea648b594`. Current development is V0.8 Task
-Organization at Scale. Phase 0 Product / Architecture Freeze, Phase 1 Task
-Query Core, Phase 2 Search / Project UI Integration, and Phase 3 Full
-Acceptance are complete. Phase 1 is committed as
-`82691ac61bbce3cf745de2cfd5904f7619c1a642`, following the Phase 0 freeze
-commit `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`; Phase 2 is committed as
-`60a1dacbf1d044054a26da1e4556e6c2270de9cf`. Phase 3 acceptance adds no code
-commit. Application Version is `0.8.0`; current status is V0.8.0 Release
-Preparation, and v0.8.0 is not released. The real database schema remains
-`0005_add_deadlines_recurrence_reminders`.
+Published stable release: `v0.8.0` — Task Organization at Scale; its annotated
+tag points to release Commit
+`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.8 Phases 0–3 are complete and
+released. V0.8 Phase 0 is committed as
+`97e118a0d546f57fcee7a9dd6ae53f6f0010db80`, Phase 1 as
+`82691ac61bbce3cf745de2cfd5904f7619c1a642`, and Phase 2 as
+`60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
+code commit. Current development is V0.9 Planning Flow Refinement, with Phase
+0 Product / Architecture Freeze complete. Application Version is `0.8.0`; the
+real database schema remains `0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 
@@ -144,9 +142,34 @@ Only the version currently being implemented may be changed. Do not start later 
   columns, or indexes without a new product decision. V0.8 has no pagination
   until measured data justifies revisiting that decision.
 - Inbox Quick Project and Quick Priority are optional Should Have work, not a
-  release gate. Quick Postpone and Move Tomorrow/Next Week remain V0.9 scope.
+  release gate. V0.9 Quick Reschedule remains separate planning scope.
   Review, Calendar, Backup, Restore, Recovery, and Storage Qualification stay
   on their existing boundaries.
+
+## V0.9 Development Safety
+
+- V0.9 has one theme: Quick Reschedule + Lightweight Month Drill-down. It is a
+  small planning-flow refinement, not a new Planning system.
+- Quick Reschedule applies to pending Tasks and offers Today, Tomorrow, Next
+  Monday, Move to Inbox, and Choose Date from the existing Task/Calendar
+  surfaces. It changes `planned_date` only, except Move to Inbox also sends
+  `schedule: null` so the Inbox invariant remains valid.
+- Today, Tomorrow, and Next Monday use `GET /api/v1/runtime` `local_date` and
+  pure `YYYY-MM-DD` calendar arithmetic. Browser, server-local, and UTC dates
+  are not sources for presets.
+- Existing version checks, schedule-conflict confirmation, and
+  `updateTaskWithConflict` remain the only mutation path. No `/reschedule` or
+  `/planning` API is introduced.
+- Moving a scheduled Task preserves its local start/end clock and
+  `schedule_timezone`; the Backend recalculates UTC instants. Deadline,
+  Reminder, recurrence rule, occurrence date, and future occurrences are not
+  changed or materialized.
+- Month date selection switches to the existing Day View. It creates no Task,
+  writes no data, and introduces no Router, global planner store, or new
+  dependency. Today and Calendar use local request-sequence guards.
+- V0.9 requires no database migration: retain `0005_add_deadlines_recurrence_reminders`,
+  do not create `0006`, tables, columns, or indexes. Inbox Quick Project and
+  Quick Priority remain DEFERRED.
 
 ## Migration Rules
 

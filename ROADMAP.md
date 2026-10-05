@@ -1,16 +1,15 @@
 # DayFlow Personal Roadmap
 
-Stable release: **v0.7.0 — Daily & Weekly Review**. Current DayFlow
-application version: **0.8.0**, in Release Preparation. The
-annotated `v0.7.0` tag is the published stable release and points to Commit
-`b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete.
-Current development is V0.8 Task Organization at Scale. Phases 0–3 are
-complete, including Full Acceptance; current status is V0.8.0 Release
-Preparation. V0.8.0 is not released. Phase 1 is committed as
-`82691ac61bbce3cf745de2cfd5904f7619c1a642`, following the Phase 0 freeze
-commit `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`; Phase 2 is committed as
-`60a1dacbf1d044054a26da1e4556e6c2270de9cf`. Phase 3 acceptance adds no code
-commit. The real database schema remains
+Stable release: **v0.8.0 — Task Organization at Scale**. Current DayFlow
+application version: **0.8.0**. The annotated `v0.8.0` tag is the published
+stable release and points to Commit
+`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.8 Phases 0–3 are complete and
+released. Phase 0 is committed as
+`97e118a0d546f57fcee7a9dd6ae53f6f0010db80`, Phase 1 as
+`82691ac61bbce3cf745de2cfd5904f7619c1a642`, and Phase 2 as
+`60a1dacbf1d044054a26da1e4556e6c2270de9cf`; Phase 3 Full Acceptance added no
+code commit. Current development is V0.9 Planning Flow Refinement; Phase 0
+Product / Architecture Freeze is complete. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 ## Current
@@ -406,7 +405,8 @@ and Project flows.
 
 Status: Phase 0 Product / Architecture Freeze, Phase 1 Task Query Core, Phase 2
 Search / Project UI Integration, and Phase 3 Full Acceptance complete. V0.8.0
-Release Preparation is in progress; v0.8.0 is not released.
+is formally released by annotated tag `v0.8.0` at Commit
+`6bbd452dcee8fbc793e1c66deba2b986eac3197c`.
 The single theme is Search / Filter / Sort with Project reuse. V0.8 extends the
 existing `GET /api/v1/tasks` endpoint and keeps the existing `TaskRead[]`
 response shape.
@@ -435,8 +435,8 @@ nearly free and does not introduce a global store.
 
 Explicitly out of scope: a new Search API, query language, Saved Views,
 grouping engine, Kanban, Subtasks, Manual Ordering, Drag & Drop, Batch Edit,
-Activity History, pagination without measured evidence, Quick Postpone, Move
-Tomorrow/Next Week, Calendar/Review redesign, AI, and Backup/Restore/Recovery.
+Activity History, pagination without measured evidence, Planning Flow changes,
+Calendar/Review redesign, AI, and Backup/Restore/Recovery.
 
 NO DATABASE MIGRATION REQUIRED. Keep
 `0005_add_deadlines_recurrence_reminders`; do not create `0006`, new columns,
@@ -451,15 +451,62 @@ Implementation phases:
 3. Phase 2: Search / Project UI Integration — controls, reuse, Frontend tests,
    and isolated E2E — complete. Inbox Quick Project/Priority remains separately
    optional and is not implemented.
-4. Phase 3: Full Acceptance — complete. Release Preparation is in progress.
+4. Phase 3: Full Acceptance — complete. V0.8.0 is released.
 
 Definition of Done: the user can quickly find all pending Tasks, current
 completed Tasks, current Overdue Tasks, planned-date buckets, and use a small
 set of stable sorts; Project Detail offers the same organization capability.
 
+### V0.9 — Planning Flow Refinement
+
+Status: Phase 0 Product / Architecture Freeze complete. The frozen theme is
+**Quick Reschedule + Lightweight Month Drill-down**.
+
+Must Have:
+
+- Quick Reschedule for pending Tasks: Today, Tomorrow, Next Monday, Move to
+  Inbox, and Choose Date.
+- The same Quick Reschedule capability from Today and Calendar, using the
+  existing versioned Task PATCH and schedule-conflict confirmation.
+- Month date selection, including the “还有 N 项” overflow action, switches
+  to the existing Day View.
+- Month date cells and the overflow action are keyboard activatable with an
+  accessible name and visible focus.
+- Request-sequence protection for Today and Calendar refreshes.
+
+Quick Reschedule changes only `planned_date`. Move to Inbox also clears the
+Time Block with `schedule: null`. Deadline, Reminder, recurrence rule,
+occurrence date, and future occurrences remain unchanged. Presets use
+`/api/v1/runtime` `local_date` and pure date arithmetic; Next Monday means the
+next Monday after the current DayFlow local date.
+
+Should Have: small Task Editor planning polish, consistent Today/Calendar menu
+interaction, 900px menu/date-picker polish, and keyboard/focus improvements.
+Inbox Quick Project and Quick Priority remain DEFERRED.
+
+Explicitly out of scope: Drag & Drop, Resize, Batch Edit, Saved Views, Kanban,
+Subtasks, Project hierarchy, Activity History, Analytics, AI, External Calendar,
+Cloud Sync, Mobile, new Reminder services, Backup/Restore/Recovery,
+Authentication, new Planning APIs, migrations, and `0006`.
+
+NO DATABASE MIGRATION REQUIRED. Keep
+`0005_add_deadlines_recurrence_reminders`; V0.9 uses the existing Task PATCH,
+TaskRead, runtime endpoint, and Calendar Day View.
+
+Implementation phases:
+
+1. Phase 0: Product / Architecture Freeze — complete.
+2. Phase 1: Quick Reschedule Core — pending.
+3. Phase 2: Today / Calendar / Month Integration — pending.
+4. Phase 3: Full Acceptance / Release — pending.
+
+Definition of Done: a user can reschedule a pending Task from Today and
+Calendar, preserve Time Block local clock/timezone with conflict handling,
+leave Deadline/Reminder/Recurrence unchanged, and enter the existing Day View
+from a Month date.
+
 ## Later Candidates
 
-- V0.9 Planning Flow refinement remains separate from V0.8 organization.
 - V1.0 Product Maturity follows the focused V0.8 and V0.9 milestones.
 - AI assistance remains a future candidate after the core product workflow is
   mature; it is not on the active V0.8 path.

@@ -8,15 +8,13 @@
 
 ## Current Version
 
-Stable release: `v0.7.0` — Daily & Weekly Review. Current application version:
-`0.8.0`, in Release Preparation. The
-annotated `v0.7.0` tag points to release Commit
-`b632f10dbc9cde7da04083a60ef758dea648b594`. Deadline, Recurrence, Reminder,
+Stable release: `v0.8.0` — Task Organization at Scale. Current application
+version: `0.8.0`. The annotated `v0.8.0` tag points to release Commit
+`6bbd452dcee8fbc793e1c66deba2b986eac3197c`. Deadline, Recurrence, Reminder,
 Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
-is implemented, integrated, accepted, and released. V0.8 Task Organization at
-Scale Phase 0, Phase 1 Task Query Core, Phase 2 Search / Project UI
-Integration, and Phase 3 Full Acceptance are complete. V0.8.0 is not released;
-Release Preparation is in progress. The real database schema remains
+and V0.8 Task Organization are implemented, integrated, accepted, and
+released. Current development is V0.9 Planning Flow Refinement, Phase 0
+Product / Architecture Freeze. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -463,7 +461,45 @@ V0.8 keeps returning `TaskRead[]` with no pagination, `limit`, `offset`, or
 cursor. NO DATABASE MIGRATION REQUIRED: the existing `0005` fields and current
 indexes are sufficient for the accepted contract. Isolated performance sanity
 checks passed; no future index or migration decision is required for this
-release. Phase 3 Full Acceptance is complete and V0.8.0 remains unreleased.
+release. Phase 3 Full Acceptance is complete and V0.8.0 is released.
+
+## V0.9 Planning Contract (Phase 0 Frozen)
+
+V0.9 uses the existing Task mutation contract. It does not create a
+`/reschedule`, `/postpone`, or `/planning` endpoint.
+
+```text
+PATCH /api/v1/tasks/{id}?version=<version>
+```
+
+Normal Quick Reschedule actions send only:
+
+```json
+{ "planned_date": "YYYY-MM-DD" }
+```
+
+Move to Inbox sends both fields because an Inbox Task cannot retain a Time
+Block:
+
+```json
+{ "planned_date": null, "schedule": null }
+```
+
+Quick Reschedule applies to pending Tasks. Existing optimistic version,
+`task_version_conflict`, `schedule_conflict`, error-envelope, and explicit
+conflict-confirmation behavior remain unchanged. Stale versions are not
+automatically retried with a newer version.
+
+Today, Tomorrow, and Next Monday use `GET /api/v1/runtime` `local_date` as the
+only preset basis. Tomorrow is one calendar day later. Next Monday is the next
+Monday after the current DayFlow local date. The frontend performs pure
+`YYYY-MM-DD` date arithmetic and does not use browser or UTC clock semantics.
+
+Changing `planned_date` on a scheduled Task preserves its local start/end
+clock and `schedule_timezone`; the Backend recalculates UTC instants. Deadline
+fields, Reminder rows, recurrence rules, occurrence dates, and future
+occurrences are not modified or materialized. Month date selection is UI-only
+and switches to the existing Day View without a new endpoint or write.
 
 ## V0.1 Endpoints
 

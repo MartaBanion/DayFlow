@@ -1,9 +1,28 @@
 # Changelog
 
-## [Unreleased] — V0.8.0 — Task Organization at Scale
+## [Unreleased] — V0.9 Planning Flow Refinement
 
-V0.8.0 Full Acceptance is complete and the unreleased candidate is in Release
-Preparation. No release date or v0.8.0 tag exists yet.
+V0.9 Phase 0 Product / Architecture Freeze is complete. The frozen theme is
+Quick Reschedule + Lightweight Month Drill-down. Implementation has not
+started.
+
+### Frozen Scope
+
+- Quick Reschedule for pending Tasks: Today, Tomorrow, Next Monday, Move to
+  Inbox, and Choose Date.
+- The same versioned Task PATCH and conflict confirmation from Today and
+  Calendar.
+- Month date click, including “还有 N 项”, switches to the existing Day View.
+- Presets use DayFlow `/runtime` `local_date` and pure date arithmetic.
+- Moving a scheduled Task preserves its local clock and timezone; Deadline,
+  Reminder, and Recurrence remain unchanged.
+- No new API, dependency, migration, or `0006`; Inbox Quick Project and Quick
+  Priority remain DEFERRED.
+
+## [v0.8.0] — Task Organization at Scale
+
+V0.8.0 is formally released. The annotated `v0.8.0` tag points to release
+Commit `6bbd452dcee8fbc793e1c66deba2b986eac3197c`.
 
 ### Completed
 
@@ -39,7 +58,7 @@ gates.
 - Existing `TaskRead[]` response shape, AND semantics, Reset, and no pagination.
 
 NO DATABASE MIGRATION REQUIRED. No `0006` exists. Inbox Quick Project and Quick
-Priority remain optional Should Have work; Quick Postpone remains V0.9 scope.
+Priority remain DEFERRED. V0.9 Planning Flow Refinement is a separate scope.
 
 ## [v0.7.0] — Daily & Weekly Review
 
