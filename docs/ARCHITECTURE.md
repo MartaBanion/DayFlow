@@ -6,8 +6,10 @@ Stable release: **v0.8.0 — Task Organization at Scale**. Current application
 version: **0.8.0**. The annotated `v0.8.0` tag points to release Commit
 `6bbd452dcee8fbc793e1c66deba2b986eac3197c`. V0.7 and V0.8 are complete,
 accepted, and released. Current development is V0.9 Planning Flow Refinement;
-Phase 0 Product / Architecture Freeze is complete. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`.
+Phase 0 Product / Architecture Freeze and Phase 1 Quick Reschedule Core are
+complete. Phase 2 Today / Calendar / Month Integration is implemented and
+pending final review. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
 
@@ -501,13 +503,16 @@ planning editor. Inbox Quick Project and Quick Priority remain DEFERRED.
 
 1. Phase 0 — Product / Architecture Freeze — complete.
 2. Phase 1 — Quick Reschedule Core — complete.
-3. Phase 2 — Today / Calendar / Month Integration — pending.
+3. Phase 2 — Today / Calendar / Month Integration — implemented; pending final
+   review.
 4. Phase 3 — Full Acceptance / Release — pending.
 
-Phase 1 provides the pure date helper, runtime-date semantics, reusable
-Quick Reschedule update helper, and focused Backend/Frontend tests. It does not
-connect the helper to Today, Calendar, Month, Search, Project Detail, or
-TaskCard UI; those integrations remain Phase 2.
+Phase 1 provides the pure date helper, runtime-date semantics, reusable Quick
+Reschedule update helper, and focused Backend/Frontend tests. Phase 2 connects
+the shared helper to pending TaskCard actions in Today and Calendar, adds local
+latest-request guards, and switches Month date cells and “还有 N 项” to the
+existing Day View. Search and Project Detail remain outside the V0.9 Phase 2
+integration scope.
 
 The Definition of Done is the ability to reschedule pending Tasks from Today
 and Calendar, preserve Time Block local clock/timezone with conflict handling,

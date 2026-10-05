@@ -1,13 +1,22 @@
 <script setup lang="ts">
+import { ref, toRefs } from 'vue'
+
 import { priorityLabels } from '../constants/labels'
 import { deadlineStatusLabel, taskDeadlineLabel, taskTimeLabel } from '../calendar'
 import type { Task } from '../types'
+import QuickRescheduleMenu from './QuickRescheduleMenu.vue'
 
-defineProps<{
+const props = withDefaults(defineProps<{
   task: Task
   contextDate?: string
   busy?: boolean
-}>()
+  quickRescheduleEnabled?: boolean
+  runtimeLocalDate?: string | null
+}>(), {
+  quickRescheduleEnabled: false,
+  runtimeLocalDate: null,
+})
+const { task, contextDate, busy, quickRescheduleEnabled, runtimeLocalDate } = toRefs(props)
 
 const emit = defineEmits<{
   complete: [task: Task]
@@ -15,7 +24,20 @@ const emit = defineEmits<{
   edit: [task: Task]
   delete: [task: Task]
   skip: [task: Task]
+  rescheduled: [task: Task]
 }>()
+
+const isQuickRescheduleOpen = ref(false)
+
+function handleMoreCommand(command: string): void {
+  if (command === 'reschedule') {
+    isQuickRescheduleOpen.value = true
+  } else if (command === 'delete') {
+    emit('delete', task.value)
+  } else {
+    emit('skip', task.value)
+  }
+}
 </script>
 
 <template>
@@ -87,15 +109,30 @@ const emit = defineEmits<{
       <el-button v-if="task.status === 'completed'" text :disabled="busy" @click="emit('restore', task)">
         恢复
       </el-button>
-      <el-dropdown trigger="click" @command="(command: string) => command === 'delete' ? emit('delete', task) : emit('skip', task)">
+      <el-dropdown trigger="click" @command="handleMoreCommand">
         <el-button text :disabled="busy" :aria-label="`更多操作：${task.title}`">更多</el-button>
         <template #dropdown>
           <el-dropdown-menu>
+            <el-dropdown-item
+              v-if="quickRescheduleEnabled && task.status === 'pending'"
+              :disabled="busy"
+              command="reschedule"
+            >
+              调整日期
+            </el-dropdown-item>
             <el-dropdown-item v-if="task.status === 'pending' && task.recurrence_rule_id" :disabled="busy" command="skip">跳过本次</el-dropdown-item>
             <el-dropdown-item :disabled="busy" command="delete">删除</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
+    <QuickRescheduleMenu
+      v-if="quickRescheduleEnabled && task.status === 'pending'"
+      v-model="isQuickRescheduleOpen"
+      :task="task"
+      :runtime-local-date="runtimeLocalDate"
+      :disabled="busy"
+      @success="emit('rescheduled', $event)"
+    />
   </article>
 </template>

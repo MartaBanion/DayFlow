@@ -3,7 +3,6 @@ import type {
   Category,
   Task,
   TaskCreatePayload,
-  TaskPriority,
   RuntimeInfo,
   TaskUpdatePayload,
   TaskListParams,

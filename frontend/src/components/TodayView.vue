@@ -30,6 +30,8 @@ const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
 const projects = ref<Project[]>([])
 const metadataLoaded = ref(false)
+const hasStaleTasks = ref(false)
+let requestSequence = 0
 
 const pendingTasks = computed(() => tasks.value.filter((task) => task.status === 'pending'))
 const completionRate = computed(() => calculateCompletionRate(tasks.value))
@@ -48,17 +50,26 @@ function showError(error: unknown): void {
 
 async function loadToday(preserveList = false): Promise<void> {
   if (!selectedDate.value) return
+  const requestId = ++requestSequence
   if (!preserveList) todayLoadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
   try {
-    tasks.value = await taskApi.listToday(selectedDate.value)
+    const loadedTasks = await taskApi.listToday(selectedDate.value)
+    if (requestId !== requestSequence) return
+    tasks.value = loadedTasks
     todayLoadState.value = 'loaded'
+    hasStaleTasks.value = false
   } catch (error) {
-    todayLoadState.value = 'error'
+    if (requestId !== requestSequence) return
     showError(error)
+    if (preserveList && todayLoadState.value === 'loaded') {
+      hasStaleTasks.value = true
+    } else {
+      todayLoadState.value = 'error'
+    }
   } finally {
-    isLoading.value = false
+    if (requestId === requestSequence) isLoading.value = false
   }
 }
 
@@ -104,7 +115,11 @@ async function loadMetadata(): Promise<void> {
 async function handleMetadataUpdated(snapshot: MetadataSnapshot): Promise<void> {
   categories.value = snapshot.categories
   tags.value = snapshot.tags
-  if (todayLoadState.value === 'loaded') await loadToday()
+  if (todayLoadState.value === 'loaded') await loadToday(true)
+}
+
+async function handleRescheduled(): Promise<void> {
+  await loadToday(true)
 }
 
 async function createQuickTask(): Promise<void> {
@@ -288,7 +303,7 @@ onMounted(initializeToday)
         :tags="tags"
         @updated="handleMetadataUpdated"
       />
-      <el-button :loading="isLoading" plain @click="loadToday()">刷新</el-button>
+      <el-button :loading="isLoading" plain @click="loadToday(true)">刷新</el-button>
     </div>
   </header>
 
@@ -300,7 +315,9 @@ onMounted(initializeToday)
     show-icon
     closable
     @close="errorMessage = ''"
-  />
+  >
+    <template v-if="hasStaleTasks">当前今日任务结果可能未更新，请点击刷新重试。</template>
+  </el-alert>
 
   <section v-if="todayLoadState === 'loading'" class="today-state is-loading" aria-live="polite">
     <p class="eyebrow">加载中</p>
@@ -365,11 +382,14 @@ onMounted(initializeToday)
         :task="task"
         :busy="isSaving"
         :context-date="selectedDate"
+        :quick-reschedule-enabled="true"
+        :runtime-local-date="selectedDate"
         @complete="completeTask"
         @restore="restoreTask"
         @edit="openEditDialog"
         @delete="deleteTask"
         @skip="skipTask"
+        @rescheduled="handleRescheduled"
       />
     </div>
   </section>

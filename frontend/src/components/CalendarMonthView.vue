@@ -11,7 +11,10 @@ const props = defineProps<{
   today?: string
 }>()
 
-const emit = defineEmits<{ select: [task: Task] }>()
+const emit = defineEmits<{
+  select: [task: Task]
+  selectDate: [date: string]
+}>()
 
 function tasksForDay(day: string): Task[] {
   return props.tasks.filter((task) => task.planned_date === day)
@@ -39,26 +42,42 @@ const dayLabels = computed(() => props.days.map((day) => ({
           'is-today': item.day === today,
         }"
       >
-        <header class="calendar-month-day-header">
+        <button
+          class="calendar-month-day-header calendar-month-day-trigger"
+          type="button"
+          :disabled="!item.day.startsWith(month)"
+          :aria-label="`查看 ${item.day} 的日视图`"
+          @click="emit('selectDate', item.day)"
+          @keydown.enter.prevent="emit('selectDate', item.day)"
+          @keydown.space.prevent="emit('selectDate', item.day)"
+        >
           <span>{{ item.number }}</span>
           <small>{{ item.weekday }}</small>
-        </header>
+        </button>
         <button
           v-for="task in tasksForDay(item.day).slice(0, 3)"
           :key="task.id"
           class="calendar-task calendar-month-task"
           :class="{ 'is-completed': task.status === 'completed' }"
           type="button"
-          @click="emit('select', task)"
+          @click.stop="emit('select', task)"
         >
           <span>{{ task.title }}</span>
           <small v-if="task.start_at_utc">{{ taskTimeLabel(task) }}</small>
           <small v-if="task.project">{{ task.project.name }}</small>
           <small v-if="taskDeadlineLabel(task)">{{ taskDeadlineLabel(task) }}</small>
         </button>
-        <p v-if="tasksForDay(item.day).length > 3" class="calendar-more">
+        <button
+          v-if="tasksForDay(item.day).length > 3 && item.day.startsWith(month)"
+          class="calendar-more"
+          type="button"
+          :aria-label="`查看 ${item.day} 的全部任务`"
+          @click.stop="emit('selectDate', item.day)"
+          @keydown.enter.stop.prevent="emit('selectDate', item.day)"
+          @keydown.space.stop.prevent="emit('selectDate', item.day)"
+        >
           还有 {{ tasksForDay(item.day).length - 3 }} 项
-        </p>
+        </button>
       </section>
     </div>
   </section>

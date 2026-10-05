@@ -459,8 +459,10 @@ set of stable sorts; Project Detail offers the same organization capability.
 
 ### V0.9 — Planning Flow Refinement
 
-Status: Phase 0 Product / Architecture Freeze complete. The frozen theme is
-**Quick Reschedule + Lightweight Month Drill-down**.
+Status: Phase 0 Product / Architecture Freeze and Phase 1 Quick Reschedule Core
+are complete. Phase 2 Today / Calendar / Month Integration is implemented and
+pending final review. The frozen theme is **Quick Reschedule + Lightweight Month
+Drill-down**.
 
 Must Have:
 
@@ -497,7 +499,8 @@ Implementation phases:
 
 1. Phase 0: Product / Architecture Freeze — complete.
 2. Phase 1: Quick Reschedule Core — complete.
-3. Phase 2: Today / Calendar / Month Integration — pending.
+3. Phase 2: Today / Calendar / Month Integration — implemented; pending final
+   review.
 4. Phase 3: Full Acceptance / Release — pending.
 
 Definition of Done: a user can reschedule a pending Task from Today and

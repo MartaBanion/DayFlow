@@ -1,11 +1,15 @@
 // @vitest-environment jsdom
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import TaskCard from './TaskCard.vue'
 import type { Task } from '../types'
+
+afterEach(() => {
+  document.body.querySelectorAll('.el-popper').forEach(element => element.remove())
+})
 
 const task: Task = {
   id: 'task-organization',
@@ -61,5 +65,26 @@ describe('TaskCard organization metadata', () => {
     expect(wrapper.text()).toContain('lab')
     expect(wrapper.text()).toContain('DayFlow')
     expect(wrapper.text()).toContain('暂未安排日期')
+  })
+
+  it('shows Quick Reschedule only for pending tasks in the existing More menu', async () => {
+    const pending = mount(TaskCard, {
+      props: { task, quickRescheduleEnabled: true, runtimeLocalDate: '2026-10-05' },
+      global: { plugins: [ElementPlus] },
+    })
+    await pending.get('button[aria-label^="更多操作"]').trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('调整日期')
+    pending.unmount()
+
+    const completed = mount(TaskCard, {
+      props: { task: { ...task, status: 'completed' }, quickRescheduleEnabled: true },
+      global: { plugins: [ElementPlus] },
+    })
+    await completed.get('button[aria-label^="更多操作"]').trigger('click')
+    await flushPromises()
+    expect(document.body.querySelectorAll('[role="menuitem"]')).not.toHaveLength(0)
+    expect(Array.from(document.body.querySelectorAll('[role="menuitem"]')).some(item => item.textContent?.includes('调整日期'))).toBe(false)
+    completed.unmount()
   })
 })

@@ -45,6 +45,8 @@ const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
 const projects = ref<Project[]>([])
 const metadataLoaded = ref(false)
+const hasStaleTasks = ref(false)
+let requestSequence = 0
 
 const range = computed(() => calendarRange(mode.value, anchorDate.value || '2000-01-01'))
 const headerTitle = computed(() => {
@@ -62,19 +64,29 @@ function showError(error: unknown): void {
   errorMessage.value = getCalendarErrorMessage(error)
 }
 
-async function loadCalendar(): Promise<void> {
+async function loadCalendar(preserveList = false): Promise<void> {
   if (!runtime.value || !anchorDate.value) return
-  loadState.value = 'loading'
+  const requestId = ++requestSequence
+  const requestedRange = range.value
+  if (!preserveList) loadState.value = 'loading'
   isLoading.value = true
   errorMessage.value = ''
   try {
-    tasks.value = await taskApi.listCalendar(range.value.start, range.value.end)
+    const loadedTasks = await taskApi.listCalendar(requestedRange.start, requestedRange.end)
+    if (requestId !== requestSequence) return
+    tasks.value = loadedTasks
     loadState.value = 'loaded'
+    hasStaleTasks.value = false
   } catch (error) {
-    loadState.value = 'error'
+    if (requestId !== requestSequence) return
     showError(error)
+    if (preserveList && loadState.value === 'loaded') {
+      hasStaleTasks.value = true
+    } else {
+      loadState.value = 'error'
+    }
   } finally {
-    isLoading.value = false
+    if (requestId === requestSequence) isLoading.value = false
   }
 }
 
@@ -93,7 +105,7 @@ async function initializeCalendar(): Promise<void> {
 
 async function retryCalendar(): Promise<void> {
   if (runtime.value && anchorDate.value) {
-    await loadCalendar()
+    await loadCalendar(true)
   } else {
     await initializeCalendar()
   }
@@ -113,6 +125,16 @@ async function moveAnchor(amount: number): Promise<void> {
 async function goToToday(): Promise<void> {
   if (!runtime.value) return initializeCalendar()
   anchorDate.value = runtime.value.local_date
+  await loadCalendar()
+}
+
+async function handleRescheduled(): Promise<void> {
+  await loadCalendar(true)
+}
+
+async function openDay(date: string): Promise<void> {
+  mode.value = 'day'
+  anchorDate.value = date
   await loadCalendar()
 }
 
@@ -253,7 +275,9 @@ onMounted(initializeCalendar)
     show-icon
     closable
     @close="errorMessage = ''"
-  />
+  >
+    <template v-if="hasStaleTasks">当前日历结果可能未更新，请点击刷新重试。</template>
+  </el-alert>
 
   <section v-if="loadState === 'loading'" class="calendar-state is-loading" aria-live="polite">
     <p class="eyebrow">加载中</p>
@@ -269,7 +293,7 @@ onMounted(initializeCalendar)
   </section>
 
   <section v-else class="calendar-content">
-    <el-empty v-if="tasks.length === 0" description="这个时间范围还没有任务">
+    <el-empty v-if="tasks.length === 0 && mode !== 'month'" description="这个时间范围还没有任务">
       <template #image><div class="empty-mark">日</div></template>
     </el-empty>
     <CalendarDayView
@@ -277,7 +301,9 @@ onMounted(initializeCalendar)
       :date="range.start"
       :tasks="tasks"
       :today="runtime?.local_date ?? ''"
+      :runtime-local-date="runtime?.local_date"
       @select="openTask"
+      @rescheduled="handleRescheduled"
     />
     <CalendarWeekView
       v-else-if="mode === 'week'"
@@ -285,6 +311,8 @@ onMounted(initializeCalendar)
       :tasks="tasks"
       :today="runtime?.local_date ?? ''"
       @select="openTask"
+      :runtime-local-date="runtime?.local_date"
+      @rescheduled="handleRescheduled"
     />
     <CalendarMonthView
       v-else
@@ -293,6 +321,7 @@ onMounted(initializeCalendar)
       :month="anchorDate.slice(0, 7)"
       :today="runtime?.local_date ?? ''"
       @select="openTask"
+      @select-date="openDay"
     />
   </section>
 
