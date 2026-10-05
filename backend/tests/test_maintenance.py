@@ -21,7 +21,7 @@ PROJECT = BACKEND.parent
 
 @pytest.fixture
 def safety(tmp_path):
-    return MaintenanceSafety(tmp_path / "maintenance", "0.7.0")
+    return MaintenanceSafety(tmp_path / "maintenance", "0.8.0")
 
 
 def contents(root):
@@ -45,7 +45,7 @@ def test_create_duplicate_and_valid_transitions(safety):
     assert record.stage == "prepare"
     assert record.created_at_utc.endswith("Z")
     assert record.operation == "restore-safety-prototype"
-    assert record.app_version == "0.7.0"
+    assert record.app_version == "0.8.0"
     assert record.lock_id.version == 4
     original = contents(safety.root)
     with pytest.raises(MaintenanceBlocked):
@@ -242,7 +242,7 @@ def test_cross_process_usage_lock_releases_on_exit_not_by_pid_guessing(safety):
 import os, sys
 from pathlib import Path
 from app.core.maintenance import MaintenanceSafety
-with MaintenanceSafety(Path(sys.argv[1]), "0.7.0").backend_usage():
+with MaintenanceSafety(Path(sys.argv[1]), "0.8.0").backend_usage():
     print("ready", flush=True)
     sys.stdin.readline()
     os._exit(27)
@@ -270,7 +270,7 @@ def test_process_crash_retains_state_and_blocks_next_start(safety, stage):
 import os, sys
 from pathlib import Path
 from app.core.maintenance import MaintenanceSafety
-s = MaintenanceSafety(Path(sys.argv[1]), "0.7.0")
+s = MaintenanceSafety(Path(sys.argv[1]), "0.8.0")
 r = s.begin()
 for old, new in [("prepare", "verified"), ("verified", "switching"), ("switching", "verifying")]:
     if s.inspect().stage == sys.argv[2]: break
@@ -304,7 +304,7 @@ def test_backend_lifespan_checks_state_and_holds_lease(safety, tmp_path, monkeyp
 @pytest.mark.parametrize("state", ["normal", "maintenance", "pending_without_lock"])
 def test_launcher_preflight_allow_and_reject(database_engine, tmp_path, state):
     database = Path(database_engine.url.database)
-    safety = MaintenanceSafety(database.parent / "maintenance", "0.7.0")
+    safety = MaintenanceSafety(database.parent / "maintenance", "0.8.0")
     if state != "normal":
         safety.begin()
         if state == "pending_without_lock":

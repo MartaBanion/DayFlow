@@ -18,7 +18,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 
 @pytest.fixture
 def backups(database_engine: Engine, tmp_path: Path) -> BackupService:
-    return BackupService(Path(database_engine.url.database), tmp_path / "backups", "0.7.0")
+    return BackupService(Path(database_engine.url.database), tmp_path / "backups", "0.8.0")
 
 
 def digest(path: Path) -> str:

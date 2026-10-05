@@ -1,9 +1,9 @@
 # Changelog
 
-## [Unreleased] — V0.8 Task Organization at Scale / Release Preparation
+## [Unreleased] — V0.8.0 — Task Organization at Scale
 
-V0.8 Full Acceptance is complete and the unreleased 0.8.0 candidate is ready
-for Release Preparation. No release date or v0.8.0 tag exists yet.
+V0.8.0 Full Acceptance is complete and the unreleased candidate is in Release
+Preparation. No release date or v0.8.0 tag exists yet.
 
 ### Completed
 

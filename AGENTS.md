@@ -15,8 +15,8 @@ Acceptance are complete. Phase 1 is committed as
 `82691ac61bbce3cf745de2cfd5904f7619c1a642`, following the Phase 0 freeze
 commit `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`; Phase 2 is committed as
 `60a1dacbf1d044054a26da1e4556e6c2270de9cf`. Phase 3 acceptance adds no code
-commit. Next is V0.8.0 Release
-Preparation; v0.8.0 is not released. The real database schema remains
+commit. Application Version is `0.8.0`; current status is V0.8.0 Release
+Preparation, and v0.8.0 is not released. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.

@@ -9,7 +9,7 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: `0005` / V0.7.0 Stable; V0.8 Full Acceptance Complete
+## Current Schema: `0005` / V0.7.0 Stable; V0.8.0 Release Preparation
 
 The real database is currently at:
 
@@ -21,8 +21,8 @@ Published stable application version and annotated tag: `v0.7.0`, pointing to
 release Commit `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are
 complete and introduce no business schema or migration. V0.8 Task Organization
 at Scale Phases 0–3, including Full Acceptance, are complete and also require
-no schema change; V0.8.0 is not released and the next step is Release
-Preparation. The real schema remains
+no schema change. Current application version is `0.8.0`; Release Preparation
+is in progress and V0.8.0 is not released. The real schema remains
 `0005_add_deadlines_recurrence_reminders`. Review is read-only and no `0006`
 exists.
 
@@ -442,7 +442,7 @@ current-state Review. Do not create `0006` or edit migrations `0001`–`0005`.
 If immutable completion/activity history becomes a required product feature,
 stop implementation and request a separate product and migration decision.
 
-## V0.8 Task Organization Query Boundary (Phases 0–3 Complete)
+## V0.8 Task Organization Query Boundary (Implementation and Full Acceptance Complete)
 
 V0.8 uses existing Task columns and relationships for current-state filters:
 

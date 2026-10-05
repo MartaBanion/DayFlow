@@ -22,7 +22,7 @@ from app.core.errors import AppError
 def setup_restore(database_engine, tmp_path, monkeypatch):
     source = Path(database_engine.url.database)
     database_engine.dispose()
-    backup = BackupService(source, tmp_path / "backups", "0.7.0")
+    backup = BackupService(source, tmp_path / "backups", "0.8.0")
     item = backup.create()
     # Distinguish live from target without introducing task/API fixture dependencies.
     with sqlite3.connect(source) as c:
@@ -73,7 +73,7 @@ def test_success_preserves_all_and_completed_blocks(setup_restore):
     assert (workspace / "original" / service.source.name).read_bytes() == old
     assert (workspace / "candidate.sqlite3").read_bytes() == target.read_bytes()
     assert not (workspace / "install.sqlite3.partial").exists()
-    safety_service = BackupService(service.source, workspace / "pre-restore-safety", "0.7.0")
+    safety_service = BackupService(service.source, workspace / "pre-restore-safety", "0.8.0")
     assert safety_service.verify(result.safety_backup_id).status == "valid"
     assert logical_status(safety_service.root / safety_service.list()[0].filename, standalone=True)["categories"]["count"] == 1
     assert logical_status(service.source, standalone=True)["categories"]["count"] == 0
@@ -101,7 +101,7 @@ from app.services.restore_service import RestoreService
 import app.services.restore_service as execution
 from app.core.restore_io import external_users
 execution.external_users=lambda ids: external_users(ids,Path(sys.argv[1]).parent/'proc-view')
-s=RestoreService(BackupService(Path(sys.argv[1]),Path(sys.argv[2]),'0.7.0'),fault=lambda point: os._exit(73) if point==sys.argv[4] else None)
+s=RestoreService(BackupService(Path(sys.argv[1]),Path(sys.argv[2]),'0.8.0'),fault=lambda point: os._exit(73) if point==sys.argv[4] else None)
 s.execute(sys.argv[3],'RESTORE '+sys.argv[3])
 """
     result = subprocess.run([sys.executable, "-c", script, str(service.source), str(service.backup.root), item.backup_id, point], capture_output=True, timeout=30)
@@ -163,7 +163,7 @@ c.execute("INSERT INTO tags(id,name) VALUES ('uncommitted','excluded')");os._exi
         assert (workspace / "original" / name).read_bytes() == value
         assert (workspace / "current-evidence" / name).read_bytes() == value
     assert not wal.exists() and not shm.exists()
-    safety = BackupService(service.source, workspace / "pre-restore-safety", "0.7.0")
+    safety = BackupService(service.source, workspace / "pre-restore-safety", "0.8.0")
     assert logical_status(safety.root / safety.list()[0].filename, standalone=True)["tags"]["count"] == 1
 
 
@@ -275,7 +275,7 @@ def test_real_location_rejected_without_opening(monkeypatch):
     from app.core.config import PROJECT_ROOT
     # Guard is checked lexically before file access; no real DB is opened.
     source = PROJECT_ROOT / "data" / "dayflow.sqlite3"
-    service = RestoreService(BackupService(source, source.parent / "backups", "0.7.0"))
+    service = RestoreService(BackupService(source, source.parent / "backups", "0.8.0"))
     monkeypatch.setattr(Path, "resolve", lambda self: self)
     with pytest.raises(RestoreRefused):
         service.isolation()
@@ -426,7 +426,7 @@ def test_actual_sidecar_move_abort(setup_restore, point, archived):
     writer = "import sqlite3,os,sys;c=sqlite3.connect(sys.argv[1]);c.execute('PRAGMA journal_mode=WAL');c.execute('PRAGMA wal_autocheckpoint=0');c.execute(\"INSERT INTO tags(id,name) VALUES ('wal','wal')\");c.commit();os._exit(0)"
     subprocess.run([sys.executable, "-c", writer, str(service.source)], check=True)
     initial = {suffix: Path(str(service.source) + suffix).read_bytes() for suffix in ("", "-wal", "-shm")}
-    runner = "from pathlib import Path;import os,sys;from app.services.backup_service import BackupService;from app.services.restore_service import RestoreService;import app.services.restore_service as execution;from app.core.restore_io import external_users;execution.external_users=lambda ids:external_users(ids,Path(sys.argv[1]).parent/'proc-view');s=RestoreService(BackupService(Path(sys.argv[1]),Path(sys.argv[2]),'0.7.0'),fault=lambda p:os._exit(73) if p==sys.argv[4] else None);s.execute(sys.argv[3],'RESTORE '+sys.argv[3])"
+    runner = "from pathlib import Path;import os,sys;from app.services.backup_service import BackupService;from app.services.restore_service import RestoreService;import app.services.restore_service as execution;from app.core.restore_io import external_users;execution.external_users=lambda ids:external_users(ids,Path(sys.argv[1]).parent/'proc-view');s=RestoreService(BackupService(Path(sys.argv[1]),Path(sys.argv[2]),'0.8.0'),fault=lambda p:os._exit(73) if p==sys.argv[4] else None);s.execute(sys.argv[3],'RESTORE '+sys.argv[3])"
     result = subprocess.run([sys.executable, "-c", runner, str(service.source), str(service.backup.root), item.backup_id, point], capture_output=True, timeout=30)
     assert result.returncode == 73, result.stderr.decode()
     workspace = next((service.backup.root / "restore-operations").iterdir())
@@ -562,7 +562,7 @@ def test_protected_database_alias_refuses_without_sqlite(setup_restore, tmp_path
         os.link(protected, path)
     else:
         path = data / ".." / "data" / "dayflow.sqlite3"
-    probe = RestoreService(BackupService(path, path.parent / "backups", "0.7.0"))
+    probe = RestoreService(BackupService(path, path.parent / "backups", "0.8.0"))
     monkeypatch.setattr(module.sqlite3, "connect", lambda *a, **kw: pytest.fail("Must reject before SQLite access"))
     with pytest.raises(RestoreRefused):
         probe.isolation()

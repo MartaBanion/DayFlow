@@ -2,13 +2,14 @@
 
 ## Current Version
 
-Current stable application version: **v0.7.0 — Daily & Weekly Review**. The
+Stable release: **v0.7.0 — Daily & Weekly Review**. Current application
+version: **0.8.0**, in Release Preparation. The
 annotated `v0.7.0` tag points to release Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete,
 accepted, and released. V0.8 Task Organization at Scale is frozen at Product /
 Architecture Phase 0, Phase 1 Task Query Core, Phase 2 Search / Project UI
 Integration, and Phase 3 Full Acceptance are complete. V0.8.0 is not released;
-the next step is Release Preparation. The real database schema remains
+Release Preparation is in progress. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
@@ -368,8 +369,8 @@ verification.
 ## Frozen V0.8 — Task Organization at Scale
 
 Status: Product / Architecture Phase 0, Phase 1 Task Query Core, Phase 2
-Search / Project UI Integration, and Phase 3 Full Acceptance complete. Ready
-for V0.8.0 Release Preparation; v0.8.0 is not released.
+Search / Project UI Integration, and Phase 3 Full Acceptance complete. V0.8.0
+Release Preparation is in progress; v0.8.0 is not released.
 The V0.8 theme is Search / Filter / Sort with Project reuse. It is a small
 current-state organization layer over the existing Task list, not a new query
 engine or Analytics system.
@@ -394,7 +395,7 @@ instant. Planned buckets use the configured DayFlow IANA timezone. Date-only
 Deadline evaluation uses the Task's saved `deadline_timezone`; timed Deadline
 evaluation compares the same instant with `deadline_at_utc`. Invalid enum values
 use the existing API validation envelope, and invalid timezone configuration
-fails safely. Phase 1 should pass the instant to a small TaskRead serialization
+fails safely. Phase 1 passes the instant to a small TaskRead serialization
 helper instead of using the current wall-clock `Task.deadline_status` property
 for this endpoint; this does not require a Clock Framework, model redesign, or
 schema change.
@@ -440,7 +441,7 @@ and Move Tomorrow/Next Week remain V0.9 scope.
 3. Phase 2 — Search / Project UI Integration: controls, Project reuse,
    Frontend tests, and isolated E2E — complete; Inbox quick actions are
    separately optional and not implemented.
-4. Phase 3 — Full Acceptance: complete. Release Preparation is next.
+4. Phase 3 — Full Acceptance: complete. Release Preparation is in progress.
 
 The Definition of Done is the ability to find pending, current completed,
 Overdue, and planned-bucket Tasks with a small stable sort set, and to use the

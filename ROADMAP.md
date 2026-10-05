@@ -1,10 +1,11 @@
 # DayFlow Personal Roadmap
 
-Current stable application version: **v0.7.0 — Daily & Weekly Review**. The
+Stable release: **v0.7.0 — Daily & Weekly Review**. Current DayFlow
+application version: **0.8.0**, in Release Preparation. The
 annotated `v0.7.0` tag is the published stable release and points to Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete.
 Current development is V0.8 Task Organization at Scale. Phases 0–3 are
-complete, including Full Acceptance, and the next step is V0.8.0 Release
+complete, including Full Acceptance; current status is V0.8.0 Release
 Preparation. V0.8.0 is not released. Phase 1 is committed as
 `82691ac61bbce3cf745de2cfd5904f7619c1a642`, following the Phase 0 freeze
 commit `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`; Phase 2 is committed as
@@ -404,8 +405,8 @@ and Project flows.
 ### V0.8 — Task Organization at Scale
 
 Status: Phase 0 Product / Architecture Freeze, Phase 1 Task Query Core, Phase 2
-Search / Project UI Integration, and Phase 3 Full Acceptance complete. Ready
-for V0.8.0 Release Preparation; v0.8.0 is not released.
+Search / Project UI Integration, and Phase 3 Full Acceptance complete. V0.8.0
+Release Preparation is in progress; v0.8.0 is not released.
 The single theme is Search / Filter / Sort with Project reuse. V0.8 extends the
 existing `GET /api/v1/tasks` endpoint and keeps the existing `TaskRead[]`
 response shape.
@@ -450,7 +451,7 @@ Implementation phases:
 3. Phase 2: Search / Project UI Integration — controls, reuse, Frontend tests,
    and isolated E2E — complete. Inbox Quick Project/Priority remains separately
    optional and is not implemented.
-4. Phase 3: Full Acceptance — complete. Release Preparation is next.
+4. Phase 3: Full Acceptance — complete. Release Preparation is in progress.
 
 Definition of Done: the user can quickly find all pending Tasks, current
 completed Tasks, current Overdue Tasks, planned-date buckets, and use a small

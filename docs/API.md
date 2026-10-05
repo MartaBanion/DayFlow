@@ -8,14 +8,15 @@
 
 ## Current Version
 
-Current stable application version: `v0.7.0` — Daily & Weekly Review. The
+Stable release: `v0.7.0` — Daily & Weekly Review. Current application version:
+`0.8.0`, in Release Preparation. The
 annotated `v0.7.0` tag points to release Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. Deadline, Recurrence, Reminder,
 Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
 is implemented, integrated, accepted, and released. V0.8 Task Organization at
 Scale Phase 0, Phase 1 Task Query Core, Phase 2 Search / Project UI
 Integration, and Phase 3 Full Acceptance are complete. V0.8.0 is not released;
-Release Preparation is next. The real database schema remains
+Release Preparation is in progress. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -383,7 +384,7 @@ Response:
 Backend in that timezone. Frontend “今天” logic must use this runtime value
 instead of the browser's local date.
 
-## V0.8 Task Query Contract (Phase 1 and Phase 2 Complete)
+## V0.8 Task Query Contract (Implementation and Full Acceptance Complete)
 
 V0.8 extends the existing Task list endpoint. It does not create a Search or
 Analytics endpoint, and it keeps the existing response shape:

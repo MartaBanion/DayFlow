@@ -91,7 +91,7 @@ wheels = [
 
 [[package]]
 name = "dayflow-backend"
-version = "0.7.0"
+version = "0.8.0"
 source = { virtual = "." }
 dependencies = [
     { name = "alembic" },
