@@ -39,7 +39,6 @@ const statusFilter = ref<TaskStatusFilter | ''>('')
 const overdueFilter = ref(false)
 const plannedBucketFilter = ref<TaskPlannedBucket | ''>('')
 const sortFilter = ref<TaskSort | ''>('')
-const isSearchMode = computed(() => props.searchOnly || searchQuery.value.trim().length > 0)
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
 const projects = ref<Project[]>([])
@@ -89,7 +88,7 @@ async function clearFilters(): Promise<void> {
 
 function taskListParams(): TaskListParams {
   const params: TaskListParams = {
-    inbox: !isSearchMode.value,
+    inbox: !props.searchOnly,
     query: searchQuery.value.trim() || undefined,
     priority: priorityFilter.value || undefined,
     categoryId: categoryFilter.value || undefined,
@@ -477,19 +476,19 @@ onMounted(initializeInbox)
     <section class="task-section">
       <div class="section-heading task-heading">
         <div>
-          <h3>{{ isSearchMode ? '搜索结果' : '待安排任务' }}</h3>
+          <h3>{{ props.searchOnly ? '搜索结果' : '待安排任务' }}</h3>
         </div>
         <el-tag type="info" effect="plain">{{ tasks.length }}</el-tag>
       </div>
 
       <el-empty
         v-if="tasks.length === 0"
-        :description="hasConditions ? '暂无匹配任务' : props.searchOnly ? '还没有可搜索的任务' : '收件箱为空'"
+        :description="hasConditions ? (props.searchOnly ? '暂无匹配任务' : '当前收件箱中没有匹配任务') : props.searchOnly ? '还没有可搜索的任务' : '收件箱为空'"
       >
         <template #image>
           <div class="empty-mark">✓</div>
         </template>
-        <p v-if="hasConditions">试试修改搜索词或清除筛选。</p>
+        <p v-if="hasConditions">试试修改关键词或清除筛选。</p>
         <el-button v-if="hasConditions" @click="clearFilters">清除筛选</el-button>
       </el-empty>
 

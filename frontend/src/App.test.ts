@@ -273,7 +273,7 @@ describe('Inbox and search', () => {
     })
   })
 
-  it('shows search error state without pretending the result is empty', async () => {
+  it('shows Inbox query error state without pretending the result is empty', async () => {
     vi.spyOn(taskApi, 'listToday').mockResolvedValue([])
     vi.spyOn(taskApi, 'listCategories').mockResolvedValue([])
     vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
@@ -297,7 +297,7 @@ describe('Inbox and search', () => {
     expect(wrapper.text()).toContain('请求失败，请稍后重试。（HTTP 503）')
     expect(wrapper.text()).toContain('当前结果可能未更新')
     expect(list).toHaveBeenLastCalledWith({
-      inbox: false,
+      inbox: true,
       query: 'linux',
       priority: undefined,
       categoryId: undefined,

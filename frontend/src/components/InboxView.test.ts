@@ -220,3 +220,67 @@ describe('Inbox project filter', () => {
     expect(wrapper.text()).not.toContain('旧响应')
   })
 })
+
+describe('Inbox query scope', () => {
+  let wrapper: VueWrapper | undefined
+
+  beforeEach(() => {
+    vi.spyOn(taskApi, 'listCategories').mockResolvedValue([])
+    vi.spyOn(taskApi, 'listTags').mockResolvedValue([])
+    vi.spyOn(taskApi, 'list').mockResolvedValue([task])
+    vi.spyOn(projectApi, 'list').mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    vi.restoreAllMocks()
+  })
+
+  it('keeps inbox=true when an Inbox query is submitted', async () => {
+    wrapper = mount(InboxView, { global: { stubs } })
+    await flushPromises()
+
+    expect(taskApi.list).toHaveBeenLastCalledWith({
+      inbox: true,
+      query: undefined,
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
+
+    await wrapper.find('#task-search').setValue('整理')
+    await wrapper.find('form.search-form').trigger('submit')
+    await flushPromises()
+
+    expect(taskApi.list).toHaveBeenLastCalledWith({
+      inbox: true,
+      query: '整理',
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
+    expect(wrapper.get('h2').text()).toBe('收件箱')
+    expect(wrapper.get('.task-heading h3').text()).toBe('待安排任务')
+    expect(wrapper.text()).not.toContain('搜索结果')
+  })
+
+  it('clears the Inbox query back to the ordinary Inbox request and copy', async () => {
+    wrapper = mount(InboxView, { global: { stubs } })
+    await flushPromises()
+
+    await wrapper.find('#task-search').setValue('整理')
+    await wrapper.find('form.search-form').trigger('submit')
+    await flushPromises()
+    await wrapper.findAll('button').find(button => button.text() === '清除筛选')!.trigger('click')
+    await flushPromises()
+
+    expect(taskApi.list).toHaveBeenLastCalledWith({
+      inbox: true,
+      query: undefined,
+      priority: undefined,
+      categoryId: undefined,
+      tagId: undefined,
+    })
+    expect(wrapper.get('.task-heading h3').text()).toBe('待安排任务')
+  })
+})

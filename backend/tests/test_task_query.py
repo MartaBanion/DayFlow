@@ -185,6 +185,27 @@ def test_inbox_and_unscheduled_have_distinct_and_semantics(
     )
 
 
+def test_inbox_query_keeps_pending_unscheduled_and_not_deleted_semantics(
+    client: TestClient,
+    session_factory: sessionmaker[Session],
+) -> None:
+    with session_factory() as session:
+        inbox_match = insert_task(session, "alpha inbox")
+        insert_task(session, "alpha today", planned_date=date(2026, 10, 20))
+        insert_task(
+            session,
+            "alpha completed",
+            status=TaskStatus.COMPLETED.value,
+            completed_at_utc=FIXED_NOW,
+        )
+        insert_task(session, "alpha deleted", deleted_at_utc=FIXED_NOW)
+        session.commit()
+
+    assert task_titles(client.get("/api/v1/tasks?inbox=true&q=alpha")) == [
+        inbox_match.title
+    ]
+
+
 def test_planned_buckets_use_configured_timezone(
     client: TestClient,
     session_factory: sessionmaker[Session],

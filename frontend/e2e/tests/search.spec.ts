@@ -63,7 +63,39 @@ test('搜索支持标题、备注和结构化筛选', async ({ page, request }) 
 
   await query.fill(uniqueName('E2E-没有结果'))
   await searchButton.click()
-  await expect(page.getByText('暂无匹配任务', { exact: true })).toBeVisible()
+  await expect(page.getByText('当前收件箱中没有匹配任务', { exact: true })).toBeVisible()
+})
+
+test('Inbox 查询保持 Inbox 范围并可清除回普通列表', async ({ page, request }) => {
+  const query = uniqueName('V10-Inbox范围')
+  const inboxTitle = `${query}-Inbox`
+  const plannedTitle = `${query}-Today`
+  const completedTitle = `${query}-Completed`
+
+  await createTask(request, { title: inboxTitle })
+  await createTask(request, { title: plannedTitle, planned_date: todayDate() })
+  const completed = await createTask(request, { title: completedTitle })
+  const completeResponse = await request.post(`/api/v1/tasks/${completed.id}/complete`, {
+    data: { version: completed.version },
+  })
+  expect(completeResponse.ok(), await completeResponse.text()).toBeTruthy()
+
+  await page.goto('/#inbox')
+  const queryInput = page.getByLabel('搜索任务')
+  await queryInput.fill(query)
+  await page.getByRole('button', { name: '搜索', exact: true }).click()
+
+  await expect(taskCard(page, inboxTitle)).toBeVisible()
+  await expect(taskCard(page, plannedTitle)).toHaveCount(0)
+  await expect(taskCard(page, completedTitle)).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: '收件箱', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '待安排任务', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '搜索结果', exact: true })).toHaveCount(0)
+
+  await page.getByRole('button', { name: '清除筛选', exact: true }).click()
+  await expect(taskCard(page, inboxTitle)).toBeVisible()
+  await expect(taskCard(page, plannedTitle)).toHaveCount(0)
+  await expect(taskCard(page, completedTitle)).toHaveCount(0)
 })
 
 test('中文核心导航和空结果界面可见', async ({ page }) => {
