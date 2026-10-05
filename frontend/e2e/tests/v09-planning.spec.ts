@@ -199,6 +199,25 @@ test('Month 日期和“还有 N 项”进入现有 Day View', async ({ page, re
   await expect(page.locator('.calendar-day-view')).toBeVisible()
 })
 
+test('Month 空日期进入 existing Day View', async ({ page }) => {
+  await page.goto('/#calendar')
+  await page.getByRole('button', { name: '月', exact: true }).click()
+  await expect(page.locator('.calendar-month-view')).toBeVisible()
+
+  const emptyDayCells = page.locator('.calendar-month-day:not(.is-outside-month)').filter({
+    hasNot: page.locator('.calendar-month-task'),
+  })
+  await expect(emptyDayCells.first()).toBeVisible()
+  const emptyDateButton = emptyDayCells.first().locator('.calendar-month-day-trigger')
+  const emptyDate = (await emptyDateButton.getAttribute('aria-label'))?.replace(/^查看 | 的日视图$/g, '')
+  expect(emptyDate).toBeTruthy()
+
+  await emptyDateButton.click()
+  await expect(page.locator('.calendar-day-view')).toBeVisible()
+  await expect(page.locator('.calendar-day-view .calendar-day-heading h3')).toHaveText(emptyDate!)
+  await expect(page.getByText('这个时间范围还没有任务', { exact: true })).toHaveCount(0)
+})
+
 test('900×700 下 Quick Reschedule 和 Month 控件无横向溢出', async ({ page, request }) => {
   await page.setViewportSize({ width: 900, height: 700 })
   const date = todayDate()

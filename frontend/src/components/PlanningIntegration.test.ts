@@ -127,6 +127,24 @@ describe('Calendar integration', () => {
     expect(wrapper.find('.calendar-day-view').exists()).toBe(true)
     expect(listCalendar).toHaveBeenLastCalledWith('2026-10-05', '2026-10-05')
   })
+
+  it('renders the existing Day View when a Month date has no tasks', async () => {
+    vi.spyOn(taskApi, 'getRuntime').mockResolvedValue({ timezone: 'Asia/Shanghai', local_date: today })
+    const listCalendar = vi.spyOn(taskApi, 'listCalendar').mockResolvedValue([])
+
+    const wrapper = mount(CalendarView, { global: { plugins: [ElementPlus], stubs: calendarStubs } })
+    await flushPromises()
+    await wrapper.get('button[aria-pressed="false"]:nth-of-type(3)').trigger('click')
+    await flushPromises()
+
+    await wrapper.get('button[aria-label="查看 2026-10-05 的日视图"]').trigger('click')
+    await flushPromises()
+
+    expect(listCalendar).toHaveBeenLastCalledWith('2026-10-05', '2026-10-05')
+    expect(wrapper.find('.calendar-day-view').exists()).toBe(true)
+    expect(wrapper.find('.calendar-day-heading').text()).toContain('0 项')
+    expect(wrapper.text()).not.toContain('这个时间范围还没有任务')
+  })
 })
 
 describe('Month drill-down controls', () => {

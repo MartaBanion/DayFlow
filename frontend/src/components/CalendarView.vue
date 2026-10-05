@@ -293,11 +293,8 @@ onMounted(initializeCalendar)
   </section>
 
   <section v-else class="calendar-content">
-    <el-empty v-if="tasks.length === 0 && mode !== 'month'" description="这个时间范围还没有任务">
-      <template #image><div class="empty-mark">日</div></template>
-    </el-empty>
     <CalendarDayView
-      v-else-if="mode === 'day'"
+      v-if="mode === 'day'"
       :date="range.start"
       :tasks="tasks"
       :today="runtime?.local_date ?? ''"
@@ -305,6 +302,9 @@ onMounted(initializeCalendar)
       @select="openTask"
       @rescheduled="handleRescheduled"
     />
+    <el-empty v-else-if="tasks.length === 0 && mode !== 'month'" description="这个时间范围还没有任务">
+      <template #image><div class="empty-mark">日</div></template>
+    </el-empty>
     <CalendarWeekView
       v-else-if="mode === 'week'"
       :days="range.days"
