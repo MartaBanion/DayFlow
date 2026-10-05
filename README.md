@@ -1,262 +1,256 @@
 # DayFlow Personal
 
-DayFlow Personal is a local-first, single-user productivity application.
+本地优先的单用户个人任务与日程管理工具。
 
-## Current Version
+A local-first, single-user personal task and schedule manager.
 
-**Stable release: v1.0.0 — Product Maturity.**
-The current DayFlow application version is `1.0.0`. The annotated `v0.9.0`
-tag points to its historical release Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`;
-the annotated `v1.0.0` tag points to release Commit
-`8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`.
-V0.9 Phases 0–3 are complete and released, including the Month empty-date
-blocker fix. V1.0 Product Maturity Audit and Final Product Acceptance PASS;
-the V1.0 Phase 1 Inbox semantic Must Fix is complete in
-`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 is formally released.
-The real database schema remains
-`0005_add_deadlines_recurrence_reminders`, with no new migration.
+**稳定版本 / Stable Release:** [`v1.0.0`](https://github.com/MartaBanion/DayFlow/releases/tag/v1.0.0)<br>
+**应用版本 / Application Version:** `1.0.0`
 
-V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
-Restore Dry Run, isolated Restore safety and recovery coordination, and visible
-Reminder polling failure with Retry and automatic recovery. Real DayFlow
-database Restore remains disabled; only isolated temporary-database Restore has
-been verified.
+DayFlow Personal 的数据默认保存在本机，不依赖云端账户，适合个人长期管理任务、计划、时间安排与复盘。
 
-## V0.6 Data Safety & Recovery
+DayFlow Personal keeps data local by default and does not require a cloud account. It is designed for long-term personal task planning, scheduling, and review.
 
-- Maintenance view for Backup status, Create, List, and Verify.
-- Read-only Restore planning and isolated Restore safety workflows.
-- Reminder poll failure visibility, Retry, and automatic recovery.
-- No real project-database Restore authorization; storage qualification remains
-  `NOT QUALIFIED`.
+## 目录 / Contents
 
-## V0.7 Daily & Weekly Review
+- [项目简介 / Overview](#项目简介--overview)
+- [核心功能 / Core Features](#核心功能--core-features)
+- [界面与工作流 / Workflow](#界面与工作流--workflow)
+- [技术栈 / Tech Stack](#技术栈--tech-stack)
+- [快速开始 / Quick Start](#快速开始--quick-start)
+- [项目结构 / Project Structure](#项目结构--project-structure)
+- [数据与隐私 / Data & Privacy](#数据与隐私--data--privacy)
+- [备份与恢复 / Backup & Restore](#备份与恢复--backup--restore)
+- [测试 / Testing](#测试--testing)
+- [当前版本 / Release Status](#当前版本--release-status)
 
-V0.7 has one product theme: Daily & Weekly Review. The released `#review`
-view presents current-state completed Tasks, current overdue and carryover work,
-and Project snapshots for Today and This Week. It is a read-only, list-first
-review flow rather than a Statistics Dashboard. Phases 0–3 are complete and
-V0.7 requires no database Migration. `completed_at_utc` remains the latest
-retained completion state, not immutable activity history.
+## 项目简介 / Overview
 
-## V0.8 Task Organization at Scale
+DayFlow Personal 是一个 Local First、Single User 的个人任务与日程管理应用。它把收集、规划、执行和复盘放在一套轻量的本地工作流中，数据持久化在本机 SQLite 数据库。
 
-V0.8.0 is released. The theme is Search / Filter / Sort with Project reuse. The
-release scope is intentionally small: extend the existing
-`/api/v1/tasks` query with
-current-status, Overdue, planned-date bucket, and limited stable-sort controls;
-reuse those controls in Project Detail with a fixed `project_id`; and make
-Search mode visibly distinct from Inbox mode. All filters use AND semantics,
-soft-deleted Tasks remain excluded, and the response remains the existing
-`TaskRead[]` list with no pagination.
+DayFlow Personal is a local-first, single-user personal productivity application. It keeps capture, planning, execution, and review in one lightweight local workflow, with persistence provided by SQLite on the local machine.
 
-V0.8 requires no database migration and does not create `0006`. It does not
-include a query language, Saved Views, grouping, Kanban, Batch Edit, Activity
-History, Dashboard/Charts, or Backup/Restore/Recovery work. Inbox Quick Project
-and Quick Priority remain DEFERRED. V0.9 planning work is frozen separately.
+应用不要求云端账户或多人协作服务；本地数据库、备份和维护边界会在下文明确说明。
 
-## V0.9 Planning Flow Refinement
+The application does not require a cloud account or a multi-user service. The local database, backup, and maintenance boundaries are documented below.
 
-V0.9 is frozen around Quick Reschedule + Lightweight Month Drill-down. The
-core scope is:
+## 核心功能 / Core Features
 
-- Quick Reschedule for pending Tasks: Today, Tomorrow, Next Monday, Move to
-  Inbox, and Choose Date.
-- The same action from Today and Calendar, using the existing versioned Task
-  PATCH and conflict confirmation.
-- Month date click, including the “还有 N 项” overflow action, switches to the
-  existing Day View.
+| 功能 | Feature | 说明 / Description |
+| --- | --- | --- |
+| 收件箱 | Inbox | 管理未安排的待办任务。<br>Manage pending tasks that do not have a planned date. |
+| 今天 | Today | 查看当天计划，完成、恢复、删除、撤销删除或调整日期。<br>Work through today’s plan with complete, restore, delete, undo, and reschedule actions. |
+| 任务管理 | Task CRUD | 创建、查看、编辑和删除任务，并使用 optimistic version 防止静默覆盖。<br>Create, view, edit, and delete tasks with optimistic version checks. |
+| 优先级、分类、标签 | Priority, Category, Tags | 使用结构化元数据组织任务。<br>Organize tasks with structured metadata. |
+| 项目 | Projects | 管理项目、项目任务和项目进度。<br>Manage projects, project tasks, and project progress. |
+| 搜索、筛选、排序 | Search, Filter, Sort | 支持文本、状态、Overdue、计划日期区间、优先级、分类、标签、项目和稳定排序；筛选使用 AND 语义。<br>Search and organize tasks by text, status, overdue state, planned-date bucket, priority, category, tag, project, and stable sort; filters use AND semantics. |
+| 日 / 周 / 月日历 | Day / Week / Month Calendar | 查看计划任务、Time Block 和 Deadline；月视图日期可进入现有 Day View。<br>View planned tasks, Time Blocks, and Deadlines; Month dates can open the existing Day View. |
+| 时间块 | Time Block | 为任务设置本地开始/结束时间和时区。<br>Schedule a task with local start/end times and a timezone. |
+| 截止日期 | Deadline | 支持日期型和定时 Deadline，并保留时区与 DST 语义。<br>Support date-only and timed Deadlines with timezone and DST-aware semantics. |
+| 提醒 | Reminder | 支持指定时间提醒、pending、acknowledged 和 dismissed 状态。<br>Support specified-time reminders with pending, acknowledged, and dismissed states. |
+| 重复任务 | Recurrence / Repeat | 支持 Daily、选定星期和 Monthly 规则，并按现有规则处理 occurrence。<br>Support daily, selected-weekday, and monthly recurrence rules with explicit occurrence handling. |
+| 每日 / 每周复盘 | Daily / Weekly Review | 以只读方式查看完成、Overdue、Carryover 和项目当前快照。<br>Review completed, overdue, carryover, and current project facts in a read-only view. |
+| 快速调整日期 | Quick Reschedule | Pending Task 可调整到 Today、Tomorrow、Next Monday、Inbox 或自选日期。<br>Reschedule pending Tasks to Today, Tomorrow, Next Monday, Inbox, or a chosen date. |
+| 软删除与撤销 | Soft Delete / Undo | 删除任务时保留可恢复的软删除状态和 Undo 路径。<br>Use recoverable soft deletion with an Undo path. |
+| 本地 SQLite 持久化 | Local SQLite Persistence | 任务和项目数据默认持久化在本机。<br>Tasks and projects persist locally by default. |
 
-Quick Reschedule changes `planned_date` only. Move to Inbox also clears the
-Time Block with `schedule: null`. Deadline, Reminder, recurrence rule,
-occurrence date, and future occurrences remain unchanged. DayFlow runtime
-`local_date` is the only preset basis; no new API, dependency, migration, or
-`0006` is required. Inbox Quick Project and Quick Priority remain DEFERRED.
-V0.9 Full Acceptance is PASS, including the Month empty-date → existing Day
-View regression. V0.9.0 is formally released; Application Version is `0.9.0`.
+## 界面与工作流 / Workflow
 
-## V1.0 Product Maturity
+DayFlow Personal 的日常工作流保持简单：先记录，再安排，再执行，最后复盘。
 
-The Product Maturity Audit and Final Product Acceptance both PASS. The single
-V1.0 Must Fix preserved Inbox semantics for query results and is complete. V1.0.0
-is formally released; Application Version is `1.0.0`, Stable Release is
-`v1.0.0`, and its annotated tag points to
-`8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`. Reminder action feedback,
-skip-to-content, and Calendar narrow-width guidance remain deferred 1.x polish
-rather than release blockers.
+DayFlow Personal follows a simple daily loop: capture first, plan next, execute, and review.
 
-## V0.1 Features
+```text
+记录 Capture
+   ↓
+收件箱 Inbox
+   ↓
+规划 Plan
+   ↓
+Today / Calendar
+   ↓
+完成或调整 Complete / Reschedule
+   ↓
+复盘 Review
+```
 
-- Create, read, and edit Tasks.
-- Complete and restore Tasks.
-- Soft-delete Tasks with an Undo restore action.
-- View Tasks planned for Today.
-- Show explicit Today loading, loaded, and error states with Retry.
-- Persist data in SQLite across Backend restarts.
+- **收集 / Capture:** 快速创建任务，随后决定是否安排日期、时间块、项目或其他元数据。<br>
+  Create a task quickly, then decide whether to add a planned date, Time Block, project, or other metadata.
+- **规划 / Plan:** Inbox 用于未安排任务；Today、Calendar 和 Task Editor 用于更具体的计划。<br>
+  Inbox is for unscheduled work; Today, Calendar, and Task Editor support more specific planning.
+- **执行 / Execute:** Today 聚焦当前计划，Calendar 提供 Day、Week、Month 视角。<br>
+  Today focuses on the current plan, while Calendar provides Day, Week, and Month views.
+- **复盘 / Review:** `#review` 保持只读，帮助查看完成、Overdue、Carryover 和项目当前状态。<br>
+  `#review` is read-only and helps inspect completed work, Overdue tasks, Carryover, and current project state.
 
-The V0.1 UI is Today-first and desktop-first. The backend exposes the complete
-minimal Task lifecycle under `/api/v1` and uses optimistic `version` checks for
-mutations.
+### 快速调整日期 / Quick Reschedule
 
-## V0.2 Features
+Quick Reschedule 只面向 Pending Task，动作包括：Today、Tomorrow、Next Monday、移回收件箱和选择日期。普通动作只修改 `planned_date`；移回收件箱会同时清除 `schedule`。Deadline、Reminder 和 Recurrence 不会被隐式修改。
 
-- Inbox represented by active Tasks with `planned_date = null`.
-- Low/normal/high Priority with a normal default.
-- User-defined Categories and normalized many-to-many Tags.
-- Create, rename, and delete Category and Tag metadata from the Today or Inbox UI.
-- Title/description Search with structured Priority, Category, and Tag filters.
-- SQLite Foreign Key enforcement on every SQLAlchemy connection.
+Quick Reschedule is available for pending Tasks with Today, Tomorrow, Next Monday, Move to Inbox, and Choose Date actions. Normal actions change only `planned_date`; moving a task to Inbox also clears `schedule`. Deadline, Reminder, and Recurrence are not changed implicitly.
 
-V0.2 keeps the V0.1 API paths and behavior compatible. The `v0.2.0` and
-`v0.2.1` release tags are local stable checkpoints. V0.3 adds the Hash-based
-Calendar frontend, Day/Week/Month views, Task Editor Time Blocking, Calendar
-range API, Runtime API, timezone/DST validation, and conflict detection. The
-real database was later upgraded to `0004_add_projects` for V0.4.
+Today、Tomorrow 和 Next Monday 以 DayFlow runtime 的 `local_date` 为日期基准，而不是浏览器时区或 UTC 日期。带 Time Block 的任务跨日期移动时，Backend 保留本地时钟和时区并重新计算 UTC；冲突继续使用现有确认流程。
 
-V0.1 deliberately excluded Projects, Priority, Category, Tags, Reminders,
-Recurrence, Calendar, AI, and ScheduleBlock.
+Today, Tomorrow, and Next Monday use the DayFlow runtime `local_date`, not the browser timezone or a UTC date. When a scheduled task moves across dates, the Backend preserves its local clock and timezone while recalculating UTC instants; conflicts use the existing confirmation flow.
 
-V0.3 adds Calendar, Day/Week/Month views, date-only Tasks, and one optional
-Time Block per Task. V0.3 does not include Drag & Drop, Resize, cross-day Time
-Blocks, Repeat, Projects, Reminders, AI Scheduling, or external Calendar
-integration.
-
-## V0.4 Features
-
-- Project CRUD with Hash-based Project list and detail views.
-- Project assignment and clearing from Task Editor and existing Task views.
-- Project progress, complete/reopen, soft delete, and restore.
-- Project-aware Search filtering with existing Today, Inbox, and Calendar flows.
-- Migration `0004_add_projects`, temporary-database validation, and real-data
-  migration acceptance.
-
-## V0.5 Features
-
-- Date-only and timed Deadlines with saved timezone and DST validation.
-- Daily, selected-weekday, and monthly (1–28) Repeat rules with explicit
-  materialization, skip, stop, and preserved occurrence history.
-- Specified-time Reminders with pending, acknowledged, and dismissed states.
-- Read-only due polling and browser-session dialog deduplication.
-- No real-time Reminder guarantee while the Backend is stopped.
-
-## Technology
+## 技术栈 / Tech Stack
 
 - Vue 3 + TypeScript + Vite + Element Plus
 - Python 3.12 + FastAPI + Pydantic
 - Synchronous SQLAlchemy 2.x
 - SQLite + Alembic
 
-## Runtime Data
+## 快速开始 / Quick Start
 
-The real database is stored at:
+### 环境要求 / Prerequisites
 
-```text
-data/dayflow.sqlite3
-```
+- Python 3.12
+- Node.js 24 LTS
+- [`uv`](https://docs.astral.sh/uv/)
 
-It is excluded from Git. The V0.1 implementation did not provide an automated
-Backup Service or Restore UI; V0.6 provides the controlled maintenance view.
-Use 数据与备份 for Backup Create/List/Verify. Backup creation uses SQLite's
-Online Backup API and handles committed WAL data; do not directly copy an
-active database file. Real project-database Restore remains disabled.
+### 初始化开发环境 / Set Up a Development Environment
 
-## Development Setup
+以下示例使用临时数据库。不要把真实个人数据库用于测试或首次初始化。
 
-Use Python 3.12 and Node.js 24 LTS. Install `uv`, then run:
+The following setup uses a temporary database. Do not use the real personal database for tests or first-time setup.
 
 ```bash
 uv sync --directory backend
 npm ci --prefix frontend
-# Only point this at a new or temporary database, never the real personal DB.
-DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend alembic upgrade head
+DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 \
+  uv run --directory backend alembic upgrade head
 ```
 
-The real SQLite file is managed by Alembic and is currently at
-`0005_add_deadlines_recurrence_reminders`. Runtime code does not call `Base.metadata.create_all()`.
-Before applying any future migration to real data, stop the Backend, create a
-verified backup, and validate the migration on a copy of the current database
-first.
-
-## Run
-
-Backend:
+### 启动 Backend / Run the Backend
 
 ```bash
-DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 uv run --directory backend uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+DAYFLOW_DATABASE_PATH=/tmp/dayflow-development.sqlite3 \
+  uv run --directory backend uvicorn app.main:app \
+  --reload --host 127.0.0.1 --port 8000
 ```
 
-The development command above uses the temporary database initialized by the
-setup command. Use isolated temporary databases for tests and migration
-rehearsals; reserve `data/dayflow.sqlite3` for normal personal use.
+### 启动 Frontend / Run the Frontend
 
-Frontend:
+在另一个终端执行：
+
+Run this in a second terminal:
 
 ```bash
 npm run dev --prefix frontend
 ```
 
-### WSL 日常启动与停止
+### WSL 日常启动 / Daily WSL Launch
 
-在 WSL 项目根目录执行：
+在项目根目录执行：
+
+From the project root, run:
 
 ```bash
 ./scripts/dayflow-start.sh
 ```
 
-启动脚本会检查 Node.js 24 LTS、Backend 虚拟环境、Frontend 依赖、端口和
-真实数据库版本（`0005_add_deadlines_recurrence_reminders`），并从项目元数据
-读取应用版本、验证 Backend 健康接口版本一致。不会自动执行 Migration，也不会创建
-测试数据。启动成功后，在浏览器访问 `http://127.0.0.1:5173`；Backend 地址为
-`http://127.0.0.1:8000`。
+启动脚本会检查运行环境、端口、Backend 健康状态、应用版本和真实数据库 Schema，不会自动执行 Migration，也不会创建测试数据。停止由脚本创建的服务：
 
-停止由启动脚本创建的服务：
+The launcher checks the runtime environment, ports, Backend health, application version, and database schema. It does not run migrations or create test data. Stop services created by the launcher with:
 
 ```bash
 ./scripts/dayflow-stop.sh
 ```
 
-停止脚本只会终止已记录且身份校验通过的 DayFlow Backend/Frontend 进程；遇到
-PID 复用或未知进程时会拒绝操作。
+## 项目结构 / Project Structure
 
-Node.js 由 WSL 用户级 nvm 管理，启动脚本会从 nvm 默认版本加载 Node.js，
-不会依赖临时目录中的 Node 安装，也不会修改系统 Node.js。
+```text
+backend/     FastAPI API, services, models, migrations, and Backend tests
+frontend/    Vue application, unit tests, and Playwright E2E tests
+docs/        API, architecture, and database documentation
+scripts/     Local WSL start/stop scripts
+data/        Ignored local runtime data; never commit personal data
+```
 
-## Test
+```text
+backend/     FastAPI API、服务、模型、迁移和 Backend 测试
+frontend/    Vue 应用、单元测试和 Playwright E2E 测试
+docs/        API、架构和数据库文档
+scripts/     本地 WSL 启停脚本
+data/        被 Git 忽略的本地运行数据；不要提交个人数据
+```
+
+## 数据与隐私 / Data & Privacy
+
+真实 SQLite 数据库默认位于 `data/dayflow.sqlite3`，属于个人运行数据，已被 Git 忽略，不会包含在 GitHub 仓库或 Release 中。应用以本地运行和本地持久化为核心，不要求云端账户。
+
+The real SQLite database normally lives at `data/dayflow.sqlite3`. It is personal runtime data, ignored by Git, and not included in the GitHub repository or Release. The application is built around local execution and local persistence and does not require a cloud account.
+
+测试、浏览器 E2E 和迁移演练必须使用隔离临时数据库。不要把 `.env`、真实数据库、备份、虚拟环境、`node_modules` 或测试产物复制到 Git。
+
+Tests, browser E2E runs, and migration rehearsals must use isolated temporary databases. Do not copy `.env`, the real database, backups, virtual environments, `node_modules`, or test artifacts into Git.
+
+## 备份与恢复 / Backup & Restore
+
+DayFlow 提供维护界面的 Backup Create、List 和 Verify。备份使用 SQLite Online Backup API，以处理活动数据库的 WAL 数据；不要直接复制正在运行的数据库主文件。
+
+DayFlow provides Backup Create, List, and Verify through the maintenance view. Backups use SQLite’s Online Backup API so committed WAL data is handled safely; do not directly copy the main file of an active database.
+
+当前边界如下：
+
+The current boundary is:
+
+- **Backup / 备份:** available
+- **Real Restore / 真实数据库恢复:** prohibited
+- **Storage Qualification / 存储资格:** `NOT QUALIFIED`
+- 目前只验证了独立系统临时数据库上的隔离 Restore 流程。<br>
+  Restore execution has only been verified for independent system-temporary databases.
+
+真实个人数据库、备份和维护状态属于本地数据，必须在删除 WSL 或迁移环境前单独备份；它们不是 GitHub Repository 或 Release 的内容。
+
+The real personal database, backups, and maintenance state are local-only data. Back them up separately before retiring or migrating the WSL environment; they are not part of the GitHub repository or Release.
+
+## 测试 / Testing
+
+Backend 和 Frontend 测试使用隔离临时数据库，不得访问 `data/dayflow.sqlite3`。
+
+Backend and Frontend tests use isolated temporary databases and must never access `data/dayflow.sqlite3`.
 
 ```bash
 uv run --directory backend pytest
 npm run test --prefix frontend
 ```
 
-Tests use isolated temporary databases and must never access `data/dayflow.sqlite3`.
-When running inside a restricted Codex sandbox, backend tests that exercise
-synchronous FastAPI routes may need one-time elevated execution because the
-sandbox can block cross-thread asyncio wakeups. This is an execution-environment
-limitation, not a dependency downgrade requirement.
+浏览器 E2E 使用一次性的临时 SQLite 数据库、headless Chromium、Backend `18000` 和 Frontend `15173`：
 
-Browser E2E acceptance tests use a fresh temporary SQLite database for each
-run. The runner refuses the real database and runs Alembic before starting a
-test-only Backend on `127.0.0.1:18000` and Vite on `127.0.0.1:15173`:
+Browser E2E uses a fresh temporary SQLite database, headless Chromium, Backend port `18000`, and Frontend port `15173`:
 
 ```bash
 npm run test:e2e --prefix frontend
 npm run test:e2e:ui --prefix frontend
 ```
 
-Install only the Playwright Chromium browser before the first run:
+首次运行前只需安装 Playwright Chromium：
+
+Install the Playwright Chromium browser once before the first run:
 
 ```bash
 npm exec --prefix frontend playwright install chromium
 ```
 
-The UI mode is optional and is not a release gate in headless-only
-environments. Browser reports and test results are ignored by Git.
+## 当前版本 / Release Status
 
-## Troubleshooting
+- **Stable Release / 稳定版本:** `v1.0.0`
+- **Application Version / 应用版本:** `1.0.0`
+- **Release Commit / 发布 Commit:** `8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`
+- **Database Schema / 数据库 Schema:** `0005_add_deadlines_recurrence_reminders`
+- **Migration / 数据库迁移:** NO；`0006` 不存在 / `0006` does not exist
+- **V1.0 Product Maturity Audit:** PASS
+- **V1.0 Final Product Acceptance:** PASS
 
-- `database is locked`: stop the Backend before manually copying or inspecting
-  the real database, and avoid running two writers against it.
-- Frontend shows an API error: start the Backend on `127.0.0.1:8000` before the
-  Vite development server.
-- Do not copy `.env`, `data/dayflow.sqlite3`, backups, `.venv`, or
-  `frontend/node_modules` into Git.
+当前正式验收基线：Backend 414 passed、Frontend 127 passed、Playwright 52 passed、Type-check PASS、Build PASS。
+
+The accepted release baseline is: Backend 414 passed, Frontend 127 passed, Playwright 52 passed, Type-check PASS, and Build PASS.
+
+低风险 UX 改进仍延后至 1.x；V1.0 的重点是稳定、可理解、可恢复的个人任务管理闭环，而不是继续扩大功能范围。
+
+Additional low-risk UX improvements remain deferred to 1.x. V1.0 focuses on a stable, understandable, and recoverable personal task workflow rather than continued feature expansion.
+
+完整历史请参阅 [`CHANGELOG.md`](CHANGELOG.md) 与 [`ROADMAP.md`](ROADMAP.md)。
+
+See [`CHANGELOG.md`](CHANGELOG.md) and [`ROADMAP.md`](ROADMAP.md) for the full release history.
