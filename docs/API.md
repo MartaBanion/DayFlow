@@ -13,9 +13,9 @@ annotated `v0.7.0` tag points to release Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. Deadline, Recurrence, Reminder,
 Backup, and Recovery API contracts use the released V0.6 behavior. V0.7 Review
 is implemented, integrated, accepted, and released. V0.8 Task Organization at
-Scale is frozen at Product / Architecture Phase 0; Phase 1 Task Query Core is
-complete; Phase 2 Search / Project UI Integration is complete. The real
-database schema remains
+Scale Phase 0, Phase 1 Task Query Core, Phase 2 Search / Project UI
+Integration, and Phase 3 Full Acceptance are complete. V0.8.0 is not released;
+Release Preparation is next. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -460,8 +460,9 @@ Review service and Calendar range API remain separate contracts.
 
 V0.8 keeps returning `TaskRead[]` with no pagination, `limit`, `offset`, or
 cursor. NO DATABASE MIGRATION REQUIRED: the existing `0005` fields and current
-indexes are sufficient for the frozen contract. Performance will be checked
-with isolated sanity data before any future index or migration decision.
+indexes are sufficient for the accepted contract. Isolated performance sanity
+checks passed; no future index or migration decision is required for this
+release. Phase 3 Full Acceptance is complete and V0.8.0 remains unreleased.
 
 ## V0.1 Endpoints
 

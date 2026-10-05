@@ -9,9 +9,15 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 Published stable release: `v0.7.0` — Daily & Weekly Review; its annotated tag
 points to release Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. Current development is V0.8 Task
-Organization at Scale. Product / Architecture Phase 0 is frozen in the core
-documentation; Phase 1 implementation has not started. The real database
-schema remains `0005_add_deadlines_recurrence_reminders`.
+Organization at Scale. Phase 0 Product / Architecture Freeze, Phase 1 Task
+Query Core, Phase 2 Search / Project UI Integration, and Phase 3 Full
+Acceptance are complete. Phase 1 is committed as
+`82691ac61bbce3cf745de2cfd5904f7619c1a642`, following the Phase 0 freeze
+commit `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`; Phase 2 is committed as
+`60a1dacbf1d044054a26da1e4556e6c2270de9cf`. Phase 3 acceptance adds no code
+commit. Next is V0.8.0 Release
+Preparation; v0.8.0 is not released. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.
 

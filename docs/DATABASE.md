@@ -9,7 +9,7 @@ data/dayflow.sqlite3
 The file is personal runtime data and must never be committed. Backend writes
 must occur through services and transactions.
 
-## Current Schema: `0005` / V0.7.0 Stable; V0.8 Phase 0 Frozen
+## Current Schema: `0005` / V0.7.0 Stable; V0.8 Full Acceptance Complete
 
 The real database is currently at:
 
@@ -20,8 +20,9 @@ The real database is currently at:
 Published stable application version and annotated tag: `v0.7.0`, pointing to
 release Commit `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are
 complete and introduce no business schema or migration. V0.8 Task Organization
-at Scale is frozen at Product / Architecture Phase 0 and also requires no
-schema change; the real schema remains
+at Scale Phases 0–3, including Full Acceptance, are complete and also require
+no schema change; V0.8.0 is not released and the next step is Release
+Preparation. The real schema remains
 `0005_add_deadlines_recurrence_reminders`. Review is read-only and no `0006`
 exists.
 
@@ -441,7 +442,7 @@ current-state Review. Do not create `0006` or edit migrations `0001`–`0005`.
 If immutable completion/activity history becomes a required product feature,
 stop implementation and request a separate product and migration decision.
 
-## V0.8 Task Organization Query Boundary (Phase 0 Frozen)
+## V0.8 Task Organization Query Boundary (Phases 0–3 Complete)
 
 V0.8 uses existing Task columns and relationships for current-state filters:
 
@@ -461,9 +462,9 @@ result is stored or materialized.
 This is a read-only query-contract extension. It creates no table, column,
 relationship, index, event log, snapshot, or cache, and it keeps the existing
 `TaskRead[]` response shape with no pagination. V0.8 therefore has **NO DATABASE
-MIGRATION REQUIRED** and must not create `0006`. Existing indexes are sufficient
-for Phase 0; isolated performance sanity checks must precede any future index
-proposal.
+MIGRATION REQUIRED** and must not create `0006`. Existing indexes were
+validated by the isolated performance sanity check; no index or migration is
+required for the unreleased V0.8.0 candidate.
 
 ## Backup
 

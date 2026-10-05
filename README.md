@@ -7,8 +7,14 @@ DayFlow Personal is a local-first, single-user productivity application.
 **Current stable application version: v0.7.0 — Daily & Weekly Review.** The
 annotated `v0.7.0` tag is the published stable release at Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.8 Task Organization at Scale
-is frozen at Product / Architecture Phase 0; Phase 1 implementation has not
-started. The real database schema remains
+has completed Phase 0 Product / Architecture Freeze, Phase 1 Task Query Core,
+Phase 2 Search / Project UI Integration, and Phase 3 Full Acceptance. The
+completed Phase 1, Phase 2, and Phase 3 state is recorded by commits
+`82691ac61bbce3cf745de2cfd5904f7619c1a642` and
+`60a1dacbf1d044054a26da1e4556e6c2270de9cf`; the Phase 0 freeze is committed
+as `97e118a0d546f57fcee7a9dd6ae53f6f0010db80`, and Phase 3 acceptance adds no
+code commit. V0.8.0 is entering Release Preparation and is not released. The
+real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
@@ -36,8 +42,10 @@ retained completion state, not immutable activity history.
 
 ## V0.8 Task Organization at Scale
 
-V0.8 is frozen around Search / Filter / Sort with Project reuse. The release
-scope is intentionally small: extend the existing `/api/v1/tasks` query with
+V0.8 Full Acceptance is complete and the project is entering Release
+Preparation; v0.8.0 is not released. The theme is Search / Filter / Sort with
+Project reuse. The release scope is intentionally small: extend the existing
+`/api/v1/tasks` query with
 current-status, Overdue, planned-date bucket, and limited stable-sort controls;
 reuse those controls in Project Detail with a fixed `project_id`; and make
 Search mode visibly distinct from Inbox mode. All filters use AND semantics,

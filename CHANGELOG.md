@@ -1,9 +1,34 @@
 # Changelog
 
-## [Unreleased] — V0.8 Task Organization at Scale
+## [Unreleased] — V0.8 Task Organization at Scale / Release Preparation
 
-V0.8 Product / Architecture Phase 0 is frozen around Search / Filter / Sort
-with Project reuse. Implementation has not started.
+V0.8 Full Acceptance is complete and the unreleased 0.8.0 candidate is ready
+for Release Preparation. No release date or v0.8.0 tag exists yet.
+
+### Completed
+
+Backend:
+
+- Current status, canonical Overdue, planned-date bucket, and stable sort
+  filters on `GET /api/v1/tasks`.
+- Request-scoped clock and Project query reuse.
+
+Frontend:
+
+- Search organization controls with clear Search / Inbox semantics.
+- Project Detail filter/sort reuse, Reset, Loading/Error/Empty states, request
+  race protection, and Task edit refresh.
+
+Quality:
+
+- Backend: 405 passed.
+- Frontend: 99 passed; type-check and build passed.
+- Playwright Chromium: 40 passed.
+- Performance sanity: PASS.
+- NO DATABASE MIGRATION REQUIRED.
+
+Inbox Quick Project and Quick Priority remain DEFERRED and are not release
+gates.
 
 ### Frozen Scope
 

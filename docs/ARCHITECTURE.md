@@ -6,8 +6,9 @@ Current stable application version: **v0.7.0 — Daily & Weekly Review**. The
 annotated `v0.7.0` tag points to release Commit
 `b632f10dbc9cde7da04083a60ef758dea648b594`. V0.7 Phases 0–3 are complete,
 accepted, and released. V0.8 Task Organization at Scale is frozen at Product /
-Architecture Phase 0; Phase 1 Task Query Core is complete; Phase 2 Search /
-Project UI Integration is complete. The real database schema remains
+Architecture Phase 0, Phase 1 Task Query Core, Phase 2 Search / Project UI
+Integration, and Phase 3 Full Acceptance are complete. V0.8.0 is not released;
+the next step is Release Preparation. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
@@ -366,8 +367,9 @@ verification.
 
 ## Frozen V0.8 — Task Organization at Scale
 
-Status: Product / Architecture Phase 0 frozen; Phase 1 Task Query Core
-complete; Phase 2 Search / Project UI Integration complete.
+Status: Product / Architecture Phase 0, Phase 1 Task Query Core, Phase 2
+Search / Project UI Integration, and Phase 3 Full Acceptance complete. Ready
+for V0.8.0 Release Preparation; v0.8.0 is not released.
 The V0.8 theme is Search / Filter / Sort with Project reuse. It is a small
 current-state organization layer over the existing Task list, not a new query
 engine or Analytics system.
@@ -438,7 +440,7 @@ and Move Tomorrow/Next Week remain V0.9 scope.
 3. Phase 2 — Search / Project UI Integration: controls, Project reuse,
    Frontend tests, and isolated E2E — complete; Inbox quick actions are
    separately optional and not implemented.
-4. Phase 3 — Full Acceptance / Release.
+4. Phase 3 — Full Acceptance: complete. Release Preparation is next.
 
 The Definition of Done is the ability to find pending, current completed,
 Overdue, and planned-bucket Tasks with a small stable sort set, and to use the
