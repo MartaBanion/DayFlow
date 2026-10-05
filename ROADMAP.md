@@ -1,14 +1,15 @@
 # DayFlow Personal Roadmap
 
-Stable release: **v0.9.0 — Quick Reschedule + Lightweight Month Drill-down**.
-Current DayFlow application version: **1.0.0**. The annotated `v0.9.0` tag
+Stable release: **v1.0.0 — Product Maturity**. Current DayFlow application
+version: **1.0.0**. The annotated `v0.9.0` tag points to historical release
+Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`; the annotated `v1.0.0` tag
 points to release Commit
-`f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.9 Phases 0–3 are complete and
+`8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`. V0.9 Phases 0–3 are complete and
 released, including the Month empty-date blocker fix. V1.0 Product Maturity
 Audit and Final Product Acceptance PASS; the V1.0 Phase 1 Inbox semantic Must
-Fix is complete in `0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 Release
-Preparation is current. `v1.0.0` is not released. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`.
+Fix is complete in `0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 is
+formally released. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`.
 
 ## Current
 
@@ -511,8 +512,9 @@ from a Month date.
 Status: Product Maturity Audit PASS. The single Phase 1 Must Fix preserved
 Inbox semantics when a query is entered and is complete in
 `0c8e0b470ab097305e7dc39d7f9cf8703306243e`. Final Product Acceptance also
-PASS. V1.0.0 Release Preparation is current; Application Version is `1.0.0`,
-Stable Release remains `v0.9.0`, and `v1.0.0` is not released. Reminder action
+PASS. V1.0.0 is formally released; Application Version is `1.0.0`, Stable
+Release is `v1.0.0`, and its annotated tag points to
+`8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`. Reminder action
 feedback, skip-to-content, and Calendar narrow-width guidance remain deferred
 1.x polish.
 

@@ -8,14 +8,14 @@
 
 ## Current Version
 
-Stable release: `v0.9.0` — Quick Reschedule + Lightweight Month Drill-down.
-Current application version: `1.0.0`. The annotated `v0.9.0` tag points to
-release Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`. Deadline,
+Stable release: `v1.0.0` — Product Maturity. Current application version:
+`1.0.0`. The annotated `v0.9.0` tag points to historical release Commit
+`f7b827071bbce3918c45ae9003800166fa9a2f79`; the annotated `v1.0.0` tag points
+to release Commit `8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`. Deadline,
 Recurrence, Reminder, Backup, and Recovery API contracts use their released
 behavior. V0.9 Phases 0–3 are complete and released; the Month empty-date
 blocker is fixed. V1.0 Product Maturity Audit and Final Product Acceptance
-PASS, and V1.0.0 Release Preparation is current. Application Version is
-`1.0.0`; `v1.0.0` is not released. The real database schema remains
+PASS, and V1.0.0 is formally released. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 ## V0.7 Review API (Phase 1 and Phase 2 Complete; Phase 3 Acceptance Complete)
@@ -510,9 +510,9 @@ and switches to the existing Day View without a new endpoint or write.
 
 The Product Maturity Audit and Final Product Acceptance are PASS. The Phase 1
 Inbox semantic fix keeps `inbox=true` when a query is supplied, so Inbox
-search remains distinct from global Search. V1.0.0 Release Preparation is
-current; Application Version is `1.0.0`. No new API, migration, `0006`, or
-dependency is introduced.
+search remains distinct from global Search. V1.0.0 is formally released;
+Application Version is `1.0.0`. No new API, migration, `0006`, or dependency
+is introduced.
 
 ## V0.1 Endpoints
 

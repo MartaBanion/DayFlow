@@ -6,14 +6,13 @@ DayFlow Personal is a local-first, single-user productivity application for reli
 
 ## Current Version
 
-Published stable release: `v0.9.0` — Quick Reschedule + Lightweight Month
-Drill-down; its annotated tag points to release Commit
-`f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.9 Phases 0–3 are complete and
-released. The Month empty-date blocker is fixed. V1.0 Product Maturity Audit
-and Final Product Acceptance both PASS; the V1.0 Phase 1 Inbox semantic Must
-Fix is complete in `0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 Release
-Preparation is current. Application Version is `1.0.0`; `v1.0.0` is not
-released. The real database schema remains
+Published stable release: `v1.0.0` — Product Maturity; its annotated tag points
+to release Commit `8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`. V0.9 Phases 0–3
+are complete and released. The Month empty-date blocker is fixed. V1.0
+Product Maturity Audit and Final Product Acceptance both PASS; the V1.0 Phase 1
+Inbox semantic Must Fix is complete in
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 is formally released.
+Application Version is `1.0.0`. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 Only the version currently being implemented may be changed. Do not start later roadmap versions early.

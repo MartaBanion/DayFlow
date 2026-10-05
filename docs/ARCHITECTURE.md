@@ -2,13 +2,13 @@
 
 ## Current Version
 
-Stable release: **v0.9.0 — Quick Reschedule + Lightweight Month Drill-down**.
-Current application version: **1.0.0**. The annotated `v0.9.0` tag points to
-release Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.9 Phases 0–3
+Stable release: **v1.0.0 — Product Maturity**. Current application version:
+**1.0.0**. The annotated `v0.9.0` tag points to historical release Commit
+`f7b827071bbce3918c45ae9003800166fa9a2f79`; the annotated `v1.0.0` tag points
+to release Commit `8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`. V0.9 Phases 0–3
 are complete and released. The Month empty-date blocker is fixed. V1.0
-Product Maturity Audit and Final Product Acceptance PASS; V1.0.0 Release
-Preparation is current. Application Version is **1.0.0**; `v1.0.0` is not
-released. The real database schema remains
+Product Maturity Audit and Final Product Acceptance PASS; V1.0.0 is formally
+released. Application Version is **1.0.0**. The real database schema remains
 `0005_add_deadlines_recurrence_reminders`.
 
 ## Frozen V0.7 — Daily & Weekly Review
@@ -530,8 +530,8 @@ remain out of scope.
 The Product Maturity Audit and Final Product Acceptance are PASS. The Phase 1
 Inbox semantic Must Fix is complete in
 `0c8e0b470ab097305e7dc39d7f9cf8703306243e`; Inbox query keeps the Inbox
-contract instead of switching to global Search. V1.0.0 Release Preparation is
-current. Application Version is **1.0.0**; `v1.0.0` is not released. Reminder
+contract instead of switching to global Search. V1.0.0 is formally released;
+Application Version is **1.0.0** and Stable Release is **v1.0.0**. Reminder
 action feedback, skip-to-content, and Calendar narrow-width guidance remain
 deferred 1.x polish.
 

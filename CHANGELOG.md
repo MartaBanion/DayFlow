@@ -1,12 +1,13 @@
 # Changelog
 
-## [Unreleased] — V1.0.0 Release Preparation
+## [v1.0.0] — Product Maturity
 
 V1.0 Product Maturity Audit and Final Product Acceptance are PASS. The V1.0
 Phase 1 Inbox semantic Must Fix is complete in
-`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 Release Preparation is
-current; application version is `1.0.0`, Stable Release remains `v0.9.0`, and
-`v1.0.0` is not released.
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 is formally released;
+the annotated `v1.0.0` tag points to release Commit
+`8a941b5a15ef9eaeb18b9a415710f9d7deb7133e`, and application version is
+`1.0.0`.
 
 ### Product Maturity Scope
 
