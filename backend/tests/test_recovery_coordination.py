@@ -536,7 +536,7 @@ def test_backend_start_race_refuses_before_database_initialization(tmp_path, mon
 
 
 def test_backend_rechecks_state_after_shared_acquisition(tmp_path, monkeypatch):
-    safety = MaintenanceSafety(tmp_path / "maintenance", "0.9.0")
+    safety = MaintenanceSafety(tmp_path / "maintenance", "1.0.0")
     original = safety._check
     checks = 0
     def check(fd, *args, **kwargs):

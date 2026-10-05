@@ -20,9 +20,9 @@ The real database is currently at:
 Published stable release and annotated tag: `v0.9.0`, pointing to release
 Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`. V0.7, V0.8, and V0.9
 Phases are complete, accepted, and released, including the Month empty-date
-blocker fix. Current application version is `0.9.0`. V1.0 Product Maturity
-Audit and Final Product Acceptance PASS; the release status is ready for
-V1.0.0 Release Preparation and `v1.0.0` is not released. The real schema
+blocker fix. Current application version is `1.0.0`. V1.0 Product Maturity
+Audit and Final Product Acceptance PASS; V1.0.0 Release Preparation is current
+and `v1.0.0` is not released. The real schema
 remains `0005_add_deadlines_recurrence_reminders`. Review remains read-only and
 no `0006` exists.
 

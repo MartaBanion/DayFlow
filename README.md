@@ -5,14 +5,14 @@ DayFlow Personal is a local-first, single-user productivity application.
 ## Current Version
 
 **Stable release: v0.9.0 — Quick Reschedule + Lightweight Month Drill-down.**
-The current DayFlow application version is `0.9.0`. The annotated `v0.9.0`
+The current DayFlow application version is `1.0.0`. The annotated `v0.9.0`
 tag points to release Commit `f7b827071bbce3918c45ae9003800166fa9a2f79`.
 V0.9 Phases 0–3 are complete and released, including the Month empty-date
 blocker fix. V1.0 Product Maturity Audit and Final Product Acceptance PASS;
 the V1.0 Phase 1 Inbox semantic Must Fix is complete in
-`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. The current status is ready for
-V1.0.0 Release Preparation; `v1.0.0` is not released. The real database schema
-remains `0005_add_deadlines_recurrence_reminders`, with no new migration.
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 Release Preparation is
+current; `v1.0.0` is not released. The real database schema remains
+`0005_add_deadlines_recurrence_reminders`, with no new migration.
 
 V0.6 adds the 数据与备份 maintenance view, consistent Backup Create/List/Verify,
 Restore Dry Run, isolated Restore safety and recovery coordination, and visible
@@ -76,10 +76,11 @@ View regression. V0.9.0 is formally released; Application Version is `0.9.0`.
 ## V1.0 Product Maturity
 
 The Product Maturity Audit and Final Product Acceptance both PASS. The single
-V1.0 Must Fix preserved Inbox semantics for query results and is complete. The
-current status is ready for V1.0.0 Release Preparation; `v1.0.0` is not
-released. Reminder action feedback, skip-to-content, and Calendar narrow-width
-guidance remain deferred 1.x polish rather than release blockers.
+V1.0 Must Fix preserved Inbox semantics for query results and is complete. V1.0.0
+Release Preparation is current; Application Version is `1.0.0`, Stable Release
+remains `v0.9.0`, and `v1.0.0` is not released. Reminder action feedback,
+skip-to-content, and Calendar narrow-width guidance remain deferred 1.x polish
+rather than release blockers.
 
 ## V0.1 Features
 

@@ -9,7 +9,7 @@ import type { Backup, BackupVerification } from '../types'
 const backup: Backup = {
   backup_version: 1, backup_id: '4bfb2916-b743-4d38-b606-93c24da78200',
   filename: 'dayflow-backup-20261001T120000000000Z-12345678901234567890123456789012.sqlite3',
-  created_at_utc: '2026-10-01T12:00:00Z', app_version: '0.9.0',
+  created_at_utc: '2026-10-01T12:00:00Z', app_version: '1.0.0',
   alembic_version: '0005_add_deadlines_recurrence_reminders',
   database_sha256: 'a'.repeat(64), file_size: 409600, integrity_check: 'ok',
   foreign_key_errors: 0, verified_at_utc: '2026-10-01T12:00:01Z',
@@ -28,7 +28,7 @@ beforeEach(() => {
   vi.spyOn(backupApi, 'list').mockResolvedValue([])
   vi.spyOn(backupApi, 'create').mockResolvedValue(backup)
   vi.spyOn(backupApi, 'verify').mockResolvedValue(verified)
-  vi.spyOn(taskApi, 'getRuntime').mockResolvedValue({ timezone: 'Asia/Shanghai', local_date: '2026-10-01', app_version: '0.9.0', database_schema: backup.alembic_version })
+  vi.spyOn(taskApi, 'getRuntime').mockResolvedValue({ timezone: 'Asia/Shanghai', local_date: '2026-10-01', app_version: '1.0.0', database_schema: backup.alembic_version })
 })
 afterEach(() => { wrapper?.unmount(); vi.restoreAllMocks() })
 
@@ -42,7 +42,7 @@ describe('Maintenance UI', () => {
   })
   it('shows actual runtime status, empty action and truthful restore guidance', async () => {
     await open()
-    expect(wrapper.text()).toContain('0.9.0')
+    expect(wrapper.text()).toContain('1.0.0')
     expect(wrapper.text()).toContain(backup.alembic_version)
     expect(wrapper.text()).toContain('还没有备份')
     expect(button('创建第一份备份')).toBeDefined()

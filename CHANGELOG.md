@@ -1,12 +1,21 @@
 # Changelog
 
-## [Unreleased] — V1.0 Product Maturity
+## [Unreleased] — V1.0.0 Release Preparation
 
 V1.0 Product Maturity Audit and Final Product Acceptance are PASS. The V1.0
 Phase 1 Inbox semantic Must Fix is complete in
-`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. Release status is ready for
-V1.0.0 Release Preparation; application version remains `0.9.0` and
+`0c8e0b470ab097305e7dc39d7f9cf8703306243e`. V1.0.0 Release Preparation is
+current; application version is `1.0.0`, Stable Release remains `v0.9.0`, and
 `v1.0.0` is not released.
+
+### Product Maturity Scope
+
+- Stable Capture, Inbox, Today, Calendar, Search, Projects, Deadline, Reminder,
+  Recurrence, Review, and Quick Reschedule workflows.
+- Inbox query semantics remain `inbox=true&q=<query>`, separate from global
+  Search.
+- Reminder acknowledge/dismiss failure feedback, skip-to-content, and Calendar
+  narrow desktop scroll guidance remain deferred to 1.x.
 
 ## [v0.9.0] — Quick Reschedule + Lightweight Month Drill-down
 
